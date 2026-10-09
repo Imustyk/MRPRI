@@ -24,7 +24,7 @@ from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 from sklearn.feature_selection import f_classif
 from sklearn.neighbors import LocalOutlierFactor
-from sklearn.preprocessing import RobustScaler, StandardScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.svm import OneClassSVM
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

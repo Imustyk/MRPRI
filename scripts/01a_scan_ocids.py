@@ -30,7 +30,6 @@ from src.mtender.api_client import MTenderClient  # noqa: E402
 from src.mtender.config import (  # noqa: E402
     DATA_RAW,
     MAX_LIMIT,
-    MONGO_DB_NAME,
     MTENDER_BASE,
     RESULTS,
 )

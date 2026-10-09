@@ -8,11 +8,10 @@ __pycache__/
 # analyst workspace: local SQLite written by the dashboard and the API
 data/workspace/
 
-# --- generated / heavy artifacts (safety-ignore so source-only commits stay small) /
+# --- generated / heavy artifacts (ignored so source-only commits stay small) ---
 data/
 results/
 .pytest_cache/
-.streamlit/secrets.toml
 frontend/dist/
 frontend/node_modules/
 *.egg-info/

@@ -41,7 +41,6 @@ from src.mtender.api_client import MTenderClient, MTenderUnavailable  # noqa: E4
 from src.mtender.config import (  # noqa: E402
     DATA_RAW,
     INGEST_CONCURRENCY,
-    MAX_LIMIT,
     MTENDER_BASE,
     RESULTS,
 )

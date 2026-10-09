@@ -18,7 +18,6 @@ MIN_PLAUSIBLE = "2015-01-01T00:00:00Z"
 MAX_PLAUSIBLE = "2030-12-31T23:59:59Z"
 
 VALID_TENDER_STATUS = {"active", "complete", "cancelled", "unsuccessful", "planning"}
-VALID_AWARD_STATUS = {"active", "pending", "cancelled", "unsuccessful"}
 
 METHOD_DETAIL_CLEAN = lambda v: (  # noqa: E731
     str(v).strip().lower().replace(" ", "_") if isinstance(v, str) and v.strip() else None

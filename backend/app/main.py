@@ -151,10 +151,18 @@ def tender_detail(tender_id: str):
     for r in store.load_tenders():
         if r.get("tender_id") == tender_id:
             item = dict(r)
+            # Same guards as the list endpoint: one malformed row must not turn
+            # the whole detail view into a 500.
             if isinstance(item.get("flags"), str):
-                item["flags"] = json.loads(item["flags"])
+                try:
+                    item["flags"] = json.loads(item["flags"])
+                except json.JSONDecodeError:
+                    item["flags"] = []
             if isinstance(item.get("bids_json"), str):
-                item["bids"] = json.loads(item["bids_json"])
+                try:
+                    item["bids"] = json.loads(item["bids_json"])
+                except json.JSONDecodeError:
+                    item["bids"] = []
             return item
     raise HTTPException(404, "Tender not found")
 

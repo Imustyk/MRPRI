@@ -33,10 +33,8 @@ MTender OCDS API ─┐
 MoF open data ────┼─→ raw_* ─→ norm_* ─→ features_tenders ─→ results/tables/*
 AAP blacklist ────┘         (Mongo)                        (CSV, no DB needed)
                                                           │
-                              ┌───────────────────────────┴──────────┐
-                              ↓                                      ↓
-                     Streamlit (app.py)                    FastAPI (backend/) ─→ React (frontend/)
-                     13 pages, in-browser                  read + CRUD + analytics
+                              └───────────────────────────→ FastAPI (backend/) ─→ React (frontend/)
+                                                        read + CRUD + analytics
 ```
 
 Two rules hold this together:
@@ -44,9 +42,10 @@ Two rules hold this together:
 1. **Modelling never requires a running database.** Step 04 exports the feature table to CSV with a
    manifest recording the export query, row count and SHA-256. Steps 06 and 07 read only that file,
    so the ML half of the pipeline is reproducible from files alone.
-2. **The two front-ends share one store, and it is not the research data.** Analyst work lives in
-   SQLite at `data/workspace/workspace.db`. `data/features/` and `results/` stay read-only, so the
-   ETL output can always be regenerated and can never be corrupted by someone clicking Delete.
+2. **The UI shares one store with the pipeline's consumers, and it is not the research data.**
+   Analyst work lives in SQLite at `data/workspace/workspace.db`. `data/features/` and `results/`
+   stay read-only, so the ETL output can always be regenerated and can never be corrupted by
+   someone clicking Delete.
 
 ---
 
@@ -255,7 +254,7 @@ The first row is the whole argument. Two variables that are near-perfectly rank-
 register as *completely uncorrelated* under Pearson, because a handful of mega-contracts dominate
 the covariance while the ranks are untouched.
 
-Both UIs therefore default to **Spearman** and display the Pearson figure alongside it, so the gap
+The UI therefore defaults to **Spearman** and displays the Pearson figure alongside it, so the gap
 stays visible rather than being quietly resolved in favour of the flattering method. Correlations
 use pairwise-complete observations, and the sample size `n` is reported per pair — a correlation
 on 40 rows is not comparable with one on 117,824.
@@ -265,14 +264,14 @@ usually just means both were derived from contract size.
 
 ---
 
-## 10. The two front-ends
+## 10. The front-end
 
-| | Streamlit (`app.py`) | React (`frontend/`) + FastAPI (`backend/`) |
-|---|---|---|
-| Purpose | Research instrument: deep filtering, all 13 pages, export to CSV/Excel | Analyst-facing: browsing, workspace CRUD |
-| Data | Reads CSV artefacts directly | Reads `tenders.json` + scores; **computes analytics server-side** |
-| Shared | `src/mtender/workspace.py` (SQLite) | same |
-| Style | Refined navy/gold/paper design system | Same token set, ported to CSS variables |
+| | React (`frontend/`) + FastAPI (`backend/`) |
+|---|---|
+| Purpose | Analyst-facing: browsing, workspace CRUD, distribution and correlation analytics |
+| Data | Reads `tenders.json` + scores; **computes analytics server-side** |
+| Shared | `src/mtender/workspace.py` (SQLite) |
+| Style | Navy/gold/paper design system, expressed as CSS variables |
 
 The React app cannot pull 152k rows through `/api/tenders` (capped at 500/page for table
 rendering), and a correlation matrix over the full corpus should not be computed in a browser tab
@@ -280,13 +279,17 @@ anyway. So `/api/analytics/*` returns small aggregates computed in Python.
 
 **No Vue.** `frontend/` is React 18 + TypeScript + Vite + Recharts.
 
+> A second, Streamlit front-end (`app.py` + `dashboard/`) existed earlier and was removed during
+> the audit: it duplicated this UI while depending on `streamlit`/`plotly` and reading the CSV
+> artefacts directly. `requirements.txt`, the README and this document were updated with it.
+
 ---
 
 ## 11. The analyst workspace (CRUD)
 
 Cases, per-procedure annotations, watchlists, saved views, and an audit log. In SQLite at
-`data/workspace/`, separate from all research output. Full CRUD from both UIs against the same
-store, so a case opened in one appears in the other.
+`data/workspace/`, separate from all research output. Full CRUD against the same store the API
+serves, so state survives a restart of either process.
 
 Every mutation writes an `activity` row. `POST /api/workspace/reset` refuses to run without
 `confirm=true`. Vocabulary is validated server-side (Pydantic), so a typo'd status returns 422
@@ -301,7 +304,8 @@ not an allegation.
 
 Recorded because each one silently corrupted a headline number rather than crashing.
 
-1. **`suppliers.py` IndentationError** — the Streamlit app could not start.
+1. **`suppliers.py` IndentationError** — the Streamlit app could not start. (Historical: that
+   front-end was since removed entirely in the audit, see section 10.)
 2. **Invalid CSV in `04_export_snapshot.py`** — the hand-rolled writer stripped `,` and `\n` but
    not `"`. Party names containing quotes (`фильм "Время инвестировать в Гагаузию"`) opened a quoted
    string that swallowed following records: *"Expected 62 fields, saw 67"*. This broke the snapshot
@@ -328,9 +332,6 @@ Recorded because each one silently corrupted a headline number rather than crash
 .venv/bin/uvicorn backend.app.main:app --port 8000
 cd frontend && npm run dev            # proxies /api → :8000
 
-# Streamlit (thesis instrument)
-.venv/bin/python -m streamlit run app.py
-
 # Full pipeline
 ./scripts/run_pipeline.sh             # or SMOKE=1 ./scripts/run_pipeline.sh
 ```
@@ -343,7 +344,6 @@ cd frontend && npm run dev            # proxies /api → :8000
 src/mtender/        shared logic — features, normalize, ocds, aggregations, names, workspace
 scripts/            00…11 pipeline stages + run_pipeline.sh
 backend/app/        FastAPI: store.py, adapter.py, analytics.py, workspace_api.py
-dashboard/          Streamlit: pages/ (13), components/ (theme, layout, charts, metrics, tables), utils/
 frontend/src/       React: pages/, api.ts, ui.tsx, styles.css
 data/               raw/ · processed/ · features/ · workspace/ (analyst SQLite)
 results/            tables/ · figures/ · models/ · logs/ · mongo/

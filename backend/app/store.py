@@ -9,9 +9,8 @@ from __future__ import annotations
 
 import json
 from functools import lru_cache
-from pathlib import Path
 
-from .adapter import UNAVAILABLE, build_graph, build_stats, project_tender, risk_level
+from .adapter import UNAVAILABLE, build_graph, build_stats, project_tender
 from .config import DATA_PROCESSED, MODELS_DIR, TABLES_DIR
 
 # Real feature columns, i.e. the ones the ETL actually computes.
@@ -200,7 +199,6 @@ def mongo_status() -> dict:
     """Live MongoDB topology, so the dashboard can prove its data source."""
     try:
         from src.mtender.mongo_client import (
-            MONGO_DB_NAME,
             cluster_info,
             connect,
             supports_transactions,

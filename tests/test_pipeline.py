@@ -7,7 +7,6 @@ so a future refactor cannot silently reintroduce them. Run with:
 """
 from __future__ import annotations
 
-import datetime as dt
 import sys
 from pathlib import Path
 
@@ -21,7 +20,6 @@ from src.mtender import normalize as N
 from src.mtender.ocds import (
     extract_parties,
     extract_tender,
-    find_party,
     json_key,
     merge_compiled_releases,
 )

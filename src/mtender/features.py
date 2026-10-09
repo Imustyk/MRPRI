@@ -204,7 +204,6 @@ def add_behavioural_features(df: pd.DataFrame) -> pd.DataFrame:
     buyer_n = work.groupby("_buyer", dropna=False).size()
     winner_n = work.groupby("_winner", dropna=False).size()
 
-    idx = pd.MultiIndex.from_arrays([work["_buyer"], work["_winner"]])
     # Map by key explicitly. Dividing the (buyer, winner)-indexed counts by a
     # buyer-indexed Series relies on index alignment that does not hold between a
     # MultiIndex and a plain Index, and silently produces the wrong length.

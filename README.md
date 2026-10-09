@@ -300,51 +300,21 @@ This creates `frontend/node_modules/` (git-ignored).
 
 ---
 
-## 7b. Streamlit analytics dashboard
-
-The thesis UI required in section 29 is a **Streamlit** application at the repo root. It reads the **same** artefacts as the research pipeline (`data/features/features.csv`, `results/tables/*`, validation JSON). It does not generate a second fake dataset.
-
-```bash
-cd /Users/imustyk/Diplom
-source .venv/bin/activate
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-Open the printed URL (normally **http://127.0.0.1:8501**).
-
-| Item | Behaviour |
-|---|---|
-| Data | Real MTender snapshot via `features.csv`; anomaly scores via `tender_anomaly_scores.csv` |
-| Demo mode | Only if that snapshot is missing — banner **⚠ DEMO DATA — NOT REAL PROCUREMENT DATA** |
-| Filters | Sidebar date / method / status / CPV / organisations / value / risk; KPIs and charts recompute |
-| Export | CSV and Excel of the **currently filtered** table on each page |
-| Wording | Anomalies are **potential risk indicators**, never a finding of corruption |
-| Autoencoder / winning margin / lat-lon maps | Not fabricated; pages state why the pipeline could not compute them |
-
-Layout: `app.py`, `dashboard/pages/`, `dashboard/components/`, `dashboard/utils/`.
-
-Newer pages: **Distributions** (ECDF, Q-Q, violin, correlation matrix) and **Cases & notes**
-(the analyst workspace, see section 8a). Both UIs read the same SQLite store, so a case opened in
-one appears in the other.
-
----
-
 ## 8a. Analyst workspace (CRUD)
 
 Cases, per-procedure annotations, watchlists and saved views. Stored in SQLite at
 `data/workspace/workspace.db`, which is **separate from the pipeline output** — `data/features/`
 and `results/` stay read-only, so the ETL artefacts remain reproducible.
 
-Both UIs use the same store via `src/mtender/workspace.py`:
+via `src/mtender/workspace.py`:
 
-| Operation | Streamlit | REST |
-|---|---|---|
-| Cases | Cases & notes page | `GET/POST /api/workspace/cases`, `PATCH/DELETE /api/workspace/cases/{id}` |
-| Annotations | Cases & notes → Annotations | `GET/POST /api/workspace/annotations`, `PATCH/DELETE …/{id}` |
-| Watchlists + items | Cases & notes → Watchlists | `GET/POST /api/workspace/watchlists`, `…/{id}/items` |
-| Saved views | Cases & notes → Saved views | `GET/POST /api/workspace/views`, `PATCH/DELETE …/{id}` |
-| Audit log | Cases & notes → Activity | `GET /api/workspace/activity` |
+| Operation | REST |
+|---|---|
+| Cases | `GET/POST /api/workspace/cases`, `PATCH/DELETE /api/workspace/cases/{id}` |
+| Annotations | `GET/POST /api/workspace/annotations`, `PATCH/DELETE …/{id}` |
+| Watchlists + items | `GET/POST /api/workspace/watchlists`, `…/{id}/items` |
+| Saved views | `GET/POST /api/workspace/views`, `PATCH/DELETE …/{id}` |
+| Audit log | `GET /api/workspace/activity` |
 
 Every mutation writes an `activity` row. `POST /api/workspace/reset?confirm=true` wipes the
 workspace and refuses to run without `confirm=true`.
@@ -650,7 +620,6 @@ Diplom/
   results/                  ← tables, figures, mongo summaries
   docs/                     ← API investigation report, data dictionary
   thesis/                   ← STATUS.md working journal
-  app.py / dashboard/       ← Streamlit analytics dashboard (section 29)
   frontend/                 ← React + Vite + TypeScript prototype
   tests/                    ← pytest regression suite
 ```

@@ -5,14 +5,6 @@
  */
 export type RiskLevel = "unscored" | "low" | "medium" | "high" | "critical";
 
-export const RISK_ORDER: RiskLevel[] = [
-  "unscored",
-  "low",
-  "medium",
-  "high",
-  "critical",
-];
-
 export const RISK_COLOR: Record<RiskLevel, string> = {
   unscored: "#8a93a0",
   low: "#2a6b4a",
@@ -123,8 +115,6 @@ export type Meta = {
   model: string;
   etl_run_id?: string;
 };
-
-export type Indicators = Record<string, { n: number } & Record<string, number | null>>;
 
 export type Health = {
   ok: boolean;

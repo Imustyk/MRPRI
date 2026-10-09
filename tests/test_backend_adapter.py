@@ -107,7 +107,8 @@ def test_num_keeps_finite_values():
         (2, "high"),
         (3, "critical"),
         (4, "critical"),
-        (None, "low"),
+        # No detector output at all: reported as its own band, never as "low".
+        (None, "unscored"),
     ],
 )
 def test_risk_level_bands_on_model_agreement(n_models, expected):
@@ -164,7 +165,8 @@ def test_project_tender_scales_percentile_to_0_100():
 def test_project_tender_without_scores_is_still_valid():
     t = project_tender(REAL_ROW, None)
     assert t["risk_score"] is None
-    assert t["risk_level"] == "low"
+    # Unscored, not low: nothing ever examined this record.
+    assert t["risk_level"] == "unscored"
     assert t["n_models_flagging"] is None
 
 

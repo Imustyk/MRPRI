@@ -1,8 +1,8 @@
 """Analyst workspace: investigation cases, annotations, watchlists and saved views.
 
 Deliberately dependency-free (standard library only) and free of any web
-framework import, so the same store backs both the FastAPI API and the Streamlit
-dashboard without either one owning it.
+framework import, so the same store can back any front-end without a web
+framework owning it.
 
 The research pipeline output in ``data/`` and ``results/`` is treated as
 **read-only**. Everything an analyst creates lives in a separate SQLite file, so
@@ -43,8 +43,8 @@ WATCHLIST_COLORS = {
     "plum": "#6b4a86",
 }
 
-#: Bumped by every mutation. Consumers (Streamlit caches) poll it to know when
-#: their cached reads are stale without having to guess.
+#: Bumped by every mutation. Consumers poll it to know when their cached reads
+#: are stale without having to guess.
 REVISION = 0
 
 _lock = threading.Lock()
@@ -545,16 +545,6 @@ def delete_saved_view(view_id: int) -> bool:
         _log(con, "view", view_id, "delete", row["name"])
     _bump()
     return True
-
-
-def saved_view_payload(view_id: int) -> dict:
-    row = _one("SELECT payload FROM saved_views WHERE id = ?", (view_id,))
-    if not row:
-        return {}
-    try:
-        return json.loads(row["payload"])
-    except json.JSONDecodeError:
-        return {}
 
 
 # ==========================================================================

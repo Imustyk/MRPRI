@@ -84,16 +84,6 @@ NOT_PRESENT = [
 ]
 
 
-def _norm(path: str) -> str:
-    """Map a MAPPING key onto the key format produced by :func:`walk`.
-
-    ``walk`` is called on the package root and on each ``compiledRelease``
-    separately, so ``records[].compiledRelease.tender.items[].classification.id``
-    is recorded as ``compiledRelease.tender.items[].classification.id``.
-    """
-    return path.replace("records[].", "").replace("records.", "")
-
-
 def _present(seen_paths: list[set[str]], path: str) -> int:
     """How many sampled packages contained this path (in any release)."""
     return sum(1 for paths in seen_paths if path in paths)

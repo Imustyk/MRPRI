@@ -64,23 +64,3 @@ def median_pipeline(
             }
         },
     ]
-
-
-def count_where_pipeline(group_by: str, where_field: str, exists: bool = True) -> list[dict]:
-    cond = {"$ne": [f"${where_field}", None]} if exists else {"$eq": [f"${where_field}", None]}
-    return [
-        {"$group": {"_id": f"${group_by}", "n": {"$sum": 1}, "n_awarded": {"$sum": {"$cond": [cond, 1, 0]}}}}
-    ]
-
-
-def count_where_to_csv_pipeline(where_field: str) -> list[dict]:
-    return [
-        {
-            "$group": {
-                "_id": f"${where_field}",
-                "n": {"$sum": 1},
-                "n_awarded": {"$sum": {"$cond": [{"$ne": [f"${where_field}", None]}, 1, 0]}},
-            }
-        },
-        {"$sort": {"_id": 1}},
-    ]

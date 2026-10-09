@@ -168,7 +168,7 @@ def check_history_depth(client: MTenderClient) -> None:
         ("2023-01-01", "2023-01-01T00:00:00Z"),
         ("2026-01-01", "2026-01-01T00:00:00Z"),
     ):
-        url = f"{MTENDER_BASE}/tenders/?limit=1&offset={cursor}"
+        # cursor is the request itself; only the response is recorded below.
         try:
             payload = client.fetch_page(1, cursor)
         except MTenderUnavailable as exc:
