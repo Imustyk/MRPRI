@@ -220,17 +220,133 @@ def test_build_stats_handles_non_finite_features():
     assert s["mean_risk"] == 81.0
 
 
+# -- relational graph -------------------------------------------------------
+def _award(raw: dict, score: dict | None) -> dict:
+    return project_tender(raw, dict(score, ocid=raw["ocid"]) if score else None)
+
+
+def _pair_rows(n: int) -> list[dict]:
+    """``n`` awards of one supplier from one authority: a repeated pair once n >= 2."""
+    return [
+        _award(dict(REAL_ROW, ocid=f"ocds-x-MD-{i}", tender_id=f"ocds-x-MD-{i}"), REAL_SCORE)
+        for i in range(1, n + 1)
+    ]
+
+
+def _supplier_rows(n_pairs: int, awards_each: int) -> list[dict]:
+    """``n_pairs`` suppliers, each with ``awards_each`` awards from the same buyer."""
+    rows = []
+    for p in range(n_pairs):
+        for a in range(awards_each):
+            rows.append(
+                _award(
+                    dict(
+                        REAL_ROW,
+                        ocid=f"ocds-x-MD-{p}-{a}",
+                        tender_id=f"ocds-x-MD-{p}-{a}",
+                        winner_id=f"MD-IDNO-{100 + p}",
+                        winner_name=f"Supplier {p}",
+                    ),
+                    REAL_SCORE,
+                )
+            )
+    return rows
+
+
+def _two_pairs() -> list[dict]:
+    """Two repeated pairs: ``MD-IDNO-8`` scored, ``MD-IDNO-9`` never examined."""
+    rows = []
+    for wid, scored in (("MD-IDNO-8", True), ("MD-IDNO-9", False)):
+        for a in range(2):
+            raw = dict(
+                REAL_ROW,
+                ocid=f"ocds-y-{wid}-{a}",
+                tender_id=f"ocds-y-{wid}-{a}",
+                winner_id=wid,
+                winner_name=wid,
+            )
+            rows.append(_award(raw, REAL_SCORE if scored else None))
+    return rows
+
+
 def test_build_graph_links_buyer_to_winner():
-    g = build_graph([project_tender(REAL_ROW, REAL_SCORE)])
+    g = build_graph(_pair_rows(2))
     assert len(g["nodes"]) == 2
     assert len(g["links"]) == 1
-    assert g["links"][0]["value"] == 7_992_807.28
+    assert g["links"][0]["value"] == pytest.approx(2 * 7_992_807.28, abs=0.01)
     assert g["links"][0]["max_risk"] == 81.0
+    # The locality used to be hard-coded to "", so every tooltip read "(buyer, )".
+    buyer = next(n for n in g["nodes"] if n["kind"] == "buyer")
+    supplier = next(n for n in g["nodes"] if n["kind"] == "supplier")
+    assert buyer["locality"] == "mun.Chisinau"
+    assert supplier["locality"] == ""  # MTender publishes no address for winners
+
+
+def test_build_graph_needs_a_repeated_pair_before_it_draws_an_edge():
+    """One award is a transaction; this view is about relationships."""
+    once = build_graph(_pair_rows(1))
+    assert once["links"] == []
+    assert once["nodes"] == []
+    assert once["stats"]["pairs_all"] == 1
+    assert once["stats"]["pairs_repeated"] == 0
+    assert once["stats"]["pairs_qualifying"] == 0
+
+    twice = build_graph(_pair_rows(2))
+    assert len(twice["links"]) == 1
+    assert twice["links"][0]["weight"] == 2
+    assert twice["stats"]["pairs_repeated"] == 1
+
+    # The wider window is still available to the caller, it just is not default.
+    assert len(build_graph(_pair_rows(1), min_awards=1)["links"]) == 1
+
+
+def test_build_graph_states_what_the_limit_clipped():
+    g = build_graph(_supplier_rows(6, awards_each=3), limit=3)
+    s = g["stats"]
+    assert s["pairs_qualifying"] == 6
+    assert s["pairs_shown"] == 3
+    assert s["truncated"] is True
+    assert s["nodes_shown"] == len(g["nodes"])
+    assert s["value_shown"] <= s["value_qualifying"]
+    # The drawing is an induced subgraph: no node without an edge in it.
+    drawn = {l["source"] for l in g["links"]} | {l["target"] for l in g["links"]}
+    assert {n["id"] for n in g["nodes"]} == drawn
+    # Node totals still cover every qualifying pair, not only the drawn ones,
+    # so a clipped relationship cannot shrink an organisation's real footprint.
+    buyer = next(n for n in g["nodes"] if n["kind"] == "buyer")
+    assert buyer["awards"] == 6 * 3
+    assert buyer["n_partners"] == 6
+    assert buyer["degree"] < buyer["n_partners"]
+
+
+def test_build_graph_ranks_unscored_pairs_last_never_first():
+    g = build_graph(_two_pairs(), sort="risk")
+    assert g["stats"]["sort"] == "risk"
+    # An unexamined pair is not the least risky one, so it must not lead.
+    assert g["links"][0]["target"] == "MD-IDNO-8"
+    assert g["links"][0]["max_risk"] is not None
+    assert g["links"][1]["max_risk"] is None
+
+    # A percentile threshold cannot be met by a record no model examined.
+    filtered = build_graph(_two_pairs(), min_risk=80)
+    assert filtered["stats"]["pairs_qualifying"] == 1
+    assert all(l["max_risk"] is not None for l in filtered["links"])
+
+
+def test_build_graph_rejects_a_non_finite_score_instead_of_sorting_on_nan():
+    rows = _pair_rows(2)
+    broken = [dict(r, risk_score=float("nan")) for r in rows]
+    g = build_graph(broken, sort="risk")
+    assert g["links"][0]["max_risk"] is None
+    assert g["stats"]["pairs_qualifying"] == 1
 
 
 def test_build_graph_skips_rows_without_both_parties():
-    g = build_graph([project_tender(dict(REAL_ROW, winner_id=None), REAL_SCORE)])
+    g = build_graph(
+        [project_tender(dict(REAL_ROW, winner_id=None), REAL_SCORE) for _ in range(3)]
+    )
     assert g["links"] == []
+    assert g["stats"]["pairs_all"] == 0
 
 
 def test_build_stats_counts_int_flags_as_set():

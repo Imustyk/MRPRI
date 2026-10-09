@@ -138,15 +138,59 @@ export type MongoStatus = {
   collections?: Record<string, number>;
 };
 
+export type GraphSort = "awards" | "risk" | "value";
+
+export type GraphNode = {
+  id: string;
+  kind: "buyer" | "supplier" | string;
+  name: string;
+  /** Contracting authorities carry a locality; MTender publishes none for winners. */
+  locality: string;
+  /** Partners drawn in this slice. Drives layout and node size. */
+  degree: number;
+  /** Awards across every qualifying pair, including ones the limit clipped away. */
+  awards: number;
+  value: number;
+  max_risk: number | null;
+  /** Distinct partners across every qualifying pair: the party's real fan-out. */
+  n_partners: number;
+};
+
+export type GraphLink = {
+  source: string;
+  target: string;
+  /** Awards on this buyer-supplier pair. */
+  weight: number;
+  value: number;
+  max_risk: number | null;
+};
+
+/**
+ * Counts for the whole qualifying set alongside what was returned, so the page
+ * can state its own coverage instead of implying the slice is the network.
+ */
+export type GraphStats = {
+  limit: number;
+  min_awards: number;
+  min_risk: number | null;
+  sort: GraphSort;
+  pairs_all: number;
+  pairs_repeated: number;
+  pairs_qualifying: number;
+  pairs_shown: number;
+  nodes_qualifying: number;
+  nodes_shown: number;
+  awards_qualifying: number;
+  awards_shown: number;
+  value_qualifying: number;
+  value_shown: number;
+  truncated: boolean;
+};
+
 export type GraphData = {
-  nodes: { id: string; kind: string; name: string; locality: string; degree: number }[];
-  links: {
-    source: string;
-    target: string;
-    weight: number;
-    value: number;
-    max_risk: number | null;
-  }[];
+  nodes: GraphNode[];
+  links: GraphLink[];
+  stats: GraphStats;
 };
 
 /** Renders a value that may legitimately be absent, without faking a zero. */
@@ -396,6 +440,22 @@ function qs(params: Record<string, string | number | boolean | undefined | null>
 }
 
 export const getFeatures = () => getJson<FeatureCatalog>("/api/analytics/features");
+
+/** The bounded relational slice; see GraphStats for what the limit clipped. */
+export const getGraph = (p: {
+  limit?: number;
+  min_awards?: number;
+  min_risk?: number | null;
+  sort?: GraphSort;
+} = {}) =>
+  getJson<GraphData>(
+    `/api/graph${qs({
+      limit: p.limit,
+      min_awards: p.min_awards,
+      min_risk: p.min_risk,
+      sort: p.sort,
+    })}`,
+  );
 
 export const getCorrelations = (p: {
   features?: string[];

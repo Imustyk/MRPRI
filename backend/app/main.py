@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -88,10 +89,44 @@ def stats():
 
 
 @app.get("/api/graph")
-def graph():
+def graph(
+    limit: int = Query(
+        300, ge=10, le=1500, description="Ranked buyer-supplier pairs to return."
+    ),
+    min_awards: int = Query(
+        2,
+        ge=1,
+        le=100,
+        description=(
+            "An edge is a pair that reached this many awards from the same "
+            "authority. 2 (the default) is what makes it a relationship rather "
+            "than a one-off transaction."
+        ),
+    ),
+    min_risk: float | None = Query(
+        None,
+        ge=0,
+        le=100,
+        description=(
+            "Keep only pairs whose highest anomaly percentile is at least this. "
+            "Unscored pairs never satisfy it, because 'at least X percentile' "
+            "cannot be met by a record no model examined."
+        ),
+    ),
+    sort: Literal["awards", "risk", "value"] = Query(
+        "awards", description="Ranking applied before the limit truncates."
+    ),
+):
+    """Buyer-winner network, bounded by ``limit``.
+
+    The payload ends with a ``stats`` block counting the qualifying pairs,
+    parties, awards and awarded value in the *whole* set alongside what was
+    returned, so the dashboard can report what the limit clipped away instead
+    of implying the returned slice is the entire network.
+    """
     if not store.artefacts_ready():
         raise HTTPException(404, "Run the pipeline first")
-    return store.load_graph()
+    return store.load_graph(limit=limit, min_awards=min_awards, min_risk=min_risk, sort=sort)
 
 
 @app.get("/api/tenders")

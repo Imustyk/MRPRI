@@ -79,6 +79,71 @@ def _idno_from(party_id: Any) -> str | None:
     return hit.group(1) if hit else None
 
 
+#: An award amount above this multiple of the procedure's own estimate cannot
+#: be a real award. See :func:`plausible_award_total`.
+AWARD_AMOUNT_VS_ESTIMATE_MAX = 1000.0
+
+
+def _finite(value: Any) -> float | None:
+    """A usable finite number, or None when the value cannot be trusted."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    value = float(value)
+    return value if np.isfinite(value) else None
+
+
+def plausible_award_total(doc: dict, est: float | None, primary: float | None) -> float | None:
+    """Sum of the published award amounts, minus source-level unit errors.
+
+    Why this exists
+    ---------------
+    MTender has published award amounts that no procurement can have.
+    ``ocds-b3wdp1-MD-1641913557981`` (centralised laboratory consumables) lists
+    127 priced awards of which one reads 50,160,300,506,386 MDL while the other
+    126 together total 9,669,090. With a second record of the same kind, those
+    two amounts are 99.6% of every award amount in the 152,378-row history, so
+    the dashboard's "total awarded value" headline reported 50.4 trillion MDL
+    instead of 193.7 billion: a 260x error caused by two rows.
+
+    The rule
+    --------
+    An amount is dropped only when it exceeds ``1000x`` the procedure's own
+    estimate. That is orders of magnitude beyond any real procurement, yet
+    loose enough to leave alone the cases where the *estimate* is the odd
+    field: a 4.2 MDL-million award against a 2,100 MDL estimate survives,
+    because its individual amounts are internally consistent and under the
+    bound. Procedures whose published sum is already plausible return it
+    untouched, so exactly two rows in the whole history change.
+
+    When every amount is rejected, the primary award amount stands in for the
+    sum, and ``None`` is returned when even that is out of bounds: a missing
+    total beats an invented one, and consumers already fall back from
+    ``award_total`` to ``award_value`` when the sum is absent.
+    """
+    total = _finite(doc.get("award_total"))
+    amounts = [
+        a
+        for a in (
+            _finite(a.get("amount")) for a in doc.get("awards") or [] if isinstance(a, dict)
+        )
+        if a is not None
+    ]
+    if est is None or est <= 0 or total is None or not amounts:
+        # No estimate to measure against, or nothing to recompute from: publish
+        # what MTender published.
+        return total if total is not None else _finite(primary)
+
+    bound = est * AWARD_AMOUNT_VS_ESTIMATE_MAX
+    kept = [a for a in amounts if abs(a) <= bound]
+    if len(kept) == len(amounts):
+        return total
+    if kept:
+        return round(sum(kept), 2)
+    # Every published amount is a unit error, so the sum carries no signal.
+    fallback = _finite(primary)
+    return round(fallback, 2) if fallback is not None and abs(fallback) <= bound else None
+
+
 def normalize_tender(doc: dict) -> dict:
     tender_start = sane_dt(doc.get("tender_start"))
     tender_end = sane_dt(doc.get("tender_end"))
@@ -120,9 +185,9 @@ def normalize_tender(doc: dict) -> dict:
         # permanently empty even though the raw documents carried them.
         "award_id": doc.get("award_id"),
         "award_status": doc.get("award_status"),
-        "award_total": (float(doc["award_total"])
-                        if isinstance(doc.get("award_total"), (int, float))
-                        and not isinstance(doc.get("award_total"), bool) else awd),
+        # Not a plain copy of ``doc["award_total"]``: that sum includes published
+        # unit errors. See plausible_award_total.
+        "award_total": plausible_award_total(doc, est, awd),
         "n_awards_with_value": doc.get("n_awards_with_value") or 0,
         "currency": doc.get("currency") or "MDL",
         "tender_start": iso(tender_start),

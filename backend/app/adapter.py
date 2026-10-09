@@ -340,60 +340,186 @@ def build_stats(rows: list[dict], feature_columns: list[str]) -> dict:
     }
 
 
-def build_graph(rows: list[dict], max_nodes: int = 60) -> dict:
-    """Buyer <-> winner bipartite network from real awards."""
-    pairs: dict[tuple[str, str], list[dict]] = {}
+#: Ranking modes ``/api/graph`` accepts, shared with the query validation in
+#: ``main.py`` and the toolbar in the UI so the three cannot drift apart.
+GRAPH_SORTS = ("awards", "risk", "value")
+
+
+def build_graph(
+    rows: list[dict],
+    *,
+    limit: int = 300,
+    min_awards: int = 2,
+    min_risk: float | None = None,
+    sort: str = "awards",
+) -> dict:
+    """Buyer <-> winner bipartite network, bounded and honest about the bound.
+
+    Why an edge needs ``min_awards`` awards
+    ---------------------------------------
+    The full history holds ~63k distinct buyer-supplier pairs, but the large
+    majority are a single award: a transaction, not a relationship. The
+    relational view exists to expose *repeat* ties, so by default a pair only
+    qualifies once the same supplier has won twice from the same authority.
+
+    Why the payload is bounded
+    --------------------------
+    Even after that filter there are ~20k qualifying pairs over ~7k parties --
+    far more than a screen can show. Rather than silently dropping to the 60
+    most connected nodes (which showed under 1% of the network and chose nodes
+    by degree instead of relevance), the pairs are ranked by ``sort`` and the
+    top ``limit`` are returned together with a ``stats`` block that states
+    exactly what was left out: qualifying pairs, parties, awards and awarded
+    value in the full set versus the returned slice. The UI is then able to
+    say "showing 300 of 20,127 relationships, 4.1% of the awarded value"
+    instead of pretending the drawing *is* the network.
+
+    Node totals (``awards``, ``value``, ``max_risk``, ``n_partners``) are
+    aggregated over every qualifying pair, not only the drawn ones, so a
+    party's card keeps its real magnitude even when the ``limit`` clipped one
+    of its relationships away.
+    """
+    limit = max(0, int(limit))
+    min_awards = max(1, int(min_awards))
+    if sort not in GRAPH_SORTS:
+        sort = "awards"
+    if min_risk is not None:
+        min_risk = max(0.0, min(100.0, float(min_risk)))
+
+    # One pass over the rows: per-pair aggregates plus the metadata needed to
+    # label a node later. A score that is not a finite percentile (absent, or a
+    # NaN that leaked out of the detector) is dropped rather than fed to max():
+    # a single NaN would poison every comparison downstream and silently order
+    # the whole network wrong.
+    pairs: dict[tuple[str, str], dict] = {}
+    meta: dict[str, dict] = {}
     for r in rows:
         b = _s(r.get("buyer_id"))
         w = _s(r.get("winner_id"))
         if not b or not w:
             continue
-        pairs.setdefault((b, w), []).append(r)
 
-    degree: dict[str, int] = {}
-    for b, w in pairs:
-        degree[b] = degree.get(b, 0) + 1
-        degree[w] = degree.get(w, 0) + 1
+        risk = r.get("risk_score")
+        if isinstance(risk, bool) or not isinstance(risk, (int, float)) or not math.isfinite(risk):
+            risk = None
+        else:
+            risk = float(risk)
 
-    # keep the most connected parties so the payload stays renderable
-    keep = {p for p, _ in sorted(degree.items(), key=lambda kv: (-kv[1], kv[0]))[:max_nodes]}
+        value = r.get("award_total_mdl") or r.get("award_value_mdl") or 0.0
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+            value = 0.0
 
-    names: dict[str, tuple[str, str]] = {}
-    for r in rows:
-        b = _s(r.get("buyer_id"))
-        w = _s(r.get("winner_id"))
-        if b and b in keep:
-            names.setdefault(b, ("buyer", _s(r.get("buyer_name")) or b))
-        if w and w in keep:
-            names.setdefault(w, ("supplier", _s(r.get("winner_name")) or w))
+        p = pairs.get((b, w))
+        if p is None:
+            p = pairs[(b, w)] = {"n": 0, "value": 0.0, "max_risk": None}
+        p["n"] += 1
+        p["value"] += float(value)
+        if risk is not None and (p["max_risk"] is None or risk > p["max_risk"]):
+            p["max_risk"] = risk
 
-    links = []
-    for (b, w), items in pairs.items():
-        if b not in keep or w not in keep:
-            continue
-        risks = [i["risk_score"] for i in items if i["risk_score"] is not None]
-        links.append(
-            {
-                "source": b,
-                "target": w,
-                "weight": len(items),
-                "value": round(
-                    sum(i["award_total_mdl"] or i["award_value_mdl"] or 0.0
-                        for i in items),
-                    2,
-                ),
-                "max_risk": round(max(risks), 2) if risks else None,
+        if b not in meta:
+            meta[b] = {
+                "kind": "buyer",
+                "name": _s(r.get("buyer_name")) or b,
+                "locality": _s(r.get("buyer_locality")),
             }
-        )
+        if w not in meta:
+            # MTender publishes no registered address for winners, so a supplier
+            # locality is genuinely unknown rather than empty-by-omission.
+            meta[w] = {"kind": "supplier", "name": _s(r.get("winner_name")) or w, "locality": ""}
+
+    def qualifies(v: dict) -> bool:
+        if v["n"] < min_awards:
+            return False
+        if min_risk is None:
+            return True
+        # A threshold excludes unscored pairs: "at least percentile X" cannot
+        # be satisfied by a record no model ever scored.
+        return v["max_risk"] is not None and v["max_risk"] >= min_risk
+
+    qualifying = {k: v for k, v in pairs.items() if qualifies(v)}
+
+    def rank(item: tuple[tuple[str, str], dict]) -> tuple:
+        (pair, v) = item
+        # None must sort last, never first: an unscored pair is not the least
+        # risky one, it is the unexamined one.
+        risk_key = -v["max_risk"] if v["max_risk"] is not None else math.inf
+        if sort == "risk":
+            head = (risk_key, -v["n"], -v["value"])
+        elif sort == "value":
+            head = (-v["value"], -v["n"], risk_key)
+        else:
+            head = (-v["n"], risk_key, -v["value"])
+        # The pair id breaks ties so the same request always returns the same
+        # slice instead of depending on the order rows happen to arrive in.
+        return head + pair
+
+    shown = sorted(qualifying.items(), key=rank)[:limit]
+
+    # Aggregates cover every qualifying pair, so a node's totals stay meaningful
+    # even when the limit clipped one of its relationships out of the drawing.
+    agg: dict[str, dict] = {}
+    partners: dict[str, set[str]] = {}
+    for (b, w), v in qualifying.items():
+        for pid, other in ((b, w), (w, b)):
+            a = agg.get(pid)
+            if a is None:
+                a = agg[pid] = {"awards": 0, "value": 0.0, "max_risk": None}
+            a["awards"] += v["n"]
+            a["value"] += v["value"]
+            if v["max_risk"] is not None and (a["max_risk"] is None or v["max_risk"] > a["max_risk"]):
+                a["max_risk"] = v["max_risk"]
+            partners.setdefault(pid, set()).add(other)
+
+    links = [
+        {
+            "source": b,
+            "target": w,
+            "weight": v["n"],
+            "value": round(v["value"], 2),
+            "max_risk": round(v["max_risk"], 2) if v["max_risk"] is not None else None,
+        }
+        for (b, w), v in shown
+    ]
+
+    # ``degree`` is the partners actually drawn (drives layout and node size);
+    # ``n_partners`` is the party's full qualifying fan-out (drives the panel).
+    degree: dict[str, int] = {}
+    for link in links:
+        degree[link["source"]] = degree.get(link["source"], 0) + 1
+        degree[link["target"]] = degree.get(link["target"], 0) + 1
 
     nodes = [
         {
             "id": pid,
-            "kind": kind,
-            "name": name,
-            "locality": "",
-            "degree": degree.get(pid, 0),
+            "kind": meta[pid]["kind"],
+            "name": meta[pid]["name"],
+            "locality": meta[pid]["locality"],
+            "degree": degree[pid],
+            "awards": a["awards"],
+            "value": round(a["value"], 2),
+            "max_risk": round(a["max_risk"], 2) if a["max_risk"] is not None else None,
+            "n_partners": len(partners.get(pid, ())),
         }
-        for pid, (kind, name) in names.items()
+        for pid, a in sorted(agg.items(), key=lambda kv: (-kv[1]["awards"], kv[0]))
+        if pid in degree
     ]
-    return {"nodes": nodes, "links": links}
+
+    stats = {
+        "limit": limit,
+        "min_awards": min_awards,
+        "min_risk": min_risk,
+        "sort": sort,
+        "pairs_all": len(pairs),
+        "pairs_repeated": sum(1 for v in pairs.values() if v["n"] >= 2),
+        "pairs_qualifying": len(qualifying),
+        "pairs_shown": len(links),
+        "nodes_qualifying": len(agg),
+        "nodes_shown": len(nodes),
+        "awards_qualifying": sum(v["n"] for v in qualifying.values()),
+        "awards_shown": sum(v["n"] for _, v in shown),
+        "value_qualifying": round(sum(v["value"] for v in qualifying.values()), 2),
+        "value_shown": round(sum(v["value"] for _, v in shown), 2),
+        "truncated": len(shown) < len(qualifying),
+    }
+    return {"nodes": nodes, "links": links, "stats": stats}

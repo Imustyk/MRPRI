@@ -285,6 +285,60 @@ def test_method_detail_clean():
     assert N.METHOD_DETAIL_CLEAN("") is None
 
 
+def test_plausible_award_total_drops_a_published_unit_error():
+    """One 50.16 trillion MDL award made two rows carry 99.6% of all value."""
+    doc = {
+        "award_total": 50_160_310_175_475.75,
+        "awards": [
+            {"amount": 50_160_300_506_386.0},  # the unit error
+            {"amount": 1_143_100.0},
+            {"amount": 913_994.24},
+            {"amount": 37.76},
+        ],
+    }
+    assert N.plausible_award_total(doc, 2_724_978.64, 98_866.25) == round(
+        1_143_100.0 + 913_994.24 + 37.76, 2
+    )
+
+
+def test_plausible_award_total_blames_the_amount_not_the_estimate():
+    """A 2.1 thousand MDL estimate is the odd field here, so nothing is dropped."""
+    doc = {
+        "award_total": 4_236_086.77,
+        "awards": [
+            {"amount": 1_358_822.0},
+            {"amount": 1_350_000.0},
+            {"amount": 1_349_999.0},
+            {"amount": 177_265.77},
+        ],
+    }
+    assert N.plausible_award_total(doc, 2_100.0, 177_265.77) == 4_236_086.77
+
+
+def test_plausible_award_total_is_faithful_without_an_estimate():
+    doc = {"award_total": 1_000_000.0, "awards": [{"amount": 1_000_000.0}]}
+    assert N.plausible_award_total(doc, None, 5.0) == 1_000_000.0
+    assert N.plausible_award_total(doc, 0.0, 5.0) == 1_000_000.0
+
+
+def test_plausible_award_total_never_invents_a_figure():
+    """When every amount is out of bounds, missing beats fabricated."""
+    doc = {"award_total": 9e9, "awards": [{"amount": 9e9}]}
+    assert N.plausible_award_total(doc, 1_000.0, 9e9) is None
+    assert N.plausible_award_total(doc, 1_000.0, 500.0) == 500.0
+
+
+def test_normalize_tender_applies_the_award_total_guard():
+    raw = {
+        "ocid": "ocds-x",
+        "estimated_value": 2_724_978.64,
+        "award_value": 98_866.25,
+        "award_total": 50_160_310_175_475.75,
+        "awards": [{"amount": 50_160_300_506_386.0}, {"amount": 9_669_090.0}],
+    }
+    assert N.normalize_tender(raw)["award_total"] == 9_669_090.0
+
+
 # --------------------------------------------------------------------------
 # features
 # --------------------------------------------------------------------------

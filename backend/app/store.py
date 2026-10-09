@@ -165,11 +165,34 @@ def load_stats() -> dict:
     return build_stats(load_tenders(), INDICATOR_COLUMNS)
 
 
+@lru_cache(maxsize=64)
+def load_graph(
+    limit: int = 300,
+    min_awards: int = 2,
+    min_risk: float | None = None,
+    sort: str = "awards",
+) -> dict:
+    """Bounded buyer-winner subgraph; every argument is part of the cache key.
+
+    The parameters are cached individually so an analyst can widen the view
+    (``min_awards=1``), ask only for the risky pairs or re-rank by value without
+    re-reading ``tenders.json``, while ``invalidate()`` still drops every
+    combination at once after a rebuild.
+    """
+    return build_graph(
+        load_tenders(),
+        limit=limit,
+        min_awards=min_awards,
+        min_risk=min_risk,
+        sort=sort,
+    )
+
+
+# Cached like the other row-derived views: it walks all 152k rows on every call,
+# and invalidate() clears it by name -- calling cache_clear() on an uncached
+# function made POST /api/pipeline/run raise AttributeError after it had already
+# overwritten data/processed.
 @lru_cache(maxsize=1)
-def load_graph() -> dict:
-    return build_graph(load_tenders())
-
-
 def load_indicators() -> dict:
     """Mean of each real indicator per risk band, with availability flags.
 
