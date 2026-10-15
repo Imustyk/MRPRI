@@ -3,6 +3,9 @@
  * that record. It is kept as its own band so the UI never implies that ~151k
  * procedures were examined and cleared.
  */
+import i18n, { intlLocale } from "./i18n";
+import { tr } from "./i18n/backendMap";
+
 export type RiskLevel = "unscored" | "low" | "medium" | "high" | "critical";
 
 export const RISK_COLOR: Record<RiskLevel, string> = {
@@ -56,6 +59,14 @@ export type Tender = {
   risk_score: number | null;
   risk_level: RiskLevel;
   n_models_flagging: number | null;
+  /**
+   * Verdict of each detector, keyed by model: true/false when this run scored
+   * the record, null when no detector ever did. "Cleared" and "never examined"
+   * are different claims, so the missing case is not folded into false.
+   */
+  model_flags: Record<string, boolean | null>;
+  /** Flagged by at least three of the four detectors, or null if unscored. */
+  consensus_flag: boolean | null;
   iso_score: number | null;
   lof_score: number | null;
   svm_score: number | null;
@@ -196,7 +207,7 @@ export type GraphData = {
 /** Renders a value that may legitimately be absent, without faking a zero. */
 export function val(n: number | null | undefined, digits = 2): string {
   if (n === null || n === undefined || Number.isNaN(n)) return "\u2014";
-  return n.toLocaleString("ro-MD", {
+  return n.toLocaleString(intlLocale(), {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
@@ -207,24 +218,25 @@ export async function getJson<T>(url: string): Promise<T> {
   const raw = await res.text();
   if (!res.ok) {
     throw new Error(
-      raw.slice(0, 300) || `${res.status} ${res.statusText} from ${url}`,
+      extractError(raw) ||
+        i18n.t("api.http_error", { status: res.status, statusText: res.statusText, url }),
     );
   }
   if (!raw.trim()) {
     // The MTender API intermittently answers HTTP 200 with an empty body. If a
     // proxy ever passes that through, say so plainly instead of surfacing
     // "Unexpected end of JSON input" in the UI.
-    throw new Error(`The API returned an empty body for ${url} (HTTP ${res.status}).`);
+    throw new Error(i18n.t("api.empty_body", { url, status: res.status }));
   }
   try {
     return JSON.parse(raw) as T;
   } catch {
-    throw new Error(`The API returned a malformed body for ${url}.`);
+    throw new Error(i18n.t("api.malformed_body", { url }));
   }
 }
 
 export function mdl(n: number) {
-  return new Intl.NumberFormat("ro-MD", {
+  return new Intl.NumberFormat(intlLocale(), {
     style: "currency",
     currency: "MDL",
     maximumFractionDigits: 0,
@@ -237,7 +249,7 @@ export function pct(n: number) {
 
 export function int(n: number | null | undefined): string {
   if (n === null || n === undefined || Number.isNaN(n)) return "\u2014";
-  return Math.round(n).toLocaleString("ro-MD");
+  return Math.round(n).toLocaleString(intlLocale());
 }
 
 /** Anomaly percentile: 0-100, one decimal, never a fabricated precision. */
@@ -252,14 +264,22 @@ export function monthLabel(m: string): string {
   if (!hit) return m;
   const d = new Date(Date.UTC(Number(hit[1]), Number(hit[2]) - 1, 1));
   if (Number.isNaN(d.getTime())) return m;
-  return d.toLocaleDateString("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" });
+  return d.toLocaleDateString(intlLocale(), {
+    month: "short",
+    year: "2-digit",
+    timeZone: "UTC",
+  });
 }
 
 export function dateLabel(s: string | null | undefined): string {
   if (!s) return "\u2014";
   const d = new Date(s);
   if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  return d.toLocaleDateString(intlLocale(), {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 /** Recharts axis/tooltip formatters, so charts never print raw float tails. */
@@ -543,6 +563,82 @@ export const getTimeSeries = (p: {
   );
 
 /* ==========================================================================
+   Model KPI: catalogue + live checks for the four detectors
+   ========================================================================== */
+
+export type KpiStatus = "pass" | "fail" | "skip";
+
+export type KpiThreshold = { kind: "contamination" | "rule"; name: string; value: number };
+
+export type KpiArtifact = {
+  path: string | null;
+  members: string[];
+  /** Why a detector has no path (stateless rule, refitted each run). */
+  note: string | null;
+  status: KpiStatus;
+  detail: string;
+};
+
+export type KpiDetector = {
+  key: string;
+  label: string;
+  family: string;
+  score_field: string;
+  flag_field: string;
+  row_score_field: string;
+  threshold: KpiThreshold;
+  params: Record<string, unknown>;
+  artifact: KpiArtifact;
+  /** Recomputed from the served corpus when the report is built. */
+  live: {
+    n_scored: number;
+    n_flagged: number;
+    /** Observed flagged share in percent, or null when nothing is scored. */
+    pct_flagged: number | null;
+    mean_flagged: number | null;
+    mean_cleared: number | null;
+    n_flag_missing: number;
+  };
+  /** What the detection run recorded, when its summary file exists. */
+  run_recorded: { n_flagged: number | null; pct_flagged: number | null } | null;
+};
+
+export type KpiCheck = {
+  id: string;
+  label: string;
+  status: KpiStatus;
+  detail: string;
+  /** Detector key this check belongs to, or null for a corpus-level check. */
+  detector: string | null;
+};
+
+export type ModelKpis = {
+  /** False means at least one check failed; it says nothing about metrics. */
+  ok: boolean;
+  n_rows: number;
+  n_scored: number;
+  n_checks: number;
+  n_failed: number;
+  n_skipped: number;
+  contamination: { declared: number; tolerance: number };
+  consensus_min: number;
+  run: {
+    run_id: string;
+    generated_at: string;
+    n_rows: number;
+    contamination_assumption: number;
+    preprocessing: string;
+    source: string;
+  } | null;
+  detectors: KpiDetector[];
+  checks: KpiCheck[];
+  /** Why precision/recall are not reported on this corpus. */
+  metrics: { available: boolean; reason: string };
+};
+
+export const getModelKpis = () => getJson<ModelKpis>("/api/model-kpis");
+
+/* ==========================================================================
    Workspace CRUD
    ========================================================================== */
 
@@ -634,7 +730,9 @@ export async function send<T>(
   });
   const raw = await res.text();
   if (!res.ok) {
-    throw new Error(extractError(raw) || `${res.status} ${res.statusText} from ${url}`);
+    throw new Error(
+      extractError(raw) || i18n.t("api.http_error", { status: res.status, statusText: res.statusText, url }),
+    );
   }
   if (!raw.trim()) return undefined as T;
   return JSON.parse(raw) as T;
@@ -645,11 +743,13 @@ function extractError(raw: string): string {
   try {
     const parsed = JSON.parse(raw);
     const detail = parsed?.detail;
-    if (typeof detail === "string") return detail;
+    // Server messages are English; run them through the backend label map so
+    // "Run the pipeline first" / "Case not found" render in the active language.
+    if (typeof detail === "string") return tr(detail);
     if (Array.isArray(detail)) {
       return detail
         .map((d: { loc?: (string | number)[]; msg?: string }) =>
-          `${(d.loc ?? []).filter((p) => p !== "body").join(".")}: ${d.msg ?? ""}`.trim(),
+          `${(d.loc ?? []).filter((p) => p !== "body").join(".")}: ${tr(d.msg ?? "")}`.trim(),
         )
         .join("; ");
     }

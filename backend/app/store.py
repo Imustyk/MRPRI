@@ -218,6 +218,18 @@ def load_indicators() -> dict:
     return out
 
 
+@lru_cache(maxsize=1)
+def load_model_kpis() -> dict:
+    """Detector KPI catalogue plus live checks over the served scores.
+
+    Cached like the other row-derived views: the report walks every served row
+    once, and ``invalidate()`` clears it by name after a pipeline rebuild.
+    """
+    from .model_kpis import build_kpi_report
+
+    return build_kpi_report(load_tenders())
+
+
 def mongo_status() -> dict:
     """Live MongoDB topology, so the dashboard can prove its data source."""
     try:
@@ -253,6 +265,7 @@ def invalidate() -> None:
     load_stats.cache_clear()
     load_graph.cache_clear()
     load_indicators.cache_clear()
+    load_model_kpis.cache_clear()
 
 
 def model_present() -> bool:

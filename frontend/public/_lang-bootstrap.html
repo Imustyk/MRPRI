@@ -1,0 +1,11 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>lang bootstrap</title>
+<script>
+  // Temporary screenshot helper: records a language choice exactly like the
+  // header language switcher (i18next reads localStorage first), then opens
+  // the network view. Deleted after the screenshots are taken.
+  var lang = new URLSearchParams(location.search).get("lang");
+  if (lang) localStorage.setItem("mtender_lang", lang);
+  location.replace("/network");
+</script>

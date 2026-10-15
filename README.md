@@ -266,6 +266,7 @@ Checks:
 - Open http://127.0.0.1:8000/api/health — liveness plus the **MongoDB topology** the API is connected to (replica-set name, primary state, transaction support, collection counts)
 - Open http://127.0.0.1:8000/api/stats — KPI JSON
 - Open http://127.0.0.1:8000/api/meta — feature list and the fields MTender does not publish
+- Open http://127.0.0.1:8000/api/model-kpis — KPI catalogue for the four detectors plus live checks over the scores being served
 
 Useful routes:
 
@@ -279,6 +280,7 @@ Useful routes:
 | GET | `/api/tenders/{tender_id}` | One case file |
 | GET | `/api/graph` | Buyer–winner network |
 | GET | `/api/indicators` | Mean features by risk band |
+| GET | `/api/model-kpis` | Detector KPI catalogue + live checks on served scores |
 | GET | `/api/meta` | Model weights and feature list |
 
 Optional curl rebuild:

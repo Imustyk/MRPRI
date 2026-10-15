@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import { dateLabel, getJson, int, mdl, val, type Tender } from "../api";
-import { BandBadge, ErrorNote, Skeleton } from "../ui";
+import { BandBadge, ErrorNote, PageHead, Skeleton } from "../ui";
+import { tr } from "../i18n/backendMap";
+
+/** The four detectors, in run order. Verdicts arrive per record in model_flags. */
+const DETECTORS: { key: string; labelKey: string }[] = [
+  { key: "statistical_mad_zscore", labelKey: "tenderDetail.det_mad" },
+  { key: "isolation_forest", labelKey: "tenderDetail.det_iforest" },
+  { key: "local_outlier_factor", labelKey: "tenderDetail.det_lof" },
+  { key: "one_class_svm", labelKey: "tenderDetail.det_svm" },
+];
 
 export default function TenderDetail() {
+  const { t } = useTranslation();
   const { id } = useParams();
-  const [t, setT] = useState<Tender | null>(null);
+  const [tender, setTender] = useState<Tender | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -15,7 +26,7 @@ export default function TenderDetail() {
     setError(null);
     getJson<Tender>(`/api/tenders/${id}`)
       .then((d) => {
-        setT(d);
+        setTender(d);
         setLoading(false);
       })
       .catch((e: Error) => {
@@ -29,153 +40,185 @@ export default function TenderDetail() {
   if (loading) {
     return (
       <div>
-        <Link to="/tenders" className="muted">
-          ← All procedures
+        <Link to="/tenders" className="back-link">
+          {t("tenderDetail.back")}
         </Link>
-        <h1 style={{ marginTop: 10 }}>Loading procedure…</h1>
+        <h1 style={{ marginTop: 10 }}>{t("tenderDetail.loading_title")}</h1>
         <Skeleton rows={3} height={40} />
         <Skeleton rows={6} />
       </div>
     );
   }
 
-  if (error || !t) {
+  if (error || !tender) {
     return (
       <div>
-        <Link to="/tenders" className="muted">
-          ← All procedures
+        <Link to="/tenders" className="back-link">
+          {t("tenderDetail.back")}
         </Link>
-        <h1 style={{ marginTop: 10 }}>Procedure not found</h1>
+        <h1 style={{ marginTop: 10 }}>{t("tenderDetail.not_found_title")}</h1>
         <p className="lede">
-          Nothing is stored for <code>{id}</code>. It may belong to a pipeline run that has since
-          been replaced, or the identifier may be mistyped.
+          <Trans i18nKey="tenderDetail.not_found_lede" values={{ id }} components={{ code: <code /> }} />
         </p>
-        <ErrorNote error={error ?? "No record returned."} onRetry={load} />
+        <ErrorNote error={error ?? t("tenderDetail.no_record")} onRetry={load} />
         <div style={{ marginTop: 16 }}>
-          <Link to="/tenders" className="muted">
-            Back to all procedures →
+          <Link to="/tenders" className="back-link">
+            {t("tenderDetail.back_to_all")}
           </Link>
         </div>
       </div>
     );
   }
 
-  const flags = Array.isArray(t.flags) ? t.flags : [];
-  const hasBids = (t.n_bidders ?? 0) > 0;
-  const multiLot = (t.n_lots ?? 0) > 1;
+  const flags = Array.isArray(tender.flags) ? tender.flags : [];
+  const hasBids = (tender.n_bidders ?? 0) > 0;
+  const multiLot = (tender.n_lots ?? 0) > 1;
 
   return (
     <div>
-      <Link to="/tenders" className="muted">
-        ← All procedures
+      <Link to="/tenders" className="back-link">
+        {t("tenderDetail.back")}
       </Link>
-      <div className="kicker mono">{t.tender_id ?? t.ocid ?? "—"}</div>
-      <h1>{t.title ?? "Untitled procedure"}</h1>
-      <p className="lede">
-        {[t.buyer_name, t.buyer_locality, t.procedure, t.status].filter(Boolean).join(" · ") ||
-          "No buyer, locality, procedure type or status was published for this record."}
-      </p>
+      <PageHead
+        kickerPlain
+        kicker={tender.tender_id ?? tender.ocid ?? "—"}
+        title={tender.title ?? t("tenderDetail.untitled")}
+        lede={
+          [tender.buyer_name, tender.buyer_locality, tender.procedure, tender.status]
+            .filter(Boolean)
+            .join(" · ") || t("tenderDetail.no_meta")
+        }
+      />
 
       <div className="detail-grid">
         <div className="card">
           <h2>
-            Priority band{" "}
-            <BandBadge level={t.risk_level} nModels={t.n_models_flagging} />
+            {t("tenderDetail.band_h")}{" "}
+            <BandBadge level={tender.risk_level} nModels={tender.n_models_flagging} />
           </h2>
           <p className="muted">
-            {t.n_models_flagging ?? 0} of 4 detectors flagged this procedure. The band is model
-            agreement, not a probability.
+            {t("tenderDetail.band_note", { n: tender.n_models_flagging ?? 0 })}
           </p>
           <p>
-            Anomaly percentile{" "}
-            <strong className="mono">{val(t.risk_score, 1)}</strong> / 100
+            {t("tenderDetail.percentile")}{" "}
+            <strong className="mono">{val(tender.risk_score, 1)}</strong> / 100
           </p>
           <p className="muted">
-            MAD z {val(t.rule_score, 2)} · Isolation Forest {val(t.iso_score, 3)} · LOF{" "}
-            {val(t.lof_score, 1)} · One-Class SVM {val(t.svm_score, 3)}
+            {t("tenderDetail.scores", {
+              mad: val(tender.rule_score, 2),
+              iso: val(tender.iso_score, 3),
+              lof: val(tender.lof_score, 1),
+              svm: val(tender.svm_score, 3),
+            })}
           </p>
+          {tender.model_flags && (
+            <div className="flags" style={{ marginTop: 10 }}>
+              {DETECTORS.map(({ key, labelKey }) => {
+                const verdict = tender.model_flags[key];
+                const text =
+                  verdict === true
+                    ? t("tenderDetail.verdict_flagged")
+                    : verdict === false
+                      ? t("tenderDetail.verdict_cleared")
+                      : t("tenderDetail.verdict_unscored");
+                const cls =
+                  verdict === true
+                    ? "flag"
+                    : verdict === false
+                      ? "flag clear"
+                      : "flag unscored";
+                return (
+                  <span key={key} className={cls}>
+                    {t(labelKey)}: {text}
+                  </span>
+                );
+              })}
+            </div>
+          )}
 
-          <h2 style={{ marginTop: 20 }}>Red flags</h2>
+          <h2 style={{ marginTop: 20 }}>{t("tenderDetail.flags_h")}</h2>
           <div className="flags">
             {flags.length ? (
               flags.map((f) => (
                 <span key={f} className="flag">
-                  {f}
+                  {tr(f)}
                 </span>
               ))
             ) : (
-              <span className="muted">No rule-based flags were raised.</span>
+              <span className="muted">{t("tenderDetail.flags_none")}</span>
             )}
           </div>
 
-          <h2 style={{ marginTop: 20 }}>Competition</h2>
+          <h2 style={{ marginTop: 20 }}>{t("tenderDetail.comp_h")}</h2>
           <dl className="kv">
-            <dt>Distinct bidders</dt>
-            <dd className="mono">{int(t.n_bidders)}</dd>
-            <dt>Bid records (per lot)</dt>
-            <dd className="mono">{int(t.n_bid_records)}</dd>
-            <dt>Lots</dt>
-            <dd className="mono">{int(t.n_lots)}</dd>
+            <dt>{t("tenderDetail.comp_bidders")}</dt>
+            <dd className="mono">{int(tender.n_bidders)}</dd>
+            <dt>{t("tenderDetail.comp_bid_records")}</dt>
+            <dd className="mono">{int(tender.n_bid_records)}</dd>
+            <dt>{t("tenderDetail.comp_lots")}</dt>
+            <dd className="mono">{int(tender.n_lots)}</dd>
           </dl>
           <p className="muted" style={{ marginTop: 12 }}>
             {hasBids ? (
-              <>
-                <code>bids.details</code> holds one entry per lot rather than per bidder, so{" "}
-                {int(t.n_bid_records)} records across {int(t.n_lots)} lot
-                {t.n_lots === 1 ? "" : "s"} represent {int(t.n_bidders)} distinct tenderers. Only the
-                last figure measures competition.
-              </>
+              <Trans
+                i18nKey="tenderDetail.bids_note"
+                count={tender.n_lots ?? 0}
+                values={{
+                  records: int(tender.n_bid_records),
+                  lots: int(tender.n_lots),
+                  bidders: int(tender.n_bidders),
+                }}
+                components={{ code: <code /> }}
+              />
             ) : (
-              <>
-                MTender published no participant list for this procedure, so competition cannot be
-                assessed. This is missing data, not a finding of zero bidders.
-              </>
+              <Trans i18nKey="tenderDetail.no_bids_note" />
             )}
           </p>
         </div>
 
         <div className="card">
-          <h2>Case file</h2>
+          <h2>{t("tenderDetail.case_h")}</h2>
           <dl className="kv">
-            <dt>CPV</dt>
-            <dd className="mono">{t.cpv_code ?? "—"}</dd>
-            <dt>Published</dt>
-            <dd>{dateLabel(t.published_at)}</dd>
-            <dt>Bid deadline</dt>
-            <dd>{dateLabel(t.bid_deadline)}</dd>
-            <dt>Window</dt>
-            <dd className="mono">{t.bid_window_days ?? "—"} days</dd>
-            <dt>Status</dt>
-            <dd>{t.status ?? "—"}</dd>
-            <dt>Method</dt>
-            <dd>{t.procurement_method ?? "—"}</dd>
-            <dt>Estimate</dt>
+            <dt>{t("tenderDetail.cf_cpv")}</dt>
+            <dd className="mono">{tender.cpv_code ?? "—"}</dd>
+            <dt>{t("tenderDetail.cf_published")}</dt>
+            <dd>{dateLabel(tender.published_at)}</dd>
+            <dt>{t("tenderDetail.cf_deadline")}</dt>
+            <dd>{dateLabel(tender.bid_deadline)}</dd>
+            <dt>{t("tenderDetail.cf_window")}</dt>
             <dd className="mono">
-              {t.estimated_value_mdl === null ? "—" : mdl(t.estimated_value_mdl)}
+              {tender.bid_window_days === null || tender.bid_window_days === undefined
+                ? "—"
+                : t("tenderDetail.cf_days", { count: tender.bid_window_days })}
             </dd>
-            <dt>Award (first)</dt>
+            <dt>{t("tenderDetail.cf_status")}</dt>
+            <dd>{tender.status ?? "—"}</dd>
+            <dt>{t("tenderDetail.cf_method")}</dt>
+            <dd>{tender.procurement_method ?? "—"}</dd>
+            <dt>{t("tenderDetail.cf_estimate")}</dt>
             <dd className="mono">
-              {t.award_value_mdl === null ? "—" : mdl(t.award_value_mdl)}
+              {tender.estimated_value_mdl === null ? "—" : mdl(tender.estimated_value_mdl)}
             </dd>
-            <dt>Award total (all lots)</dt>
+            <dt>{t("tenderDetail.cf_award_first")}</dt>
             <dd className="mono">
-              {t.award_total_mdl === null ? "—" : mdl(t.award_total_mdl)}
+              {tender.award_value_mdl === null ? "—" : mdl(tender.award_value_mdl)}
             </dd>
-            <dt>Winner</dt>
-            <dd>{t.winner_name ?? "—"}</dd>
-            <dt>Winner IDNO</dt>
-            <dd className="mono">{t.winner_idno ?? "—"}</dd>
+            <dt>{t("tenderDetail.cf_award_total")}</dt>
+            <dd className="mono">
+              {tender.award_total_mdl === null ? "—" : mdl(tender.award_total_mdl)}
+            </dd>
+            <dt>{t("tenderDetail.cf_winner")}</dt>
+            <dd>{tender.winner_name ?? "—"}</dd>
+            <dt>{t("tenderDetail.cf_winner_idno")}</dt>
+            <dd className="mono">{tender.winner_idno ?? "—"}</dd>
           </dl>
           {multiLot && (
             <p className="muted" style={{ marginTop: 12 }}>
-              This procedure was awarded across {int(t.n_lots)} lots. Only the all-lot total is
-              comparable with the estimate.
+              {t("tenderDetail.multilot_note", { count: tender.n_lots ?? 0 })}
             </p>
           )}
           <p className="muted" style={{ marginTop: 16 }}>
-            A high band prioritizes manual review. It does not prove corruption, collusion, or a
-            legal violation. MTender publishes no court-confirmed labels, so the detector cannot be
-            scored for precision or recall on this source.
+            <Trans i18nKey="tenderDetail.legal_note" />
           </p>
         </div>
       </div>

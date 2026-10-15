@@ -55,6 +55,17 @@ FLAG_FEATURES: dict[str, str] = {
     "long_deadline": "Long bidding window",
 }
 
+#: The four detectors ``scripts/06_detect_anomalies.py`` runs, in run order.
+#: Score documents carry ``score_<key>`` and ``flag_<key>`` for each of them, so
+#: the same keys drive the per-detector verdicts here and the KPI checks in
+#: ``model_kpis.py``.
+MODEL_KEYS = (
+    "statistical_mad_zscore",
+    "isolation_forest",
+    "local_outlier_factor",
+    "one_class_svm",
+)
+
 RISK_BANDS = ("unscored", "low", "medium", "high", "critical")
 
 
@@ -131,11 +142,38 @@ def _flag(value: Any) -> bool:
     return False
 
 
+def _bin_flag(value: Any) -> bool | None:
+    """One detector's verdict: ``True`` / ``False`` / ``None`` = never scored.
+
+    ``_flag`` collapses everything it does not recognise into ``False``, which is
+    right for a red-flag *feature* (absent == not set) but wrong for a detector
+    verdict, where "scored and cleared" and "never examined" are different
+    claims. The detection run writes ``flag_<model>`` as 0/1 ints and the CSV
+    fallback serves them as 0.0/1.0 floats, so both are accepted; anything else
+    (strings such as ``"0"``, out-of-range numbers, a missing column) stays
+    ``None`` rather than being read as a negative verdict.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return bool(value) if value in (0, 1) else None
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return None
+        return bool(value) if value in (0.0, 1.0) else None
+    return None
+
+
 def project_tender(row: dict, score: dict | None) -> dict:
     """Map one real tender (+ its anomaly score) to the dashboard contract."""
     score = score or {}
     flags = [label for field, label in FLAG_FEATURES.items() if _flag(row.get(field))]
     n_flagging = score.get("n_models_flagging")
+    # Per-detector verdicts, kept tri-state: True/False only when this run
+    # actually scored the record, None when no score document exists. That is
+    # what lets the UI (and the KPI checks) separate "four detectors looked and
+    # disagreed" from "no detector ever looked".
+    model_flags = {key: _bin_flag(score.get(f"flag_{key}")) for key in MODEL_KEYS}
 
     return {
         # --- identity -----------------------------------------------------
@@ -183,6 +221,9 @@ def project_tender(row: dict, score: dict | None) -> dict:
         else None,
         "risk_level": risk_level(n_flagging),
         "n_models_flagging": n_flagging,
+        # null = this detector never scored the record (see _bin_flag)
+        "model_flags": model_flags,
+        "consensus_flag": _bin_flag(score.get("consensus")),
         "iso_score": _num(score.get("score_isolation_forest")),
         "lof_score": _num(score.get("score_local_outlier_factor")),
         "svm_score": _num(score.get("score_one_class_svm")),

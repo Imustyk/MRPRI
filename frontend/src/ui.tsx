@@ -1,5 +1,29 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { tr } from "./i18n/backendMap";
 import type { RiskLevel } from "./api";
+
+/** Shared page title block so every route opens with the same rhythm. */
+export function PageHead({
+  kicker,
+  title,
+  lede,
+  kickerPlain,
+}: {
+  kicker: string;
+  title: string;
+  lede?: ReactNode;
+  /** Keep the kicker in source case (procedure IDs). */
+  kickerPlain?: boolean;
+}) {
+  return (
+    <header className="page-head">
+      <div className={kickerPlain ? "kicker kicker-plain mono" : "kicker"}>{kicker}</div>
+      <h1>{title}</h1>
+      {lede && <p className="lede">{lede}</p>}
+    </header>
+  );
+}
 
 /** Shown while a request is in flight, so the page never renders a bare "Loading…". */
 export function Skeleton({ rows = 3, height = 16 }: { rows?: number; height?: number }) {
@@ -20,11 +44,12 @@ export function Skeleton({ rows = 3, height = 16 }: { rows?: number; height?: nu
  * Announced to screen readers while loading, and removed as soon as the content
  * lands, so a filter change is perceptible without sight.
  */
-export function Loading({ label = "Loading" }: { label?: string }) {
+export function Loading({ label }: { label?: string }) {
+  const { t } = useTranslation();
   return (
     <div className="loading" role="status" aria-live="polite">
       <span className="spinner" aria-hidden="true" />
-      {label}
+      {label ?? t("common.loading")}
     </div>
   );
 }
@@ -36,15 +61,16 @@ export function ErrorNote({
   error: string;
   onRetry?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="error" role="alert">
       <div>
-        <strong>Could not load this view.</strong>
+        <strong>{t("common.could_not_load")}</strong>
         <div className="error-detail">{error}</div>
       </div>
       {onRetry && (
         <button className="ghost" onClick={onRetry}>
-          Retry
+          {t("common.retry")}
         </button>
       )}
     </div>
@@ -70,14 +96,6 @@ export function Empty({
   );
 }
 
-const LEVEL_TEXT: Record<RiskLevel, string> = {
-  unscored: "not scored",
-  low: "low",
-  medium: "medium",
-  high: "high",
-  critical: "critical",
-};
-
 /**
  * The band is derived from how many detectors agreed, so the dot and the label
  * always carry the same meaning as the /api/stats band counts. An unscored
@@ -91,15 +109,16 @@ export function BandBadge({
   level: RiskLevel | null | undefined;
   nModels?: number | null;
 }) {
+  const { t } = useTranslation();
   const key: RiskLevel = (level ?? "unscored") as RiskLevel;
   return (
     <span className="badge-wrap">
       <span className={`badge ${key}`}>
         <span className={`dot ${key}`} aria-hidden="true" />
-        {LEVEL_TEXT[key]}
+        {t(`risk.${key}`)}
       </span>
       {key !== "unscored" && nModels !== null && nModels !== undefined && (
-        <span className="muted models">{nModels}/4 detectors</span>
+        <span className="muted models">{t("risk.detectors", { count: nModels })}</span>
       )}
     </span>
   );
@@ -114,12 +133,13 @@ export function TableWrap({
   /** Ask for a larger minimum width, for tables with five or more columns. */
   wide?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className={wide ? "table-wrap wide" : "table-wrap"}
       tabIndex={0}
       role="region"
-      aria-label="Data table, scrollable"
+      aria-label={t("common.table_scrollable")}
     >
       {children}
     </div>
@@ -226,7 +246,7 @@ export function Field({
 export function ConfirmButton({
   onConfirm,
   children,
-  confirmLabel = "Confirm delete",
+  confirmLabel,
   className = "ghost danger",
   disabled,
 }: {
@@ -236,6 +256,7 @@ export function ConfirmButton({
   className?: string;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation();
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (!armed) return;
@@ -246,10 +267,10 @@ export function ConfirmButton({
     return (
       <span className="confirm">
         <button className="danger" onClick={onConfirm}>
-          {confirmLabel}
+          {confirmLabel ?? t("common.confirm_delete")}
         </button>
         <button className="ghost" onClick={() => setArmed(false)}>
-          Cancel
+          {t("common.cancel")}
         </button>
       </span>
     );
@@ -294,12 +315,14 @@ const STATUS_TONE: Record<string, string> = {
   dismissed: "muted",
 };
 
+/** Case/watchlist priority from the workspace API, localised via the map. */
 export function PriorityPill({ value }: { value: string }) {
-  return <Pill tone={PRIORITY_TONE[value] ?? "muted"}>{value}</Pill>;
+  return <Pill tone={PRIORITY_TONE[value] ?? "muted"}>{tr(value)}</Pill>;
 }
 
+/** Case status from the workspace API, localised via the map. */
 export function StatusPill({ value }: { value: string }) {
-  return <Pill tone={STATUS_TONE[value] ?? "muted"}>{value}</Pill>;
+  return <Pill tone={STATUS_TONE[value] ?? "muted"}>{tr(value)}</Pill>;
 }
 
 /** Compact key statistics row used above the distribution charts. */

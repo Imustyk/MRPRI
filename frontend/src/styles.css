@@ -53,9 +53,26 @@ a {
   border-radius: 4px;
 }
 
+.skip {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  z-index: 50;
+  background: #fff;
+  color: var(--navy);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.skip:focus {
+  top: 12px;
+}
+
 .shell {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 268px 1fr;
   min-height: 100vh;
 }
 
@@ -66,12 +83,15 @@ a {
 }
 
 .side {
-  background: var(--navy);
+  background: linear-gradient(180deg, var(--navy-deep) 0%, var(--navy) 42%, #1a3354 100%);
   color: #f4efe6;
-  padding: 28px 22px;
+  padding: 24px 18px 18px;
   position: sticky;
   top: 0;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .brand {
@@ -85,18 +105,43 @@ a {
   color: #e8c27a;
 }
 
+.brand-block {
+  padding: 0 6px 8px;
+}
+
 .side p {
-  margin: 0 0 28px;
+  margin: 0;
   color: #c5d0de;
   font-size: 13px;
+  line-height: 1.45;
+}
+
+.nav {
+  margin-top: 22px;
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.nav-group {
+  margin-bottom: 16px;
+}
+
+.nav-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8ea3bb;
+  padding: 0 12px 8px;
 }
 
 .nav a {
   display: block;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border-radius: 8px;
   color: #dbe4ef;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   border-left: 3px solid transparent;
   transition: background 120ms ease, color 120ms ease;
 }
@@ -114,13 +159,90 @@ a {
 }
 
 .side-foot {
-  margin-top: 40px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 12px;
   color: #9aadc2;
+  line-height: 1.45;
+}
+
+/* Language switcher: three short codes, the active one filled gold. */
+.lang-switch {
+  display: flex;
+  gap: 2px;
+  margin: 14px 6px 0;
+  padding: 3px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  width: fit-content;
+}
+
+.lang-switch button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #9aadc2;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.lang-switch button:hover {
+  color: #fff;
+}
+
+.lang-switch button.active {
+  background: #e8c27a;
+  color: #1b2430;
 }
 
 .main {
-  padding: 32px 40px 64px;
+  padding: 28px 40px 72px;
+}
+
+.page-head {
+  margin-bottom: 8px;
+}
+
+.kicker-plain {
+  text-transform: none;
+  letter-spacing: 0.02em;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--navy);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .kicker {
@@ -268,6 +390,15 @@ tr.clickable {
 tr.clickable:hover,
 tr.clickable:focus-visible {
   background: #f8f1e3;
+}
+
+.table-wrap a {
+  color: var(--navy);
+  font-weight: 600;
+}
+
+.table-wrap a:hover {
+  text-decoration: underline;
 }
 
 tr.clickable:focus-visible {
@@ -461,6 +592,17 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 6px;
   padding: 4px 8px;
   font-size: 12px;
+}
+
+/* Per-detector verdict: a detector that scored and cleared, or never scored. */
+.flag.clear {
+  background: #e4efe8;
+  color: #2a6b4a;
+}
+
+.flag.unscored {
+  background: #eceef1;
+  color: var(--muted);
 }
 
 .detail-grid {
@@ -1004,6 +1146,280 @@ button.small,
   color: #6d4a06;
 }
 
+/* --- RACI matrix --- */
+
+.raci-roles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.role-card {
+  text-align: left;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow);
+}
+
+.role-card strong {
+  font-size: 13.5px;
+}
+
+.role-card .muted {
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+.role-card:hover:not(:disabled) {
+  background: #faf6ec;
+}
+
+.role-card.active {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.18);
+  background: #f4f7fb;
+}
+
+.role-code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--navy);
+}
+
+.raci-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin: 0 0 16px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.raci-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.raci-toolbar {
+  align-items: flex-end;
+}
+
+.raci-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  padding-bottom: 8px;
+}
+
+.raci-scroll .table-wrap {
+  max-height: min(72vh, 840px);
+  overflow: auto;
+}
+
+.raci-table {
+  min-width: 920px;
+}
+
+.raci-table thead th {
+  z-index: 2;
+}
+
+.raci-table thead th:first-child,
+.raci-table tbody td.raci-id {
+  position: sticky;
+  left: 0;
+}
+
+.raci-table td,
+.raci-table th {
+  vertical-align: middle;
+}
+
+.raci-table th.raci-role-h,
+.raci-table td:nth-child(n + 2):nth-child(-n + 7) {
+  text-align: center;
+  width: 48px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.raci-role-h.focus,
+.raci-table td.col-focus {
+  background: rgba(30, 58, 95, 0.06);
+}
+
+.th-btn {
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.th-btn:hover:not(:disabled) {
+  background: transparent;
+  color: var(--navy);
+}
+
+.raci-phase th {
+  background: #efe8d8;
+  color: var(--navy-deep);
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 9px 10px;
+  position: sticky;
+  top: 37px;
+  z-index: 1;
+}
+
+.raci-id {
+  font-weight: 700;
+  color: var(--navy);
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  background: var(--card);
+  z-index: 1;
+}
+
+.raci-art {
+  max-width: 280px;
+}
+
+.raci-art code {
+  font-size: 11px;
+  word-break: break-word;
+}
+
+.raci-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 26px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.raci-cell.r {
+  background: #dceee4;
+  color: #1d4d35;
+}
+
+.raci-cell.a {
+  background: #fde3c4;
+  color: #9a3b00;
+}
+
+.raci-cell.ar {
+  background: #1e3a5f;
+  color: #f4efe6;
+}
+
+.raci-cell.c {
+  background: #e4f0f2;
+  color: #1c5560;
+}
+
+.raci-cell.i {
+  background: #eef0f2;
+  color: #545c67;
+}
+
+.raci-cell.vacant {
+  color: #c3c8cf;
+  background: transparent;
+  font-weight: 500;
+}
+
+.raci-cell.dim {
+  opacity: 0.28;
+}
+
+.workload {
+  display: grid;
+  gap: 12px;
+}
+
+.workload-row {
+  display: grid;
+  grid-template-columns: 140px 1fr minmax(160px, auto);
+  gap: 12px;
+  align-items: center;
+}
+
+.workload-meta {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.workload-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: #efe8d8;
+}
+
+.workload-bar .seg.r {
+  background: #2a6b4a;
+}
+.workload-bar .seg.a {
+  background: #c2661f;
+}
+.workload-bar .seg.c {
+  background: #2a7f8f;
+}
+.workload-bar .seg.i {
+  background: #8a93a0;
+}
+
+.workload-counts {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.risk-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.risk-list li {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.risk-list li:last-child {
+  margin-bottom: 0;
+}
+
 .recharts-cartesian-axis-tick text {
   font-size: 11px;
   fill: var(--muted);
@@ -1034,11 +1450,24 @@ button.small,
     height: auto;
     position: relative;
     padding: 16px 18px;
+    overflow: visible;
   }
   .nav {
     display: flex;
+    flex-direction: column;
+    overflow: visible;
+    flex: none;
+    margin-top: 14px;
+  }
+  .nav-group {
+    display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    margin-bottom: 8px;
+  }
+  .nav-label {
+    width: 100%;
+    padding: 4px 4px 0;
   }
   .nav a {
     margin-bottom: 0;
@@ -1053,8 +1482,326 @@ button.small,
   }
   .cards-4,
   .row2,
-  .detail-grid {
+  .detail-grid,
+  .raci-roles,
+  .workload-row {
     grid-template-columns: 1fr;
+  }
+  .main {
+    padding: 20px 16px 48px;
   }
 }
 
+
+/* ==========================================================================
+   Network page: buyer–supplier matrix, ranked pairs, drill-down canvas
+   ========================================================================== */
+
+/* Below 1280px the two cards stack; from 1280px the matrix and the table sit
+   side by side, which is the layout the page is designed for. */
+.net-grid {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 1280px) {
+  .net-grid {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.net-card {
+  padding: 16px;
+}
+
+.net-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.net-card-head h2 {
+  margin-bottom: 0;
+}
+
+.net-card-head h3 {
+  font-size: 15.5px;
+  margin: 0;
+}
+
+.net-note {
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+/* Bottom alignment is right for rows whose fields carry a hint below the input,
+   but it pushes the labelled fields apart; here the hint belongs to only one
+   field, so the labels stay on one line. */
+.net-filters {
+  align-items: flex-start;
+}
+
+.net-filters input[type="number"] {
+  width: 96px;
+}
+
+/* The grid sizes to the card and scrolls when a wider slice would squash the
+   cells below the size at which the award count stays legible. */
+.net-scroll {
+  overflow: auto;
+  max-height: 78vh;
+  padding-bottom: 2px;
+}
+
+.net-svg {
+  display: block;
+}
+
+.net-cell {
+  transition: filter 0.12s ease;
+}
+
+.net-cell:hover {
+  filter: brightness(0.94);
+  stroke: #1b2430;
+  stroke-width: 1.5;
+}
+
+/* The row and column of the pair picked in the table, plus the cell itself. */
+.net-cell-sel {
+  stroke: var(--navy) !important;
+  stroke-width: 2.5 !important;
+  animation: net-pulse 1.4s ease-out 2;
+}
+
+@keyframes net-pulse {
+  from {
+    stroke-opacity: 1;
+  }
+  50% {
+    stroke-opacity: 0.2;
+  }
+  to {
+    stroke-opacity: 1;
+  }
+}
+
+.net-axis {
+  cursor: pointer;
+  fill: var(--ink);
+}
+
+.net-axis:hover {
+  text-decoration: underline;
+}
+
+.net-axis:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 1px;
+}
+
+/* Hover details: fixed positioning so a cell near the border cannot push the
+   tooltip off screen; pointer-events keep it out of the way of the mouse. */
+.vz-tip {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  min-width: 200px;
+  max-width: 280px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: #1b2430;
+  color: #fff;
+  font-size: 12.5px;
+  line-height: 1.45;
+  box-shadow: 0 8px 22px rgba(15, 23, 32, 0.35);
+}
+
+.vz-tip-title {
+  font-weight: 600;
+}
+
+.vz-tip-sub {
+  color: #b9c0c9;
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
+}
+
+.vz-tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.vz-tip-row span {
+  color: #b9c0c9;
+}
+
+.vz-tip-row b {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Legend swatches for square cells: band fill, dashed "unscored", and a sample
+   cell that shows the award count is written into the cell, not only coloured. */
+.swatch.box {
+  border-radius: 3px;
+}
+
+.swatch.dashed {
+  background: transparent;
+  border: 1.5px dashed #9aa3ad;
+  border-radius: 3px;
+}
+
+/* Sortable headers: the whole label is the control, arrows are decorative.
+   The pairs table sits in the narrow card, so it drops the shared 560px floor,
+   lets headers wrap, and sits a touch below the page default type size: all
+   four columns stay on screen from 1280px up. */
+table.sortable {
+  min-width: 0;
+  font-size: 13px;
+}
+
+table.sortable th,
+table.sortable td {
+  padding: 8px 6px;
+}
+
+table.sortable th {
+  white-space: normal;
+}
+
+/* The last header is the relief valve for the narrow card: should the three
+   named columns already eat the width, its long word breaks in place instead
+   of the whole column being clipped off the right edge. */
+table.sortable th:last-child {
+  overflow-wrap: anywhere;
+}
+
+/* Long proper names ("LUKOIL-Moldova", "MONSTERAX - GSG SRL") set the column's
+   minimum width; letting a word break only when it must keeps all four columns
+   inside the narrow card instead of clipping the last header. */
+table.sortable td {
+  overflow-wrap: anywhere;
+}
+
+table.sortable th button {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 500;
+  /* The UA sheet centres button text; wrapped headers must stay left-aligned. */
+  text-align: left;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+table.sortable th button:hover {
+  color: var(--ink);
+}
+
+table.sortable th button:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
+table.sortable th[aria-sort]:not([aria-sort="none"]) {
+  color: var(--ink);
+}
+
+/* Long authority names otherwise stretch one row across seven lines; three
+   lines keep the ranking scannable. The full name stays in the native title
+   tooltip, the matrix tooltip, the CSV export and the drill-down list. */
+.clamp3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+tr.clickable[aria-current="true"] {
+  background: #f8f1e3;
+  box-shadow: inset 3px 0 0 var(--navy);
+}
+
+/* Inline text button (clear selection) inside a muted note. */
+button.link {
+  background: none;
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  color: var(--navy);
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+button.link:hover {
+  color: var(--gold);
+}
+
+/* Drill-down: the local network on canvas, plus its text equivalent. */
+.net-drill {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.net-drill-canvas {
+  position: relative;
+}
+
+.net-drill-canvas canvas {
+  display: block;
+  max-width: 100%;
+  background: #fcfcfd;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.net-drill-list {
+  margin-top: 10px;
+  font-size: 12.5px;
+}
+
+.net-drill-list summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.net-drill-list ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  columns: 2;
+  column-gap: 24px;
+}
+
+.net-drill-list li {
+  break-inside: avoid;
+  margin-bottom: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .net-drill-list ul {
+    columns: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .net-cell-sel {
+    animation: none;
+  }
+}

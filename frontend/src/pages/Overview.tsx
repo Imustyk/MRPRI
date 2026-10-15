@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Trans, useTranslation } from "react-i18next";
 import {
   getJson,
   int,
@@ -26,7 +27,8 @@ import {
   type RiskLevel,
   type Stats,
 } from "../api";
-import { Empty, ErrorNote, Skeleton, Stat, TableWrap } from "../ui";
+import { Empty, ErrorNote, PageHead, Skeleton, Stat, TableWrap } from "../ui";
+import { tr } from "../i18n/backendMap";
 
 const BAND_ORDER: RiskLevel[] = ["critical", "high", "medium", "low", "unscored"];
 const BAND_FILL: Record<string, string> = {
@@ -38,6 +40,7 @@ const BAND_FILL: Record<string, string> = {
 };
 
 export default function Overview() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<Stats | null>(null);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [mongo, setMongo] = useState<MongoStatus | null>(null);
@@ -70,11 +73,10 @@ export default function Overview() {
   if (error && !stats) {
     return (
       <div>
-        <div className="kicker">Chapter 3 · results</div>
-        <h1>Results not available</h1>
+        <div className="kicker">{t("overview.err_kicker")}</div>
+        <h1>{t("overview.err_title")}</h1>
         <p className="lede">
-          This dashboard reads the real MTender output in <code>data/processed/tenders.json</code> and
-          the anomaly scores in MongoDB. Produce them with the ETL:
+          <Trans i18nKey="overview.err_lede" components={{ code: <code /> }} />
         </p>
         <pre className="cmd">./scripts/run_pipeline.sh</pre>
         <div style={{ marginTop: 16 }}>
@@ -87,8 +89,8 @@ export default function Overview() {
   if (!stats) {
     return (
       <div>
-        <div className="kicker">Republic of Moldova · public procurement</div>
-        <h1>Corruption-risk radar</h1>
+        <div className="kicker">{t("overview.load_kicker")}</div>
+        <h1>{t("overview.load_title")}</h1>
         <Skeleton rows={4} height={44} />
         <Skeleton rows={5} />
       </div>
@@ -110,68 +112,67 @@ export default function Overview() {
 
   return (
     <div>
-      <div className="kicker">Republic of Moldova · public procurement</div>
-      <h1>Corruption-risk radar</h1>
-      <p className="lede">
-        Four independent detectors — MAD z-score, Isolation Forest, Local Outlier Factor and
-        One-Class SVM — score a flagged-candidate sample drawn from{" "}
-        {stats.n_tenders.toLocaleString()} real procedures in the MTender feed. The priority band is
-        set by how many of them agreed, so a band means corroboration rather than one model&apos;s
-        opinion.
-      </p>
+      <PageHead
+        kicker={t("overview.kicker")}
+        title={t("overview.title")}
+        lede={t("overview.lede", { n: stats.n_tenders.toLocaleString() })}
+      />
 
       {unscoredRows > 0 && (
         <div className="callout warn">
-          <strong>Coverage first.</strong> {int(unscoredRows)} of the {int(stats.n_tenders)}{" "}
-          procedures here ({pct(unscoredRows / stats.n_tenders)}) have <em>no</em> detector output —
-          the detection run scored {int(scoredRows)} of them. Those records are shown as{" "}
-          <strong>not scored</strong>, never as &quot;low risk&quot;: no model examined them, so
-          nothing clears them. Every figure below that describes model behaviour is a share of the{" "}
-          {int(scoredRows)} scored records only.
+          <Trans
+            i18nKey="overview.coverage"
+            values={{
+              unscored: int(unscoredRows),
+              total: int(stats.n_tenders),
+              share: pct(unscoredRows / stats.n_tenders),
+              scored: int(scoredRows),
+            }}
+            components={{ em: <em />, strong: <strong /> }}
+          />
         </div>
       )}
 
       <div className="grid cards-4">
         <Stat
-          label="Procedures scored"
+          label={t("overview.stat_scored")}
           value={int(scoredRows)}
-          note={`of ${int(stats.n_tenders)} in the corpus`}
+          note={t("overview.stat_scored_note", { n: int(stats.n_tenders) })}
         />
         <Stat
-          label="High / critical"
+          label={t("overview.stat_high")}
           value={int(stats.high_risk_count)}
           note={
             scoredRows > 0
-              ? `${pct(stats.high_risk_count / scoredRows)} of scored records`
-              : "no scored records"
+              ? t("overview.stat_high_note", { share: pct(stats.high_risk_count / scoredRows) })
+              : t("overview.stat_high_none")
           }
           tone={stats.high_risk_count > 0 ? "high" : undefined}
         />
         <Stat
-          label="Value in the high-risk set"
+          label={t("overview.stat_value")}
           value={mdl(stats.high_risk_value_mdl)}
-          note="Sum of all awarded lots"
+          note={t("overview.stat_value_note")}
         />
         <Stat
-          label="Single-bidder share"
+          label={t("overview.stat_single")}
           value={stats.single_bidder_share === null ? "—" : pct(stats.single_bidder_share)}
           note={
             hasNoPublishedBids
-              ? "No procedure published a participant list"
-              : `of ${int(stats.n_with_bid_data)} with a published bidder list`
+              ? t("overview.stat_single_none")
+              : t("overview.stat_single_note", { n: int(stats.n_with_bid_data) })
           }
         />
       </div>
 
       <div className="grid row2">
         <div className="card">
-          <h2>Mean anomaly percentile by month</h2>
+          <h2>{t("overview.monthly_h")}</h2>
           <p className="muted">
-            Rank of each procedure's most extreme detector within this dataset, averaged per month.
-            Not a probability, and not comparable across pipeline runs.
+            <Trans i18nKey="overview.monthly_p" />
           </p>
           {months.length === 0 ? (
-            <Empty title="No dated procedures" hint="The export contains no usable dates." />
+            <Empty title={t("overview.monthly_empty")} hint={t("overview.monthly_empty_hint")} />
           ) : (
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={months} margin={{ top: 6, right: 8, bottom: 4, left: -18 }}>
@@ -191,7 +192,10 @@ export default function Overview() {
                   width={44}
                 />
                 <Tooltip
-                  formatter={(v: number | string) => [num1(Number(v)), "mean percentile"]}
+                  formatter={(v: number | string) => [
+                    num1(Number(v)),
+                    t("overview.monthly_mean"),
+                  ]}
                   labelFormatter={(l) => String(l)}
                 />
                 <Line
@@ -207,13 +211,10 @@ export default function Overview() {
           )}
         </div>
         <div className="card">
-          <h2>Priority bands</h2>
-          <p className="muted">
-            By number of detectors that flagged the procedure: 0 low, 1 medium, 2 high, 3 or more
-            critical.
-          </p>
+          <h2>{t("overview.bands_h")}</h2>
+          <p className="muted">{t("overview.bands_p")}</p>
           {bandData.length === 0 ? (
-            <Empty title="No banded procedures" />
+            <Empty title={t("overview.bands_empty")} />
           ) : (
             <ResponsiveContainer width="100%" height={244}>
               <BarChart data={bandData} margin={{ top: 6, right: 8, bottom: 4, left: -18 }}>
@@ -223,6 +224,7 @@ export default function Overview() {
                   tick={{ fontSize: 11, fill: "#5c6673" }}
                   tickLine={false}
                   axisLine={{ stroke: "#d9d0c0" }}
+                  tickFormatter={(v: string) => t(`risk.${v}`)}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: "#5c6673" }}
@@ -230,7 +232,10 @@ export default function Overview() {
                   axisLine={false}
                   width={44}
                 />
-                <Tooltip formatter={(v: number | string) => [num(Number(v)), "procedures"]} />
+                <Tooltip
+                  formatter={(v: number | string) => [num(Number(v)), t("overview.bands_procedures")]}
+                  labelFormatter={(l) => t(`risk.${l}`)}
+                />
                 <Bar dataKey="n" radius={[6, 6, 0, 0]}>
                   {/* Same colours as the band badges, so the chart and the
                       table read as one system. */}
@@ -245,7 +250,7 @@ export default function Overview() {
             {bandData.map((d) => (
               <li key={d.level}>
                 <span className="swatch" style={{ background: BAND_FILL[d.level] }} />
-                {d.level} · {d.n}
+                {t(`risk.${d.level}`)} · {d.n}
               </li>
             ))}
           </ul>
@@ -254,21 +259,19 @@ export default function Overview() {
 
       <div className="grid row2">
         <div className="card">
-          <h2>Most frequent CPV groups</h2>
-          <p className="muted">
-            MTender publishes CPV codes without a label dictionary, so codes are shown as-is.
-          </p>
+          <h2>{t("overview.cpv_h")}</h2>
+          <p className="muted">{t("overview.cpv_p")}</p>
           {stats.top_cpv.length === 0 ? (
-            <Empty title="No CPV codes extracted" />
+            <Empty title={t("overview.cpv_empty")} />
           ) : (
             <TableWrap>
               <table>
                 <thead>
                   <tr>
-                    <th scope="col">CPV code</th>
-                    <th scope="col">Procedures</th>
-                    <th scope="col">Mean percentile</th>
-                    <th scope="col">Award value</th>
+                    <th scope="col">{t("overview.cpv_th_code")}</th>
+                    <th scope="col">{t("overview.cpv_th_procedures")}</th>
+                    <th scope="col">{t("overview.cpv_th_mean")}</th>
+                    <th scope="col">{t("overview.cpv_th_value")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -286,50 +289,52 @@ export default function Overview() {
           )}
         </div>
         <div className="card">
-          <h2>Model validation</h2>
+          <h2>{t("overview.valid_h")}</h2>
           {m.available ? (
-            <p className="muted">{m.reason}</p>
+            <p className="muted">{tr(m.reason)}</p>
           ) : (
             <>
               <p className="muted">
-                Precision, recall and F1 are <strong>not computable here</strong>: {m.reason}.
-                Publishing them would mean inventing labels.
+                <Trans i18nKey="overview.valid_p" values={{ reason: tr(m.reason) }} components={{ strong: <strong /> }} />
               </p>
               <p className="muted">
-                Model quality is instead evidenced by agreement between four independent detectors
-                and by univariate significance testing of each indicator against the consensus flag.
+                <Trans i18nKey="overview.valid_p2" />
               </p>
             </>
           )}
 
-          <h3 style={{ marginTop: 18 }}>Data source</h3>
+          <h3 style={{ marginTop: 18 }}>{t("overview.source_h")}</h3>
           {loading ? (
             <Skeleton rows={3} />
           ) : mongo?.connected ? (
             <dl className="kv">
-              <dt>MongoDB</dt>
+              <dt>{t("overview.kv_mongodb")}</dt>
               <dd className="mono">
                 {mongo.uri} · {mongo.database}
               </dd>
-              <dt>Replica set</dt>
+              <dt>{t("overview.kv_replica")}</dt>
               <dd className="mono">
-                {mongo.set_name ?? "standalone"}{" "}
-                {mongo.transactions ? "(transactions available)" : "(no transaction support)"}
+                {mongo.set_name ?? t("overview.kv_standalone")}{" "}
+                {mongo.transactions
+                  ? t("overview.kv_tx_yes")
+                  : t("overview.kv_tx_no")}
               </dd>
-              <dt>Procedures scored</dt>
+              <dt>{t("overview.kv_scored")}</dt>
               <dd className="mono">{int(meta?.scored ?? 0)}</dd>
             </dl>
           ) : (
-            <p className="muted">MongoDB status unavailable: {mongo?.error ?? "not reported"}</p>
+            <p className="muted">
+              {t("overview.mongo_unavail", { err: mongo?.error ?? t("overview.mongo_not_reported") })}
+            </p>
           )}
 
           {meta && Object.keys(meta.unavailable).length > 0 && (
             <>
-              <h3 style={{ marginTop: 18 }}>Not published by MTender</h3>
+              <h3 style={{ marginTop: 18 }}>{t("overview.not_pub_h")}</h3>
               <ul className="muted" style={{ paddingLeft: 18, marginTop: 0 }}>
                 {Object.entries(meta.unavailable).map(([k, why]) => (
                   <li key={k}>
-                    <code>{k}</code> — {why}
+                    <code>{k}</code> — {tr(why)}
                   </li>
                 ))}
               </ul>

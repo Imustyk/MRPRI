@@ -213,3 +213,17 @@ def indicators():
     if not store.artefacts_ready():
         raise HTTPException(404, "Run the pipeline first")
     return store.load_indicators()
+
+
+@app.get("/api/model-kpis")
+def model_kpis():
+    """KPI catalogue for the four detectors plus live checks on served scores.
+
+    Everything in ``detectors[].live`` is recomputed from the corpus the API is
+    actually serving, so the page reports the current state rather than the
+    numbers of the original run. ``metrics`` states explicitly why
+    precision/recall are not reported instead of leaving them out.
+    """
+    if not store.artefacts_ready():
+        raise HTTPException(404, "Run the pipeline first")
+    return store.load_model_kpis()

@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { intlLocale } from "../i18n";
+import { tr } from "../i18n/backendMap";
 import {
   addWatchlistItems,
   createAnnotation,
@@ -37,6 +40,7 @@ import {
   ErrorNote,
   Field,
   Loading,
+  PageHead,
   Panel,
   Pill,
   PriorityPill,
@@ -53,7 +57,7 @@ function when(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("en-GB", {
+  return d.toLocaleString(intlLocale(), {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
@@ -61,7 +65,12 @@ function when(iso: string | null | undefined): string {
   });
 }
 
+function actionKey(action: string): string {
+  return action.replace(/ /g, "_");
+}
+
 export default function Workspace() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<TabKey>("cases");
   const [summary, setSummary] = useState<WorkspaceSummary | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -80,42 +89,35 @@ export default function Workspace() {
 
   return (
     <div>
-      <div className="kicker">Analyst workspace</div>
-      <h1>Cases, notes &amp; watchlists</h1>
-      <p className="lede">
-        Everything on this page is analyst work product, stored separately in SQLite so the
-        research pipeline output stays read-only and reproducible. Cases group the procedures
-        under investigation, annotations record what was checked, and watchlists hold the OCIDs
-        worth returning to.
-      </p>
+      <PageHead
+        kicker={t("workspace.kicker")}
+        title={t("workspace.title")}
+        lede={t("workspace.lede")}
+      />
 
-      <div className="callout info">
-        A risk band is a signal, not a finding. Workspace entries are working notes about
-        published procurement data — they are not accusations, and nothing here should be
-        presented as a determination of corruption.
-      </div>
+      <div className="callout info">{t("workspace.ethics")}</div>
 
       {c && (
         <div className="grid cards-4" style={{ marginBottom: 16 }}>
           <div className="card">
-            <div className="label">Cases</div>
+            <div className="label">{t("workspace.card_cases")}</div>
             <div className="value">{int(c.cases)}</div>
-            <div className="note">investigation files</div>
+            <div className="note">{t("workspace.card_cases_note")}</div>
           </div>
           <div className="card">
-            <div className="label">Annotations</div>
+            <div className="label">{t("workspace.card_annot")}</div>
             <div className="value">{int(c.annotations)}</div>
-            <div className="note">notes on procedures</div>
+            <div className="note">{t("workspace.card_annot_note")}</div>
           </div>
           <div className="card">
-            <div className="label">Watchlists</div>
+            <div className="label">{t("workspace.card_watch")}</div>
             <div className="value">{int(c.watchlists)}</div>
-            <div className="note">{int(c.watchlist_items)} procedures tracked</div>
+            <div className="note">{t("workspace.card_watch_note", { n: int(c.watchlist_items) })}</div>
           </div>
           <div className="card">
-            <div className="label">Saved views</div>
+            <div className="label">{t("workspace.card_views")}</div>
             <div className="value">{int(c.saved_views)}</div>
-            <div className="note">reusable filter sets</div>
+            <div className="note">{t("workspace.card_views_note")}</div>
           </div>
         </div>
       )}
@@ -124,10 +126,10 @@ export default function Workspace() {
         active={tab}
         onChange={setTab}
         tabs={[
-          { key: "cases", label: "Cases", count: c?.cases },
-          { key: "annotations", label: "Annotations", count: c?.annotations },
-          { key: "watchlists", label: "Watchlists", count: c?.watchlists },
-          { key: "views", label: "Saved views", count: c?.saved_views },
+          { key: "cases", label: t("workspace.tab_cases"), count: c?.cases },
+          { key: "annotations", label: t("workspace.tab_annot"), count: c?.annotations },
+          { key: "watchlists", label: t("workspace.tab_watch"), count: c?.watchlists },
+          { key: "views", label: t("workspace.tab_views"), count: c?.saved_views },
         ]}
       />
 
@@ -152,6 +154,7 @@ function CasesTab({
   vocab?: WorkspaceSummary["vocab"];
   notify: (m: string) => void;
 }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<CaseRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("all");
@@ -171,13 +174,13 @@ function CasesTab({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.title.trim().length < 3) {
-      setError("A case needs a title of at least 3 characters.");
+      setError(t("workspace.err_title_short"));
       return;
     }
     try {
       await createCase({ ...form, ocids: form.ocids });
       setForm({ title: "", priority: "medium", owner: "", summary: "", ocids: "" });
-      notify("Case created");
+      notify(t("workspace.toast_case_created"));
       load();
     } catch (err) {
       setError((err as Error).message);
@@ -187,40 +190,40 @@ function CasesTab({
   return (
     <>
       <Panel
-        title="New case"
-        note="A case groups the procedures under investigation. OCIDs can be pasted as a list, one per line or separated by commas."
+        title={t("workspace.new_case")}
+        note={t("workspace.new_case_p")}
       >
         <form onSubmit={submit}>
           <div className="form-grid">
-            <Field label="Title" grow>
+            <Field label={t("workspace.f_title")} grow>
               <input
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Repeat awards to a single supplier"
+                placeholder={t("workspace.ph_title")}
                 required
                 minLength={3}
               />
             </Field>
-            <Field label="Priority">
+            <Field label={t("workspace.f_priority")}>
               <select
                 value={form.priority}
                 onChange={(e) => setForm({ ...form, priority: e.target.value })}
               >
                 {(vocab?.case_priority ?? ["low", "medium", "high", "critical"]).map((p) => (
                   <option key={p} value={p}>
-                    {p}
+                    {tr(p)}
                   </option>
                 ))}
               </select>
             </Field>
-            <Field label="Owner">
+            <Field label={t("workspace.f_owner")}>
               <input
                 value={form.owner}
                 onChange={(e) => setForm({ ...form, owner: e.target.value })}
-                placeholder="analyst"
+                placeholder={t("workspace.ph_owner")}
               />
             </Field>
-            <Field label="Procedures (OCIDs)" grow>
+            <Field label={t("workspace.f_ocids")} grow>
               <textarea
                 value={form.ocids}
                 onChange={(e) => setForm({ ...form, ocids: e.target.value })}
@@ -228,40 +231,40 @@ function CasesTab({
                 style={{ minHeight: 60 }}
               />
             </Field>
-            <Field label="Summary" grow>
+            <Field label={t("workspace.f_summary")} grow>
               <textarea
                 value={form.summary}
                 onChange={(e) => setForm({ ...form, summary: e.target.value })}
-                placeholder="What prompted this case, and what needs checking"
+                placeholder={t("workspace.ph_summary")}
                 style={{ minHeight: 60 }}
               />
             </Field>
             <div>
-              <button type="submit">Create case</button>
+              <button type="submit">{t("workspace.btn_create_case")}</button>
             </div>
           </div>
         </form>
       </Panel>
 
       <Panel
-        title="Cases"
+        title={t("workspace.cases_h")}
         actions={
           <div className="toolbar" style={{ margin: 0 }}>
-            <Field label="Status">
+            <Field label={t("workspace.f_status")}>
               <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="all">all</option>
+                <option value="all">{t("workspace.opt_all")}</option>
                 {(vocab?.case_status ?? []).map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {tr(s)}
                   </option>
                 ))}
               </select>
             </Field>
-            <Field label="Search">
+            <Field label={t("workspace.f_search")}>
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="title, ref, owner…"
+                placeholder={t("workspace.ph_case_search")}
               />
             </Field>
           </div>
@@ -269,22 +272,22 @@ function CasesTab({
       >
         {error && <ErrorNote error={error} onRetry={load} />}
         {!items ? (
-          <Loading label="Loading cases…" />
+          <Loading label={t("workspace.loading_cases")} />
         ) : items.length === 0 ? (
-          <Empty title="No cases yet" hint="Create one above, or clear the status filter." />
+          <Empty title={t("workspace.empty_cases")} hint={t("workspace.empty_cases_hint")} />
         ) : (
           <TableWrap wide>
             <table>
               <thead>
                 <tr>
-                  <th scope="col">Ref</th>
-                  <th scope="col">Title</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Priority</th>
-                  <th scope="col">Owner</th>
-                  <th scope="col">Procedures</th>
-                  <th scope="col">Updated</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col">{t("workspace.th_ref")}</th>
+                  <th scope="col">{t("workspace.th_title")}</th>
+                  <th scope="col">{t("workspace.th_status")}</th>
+                  <th scope="col">{t("workspace.th_priority")}</th>
+                  <th scope="col">{t("workspace.th_owner")}</th>
+                  <th scope="col">{t("workspace.th_procedures")}</th>
+                  <th scope="col">{t("workspace.th_updated")}</th>
+                  <th scope="col">{t("workspace.th_actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -322,19 +325,19 @@ function CasesTab({
                             options={vocab?.case_status ?? []}
                             onChange={async (v) => {
                               await updateCase(r.id, { status: v });
-                              notify(`${r.ref} → ${v}`);
+                              notify(t("workspace.toast_status", { ref: r.ref, status: tr(v) }));
                               load();
                             }}
                           />
                           <ConfirmButton
-                            confirmLabel="Delete?"
+                            confirmLabel={t("workspace.confirm_delete")}
                             onConfirm={async () => {
                               await deleteCase(r.id);
-                              notify(`${r.ref} deleted`);
+                              notify(t("workspace.toast_deleted", { ref: r.ref }));
                               load();
                             }}
                           >
-                            Delete
+                            {t("common.delete")}
                           </ConfirmButton>
                         </span>
                       </td>
@@ -360,12 +363,13 @@ function StatusEditor({
   options: string[];
   onChange: (v: string) => void | Promise<void>;
 }) {
+  const { t } = useTranslation();
   const [v, setV] = useState(value);
   return (
     <select
       className="small"
       value={v}
-      aria-label="Change status"
+      aria-label={t("workspace.change_status")}
       onChange={(e) => {
         setV(e.target.value);
         void onChange(e.target.value);
@@ -373,7 +377,7 @@ function StatusEditor({
     >
       {options.map((o) => (
         <option key={o} value={o}>
-          {o}
+          {tr(o)}
         </option>
       ))}
     </select>
@@ -389,6 +393,7 @@ function CaseDetail({
   onChanged: () => void;
   notify: (m: string) => void;
 }) {
+  const { t } = useTranslation();
   const [data, setData] = useState<{ case: CaseRecord; ocids: string[]; annotations: AnnotationRecord[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -398,7 +403,7 @@ function CaseDetail({
   }, [id]);
 
   if (error) return <ErrorNote error={error} />;
-  if (!data) return <Loading label="Loading case…" />;
+  if (!data) return <Loading label={t("workspace.loading_case")} />;
 
   return (
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line-soft)" }}>
@@ -406,16 +411,16 @@ function CaseDetail({
       {data.case.summary && <p className="muted">{data.case.summary}</p>}
       <div className="grid row2">
         <div>
-          <h4>Procedures ({data.ocids.length})</h4>
+          <h4>{t("workspace.procedures_h", { n: data.ocids.length })}</h4>
           {data.ocids.length === 0 ? (
-            <p className="muted">No OCIDs linked to this case.</p>
+            <p className="muted">{t("workspace.no_ocids")}</p>
           ) : (
             <TableWrap>
               <table>
                 <thead>
                   <tr>
-                    <th scope="col">OCID</th>
-                    <th scope="col">Notes</th>
+                    <th scope="col">{t("workspace.th_ocid")}</th>
+                    <th scope="col">{t("workspace.th_notes")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -430,7 +435,7 @@ function CaseDetail({
                             .filter((a) => a.ocid === o)
                             .map((a) => (
                               <div key={a.id} className="muted" style={{ fontSize: 12.5 }}>
-                                <Pill tone="info">{a.category}</Pill> {a.note}
+                                <Pill tone="info">{tr(a.category)}</Pill> {a.note}
                               </div>
                             ))
                         ) : (
@@ -445,15 +450,15 @@ function CaseDetail({
           )}
         </div>
         <div>
-          <h4>Add a note</h4>
+          <h4>{t("workspace.add_note_h")}</h4>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="What was checked, and what it showed"
+            placeholder={t("workspace.ph_case_note")}
           />
           <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
             <select
-              aria-label="Which procedure"
+              aria-label={t("workspace.which_procedure")}
               style={{ maxWidth: 210 }}
               defaultValue={data.ocids[0] ?? ""}
               id={`ocid-${id}`}
@@ -473,7 +478,7 @@ function CaseDetail({
                 try {
                   await createAnnotation({ ocid, note, case_id: id });
                   setNote("");
-                  notify("Note added");
+                  notify(t("workspace.toast_note_added"));
                   onChanged();
                   const fresh = await getCase(id);
                   if (fresh) setData(fresh);
@@ -482,7 +487,7 @@ function CaseDetail({
                 }
               }}
             >
-              Add note
+              {t("workspace.btn_add_note")}
             </button>
           </div>
         </div>
@@ -501,6 +506,7 @@ function AnnotationsTab({
   vocab?: WorkspaceSummary["vocab"];
   notify: (m: string) => void;
 }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<AnnotationRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState("all");
@@ -520,14 +526,14 @@ function AnnotationsTab({
 
   return (
     <>
-      <Panel title="New annotation" note="A note attached to one procedure OCID.">
+      <Panel title={t("workspace.new_annot")} note={t("workspace.new_annot_p")}>
         <form
           onSubmit={async (e) => {
             e.preventDefault();
             try {
               await createAnnotation(draft);
               setDraft({ ocid: "", note: "", category: "observation", author: draft.author });
-              notify("Annotation added");
+              notify(t("workspace.toast_annot_added"));
               load();
             } catch (err) {
               setError((err as Error).message);
@@ -535,7 +541,7 @@ function AnnotationsTab({
           }}
         >
           <div className="form-grid">
-            <Field label="OCID" grow>
+            <Field label={t("workspace.f_ocid")} grow>
               <input
                 value={draft.ocid}
                 onChange={(e) => setDraft({ ...draft, ocid: e.target.value })}
@@ -543,76 +549,83 @@ function AnnotationsTab({
                 required
               />
             </Field>
-            <Field label="Category">
+            <Field label={t("workspace.f_category")}>
               <select
                 value={draft.category}
                 onChange={(e) => setDraft({ ...draft, category: e.target.value })}
               >
                 {(vocab?.annotation_category ?? []).map((k) => (
                   <option key={k} value={k}>
-                    {k}
+                    {tr(k)}
                   </option>
                 ))}
               </select>
             </Field>
-            <Field label="Author">
+            <Field label={t("workspace.f_author")}>
               <input
                 value={draft.author}
                 onChange={(e) => setDraft({ ...draft, author: e.target.value })}
               />
             </Field>
-            <Field label="Note" grow>
+            <Field label={t("workspace.f_note")} grow>
               <input
                 value={draft.note}
                 onChange={(e) => setDraft({ ...draft, note: e.target.value })}
-                placeholder="What this shows"
+                placeholder={t("workspace.ph_annot_note")}
                 required
               />
             </Field>
             <div>
-              <button type="submit">Add note</button>
+              <button type="submit">{t("workspace.btn_add_note")}</button>
             </div>
           </div>
         </form>
       </Panel>
 
       <Panel
-        title="Annotations"
+        title={t("workspace.annot_h")}
         actions={
           <div className="toolbar" style={{ margin: 0 }}>
-            <Field label="Category">
+            <Field label={t("workspace.f_category")}>
               <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                <option value="all">all</option>
+                <option value="all">{t("workspace.opt_all")}</option>
                 {(vocab?.annotation_category ?? []).map((k) => (
                   <option key={k} value={k}>
-                    {k}
+                    {tr(k)}
                   </option>
                 ))}
               </select>
             </Field>
-            <Field label="Search">
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="note or OCID…" />
+            <Field label={t("workspace.f_search")}>
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={t("workspace.ph_annot_search")}
+              />
             </Field>
           </div>
         }
       >
         {error && <ErrorNote error={error} onRetry={load} />}
         {!items ? (
-          <Loading label="Loading annotations…" />
+          <Loading label={t("workspace.loading_annot")} />
         ) : items.length === 0 ? (
-          <Empty title="No annotations" hint="Notes added here or from a case appear in this list." />
+          <Empty
+            title={t("workspace.empty_annot")}
+            hint={t("workspace.empty_annot_hint")}
+          />
         ) : (
           <TableWrap wide>
             <table>
               <thead>
                 <tr>
-                  <th scope="col">OCID</th>
-                  <th scope="col">Category</th>
-                  <th scope="col">Note</th>
-                  <th scope="col">Case</th>
-                  <th scope="col">Author</th>
-                  <th scope="col">Updated</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col">{t("workspace.th_ocid")}</th>
+                  <th scope="col">{t("workspace.th_category")}</th>
+                  <th scope="col">{t("workspace.th_note")}</th>
+                  <th scope="col">{t("workspace.th_case")}</th>
+                  <th scope="col">{t("workspace.th_author")}</th>
+                  <th scope="col">{t("workspace.th_updated")}</th>
+                  <th scope="col">{t("workspace.th_actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -622,7 +635,7 @@ function AnnotationsTab({
                       {r.ocid}
                     </td>
                     <td>
-                      <Pill tone="info">{r.category}</Pill>
+                      <Pill tone="info">{tr(r.category)}</Pill>
                     </td>
                     <td>
                       {editing === r.id ? (
@@ -637,14 +650,14 @@ function AnnotationsTab({
                             onClick={async () => {
                               await updateAnnotation(r.id, { note: editText });
                               setEditing(null);
-                              notify("Note updated");
+                              notify(t("workspace.toast_note_updated"));
                               load();
                             }}
                           >
-                            Save
+                            {t("common.save")}
                           </button>
                           <button className="ghost small" onClick={() => setEditing(null)}>
-                            Cancel
+                            {t("common.cancel")}
                           </button>
                         </span>
                       ) : (
@@ -663,17 +676,17 @@ function AnnotationsTab({
                             setEditText(r.note);
                           }}
                         >
-                          Edit
+                          {t("common.edit")}
                         </button>
                         <ConfirmButton
-                          confirmLabel="Delete?"
+                          confirmLabel={t("workspace.confirm_delete")}
                           onConfirm={async () => {
                             await deleteAnnotation(r.id);
-                            notify("Annotation deleted");
+                            notify(t("workspace.toast_annot_deleted"));
                             load();
                           }}
                         >
-                          Delete
+                          {t("common.delete")}
                         </ConfirmButton>
                       </span>
                     </td>
@@ -698,6 +711,7 @@ function WatchlistsTab({
   colors?: Record<string, string>;
   notify: (m: string) => void;
 }) {
+  const { t } = useTranslation();
   const [lists, setLists] = useState<Watchlist[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
@@ -730,14 +744,14 @@ function WatchlistsTab({
 
   return (
     <>
-      <Panel title="New watchlist" note="A named collection of procedures to keep an eye on.">
+      <Panel title={t("workspace.new_watch")} note={t("workspace.new_watch_p")}>
         <form
           onSubmit={async (e) => {
             e.preventDefault();
             try {
               await createWatchlist(draft);
               setDraft({ name: "", description: "", color: "navy" });
-              notify("Watchlist created");
+              notify(t("workspace.toast_watch_created"));
               load();
             } catch (err) {
               setError((err as Error).message);
@@ -745,54 +759,54 @@ function WatchlistsTab({
           }}
         >
           <div className="form-grid">
-            <Field label="Name" grow>
+            <Field label={t("workspace.f_name")} grow>
               <input
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                placeholder="Mega suppliers"
+                placeholder={t("workspace.ph_watch_name")}
                 required
               />
             </Field>
-            <Field label="Colour">
+            <Field label={t("workspace.f_colour")}>
               <select
                 value={draft.color}
                 onChange={(e) => setDraft({ ...draft, color: e.target.value })}
               >
                 {Object.keys(palette).map((k) => (
                   <option key={k} value={k}>
-                    {k}
+                    {t(`workspace.color.${k}`)}
                   </option>
                 ))}
               </select>
             </Field>
-            <Field label="Description" grow>
+            <Field label={t("workspace.f_description")} grow>
               <input
                 value={draft.description}
                 onChange={(e) => setDraft({ ...draft, description: e.target.value })}
               />
             </Field>
             <div>
-              <button type="submit">Create</button>
+              <button type="submit">{t("common.create")}</button>
             </div>
           </div>
         </form>
       </Panel>
 
       <div className="grid row2">
-        <Panel title="Watchlists">
+        <Panel title={t("workspace.watch_h")}>
           {error && <ErrorNote error={error} onRetry={load} />}
           {!lists ? (
             <Loading />
           ) : lists.length === 0 ? (
-            <Empty title="No watchlists yet" />
+            <Empty title={t("workspace.empty_watch")} />
           ) : (
             <TableWrap>
               <table>
                 <thead>
                   <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Items</th>
-                    <th scope="col">Actions</th>
+                    <th scope="col">{t("workspace.th_name")}</th>
+                    <th scope="col">{t("workspace.th_items")}</th>
+                    <th scope="col">{t("workspace.th_actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -813,30 +827,30 @@ function WatchlistsTab({
                         <span style={{ display: "flex", gap: 6 }}>
                           <select
                             className="small"
-                            aria-label={`Recolour ${w.name}`}
+                            aria-label={t("workspace.recolour", { name: w.name })}
                             value={w.color}
                             onChange={async (e) => {
                               await updateWatchlist(w.id, { color: e.target.value });
-                              notify(`${w.name} recoloured`);
+                              notify(t("workspace.toast_recoloured", { name: w.name }));
                               load();
                             }}
                           >
                             {Object.keys(palette).map((k) => (
                               <option key={k} value={k}>
-                                {k}
+                                {t(`workspace.color.${k}`)}
                               </option>
                             ))}
                           </select>
                           <ConfirmButton
-                            confirmLabel="Delete?"
+                            confirmLabel={t("workspace.confirm_delete")}
                             onConfirm={async () => {
                               await deleteWatchlist(w.id);
                               if (selected === w.id) setSelected(null);
-                              notify(`${w.name} deleted`);
+                              notify(t("workspace.toast_watch_deleted", { name: w.name }));
                               load();
                             }}
                           >
-                            Delete
+                            {t("common.delete")}
                           </ConfirmButton>
                         </span>
                       </td>
@@ -848,12 +862,9 @@ function WatchlistsTab({
           )}
         </Panel>
 
-        <Panel
-          title="Items"
-          note="Paste OCIDs to add several at once. Duplicates already on the list are ignored."
-        >
+        <Panel title={t("workspace.items_h")} note={t("workspace.items_p")}>
           {selected === null ? (
-            <Empty title="Select a watchlist" />
+            <Empty title={t("workspace.select_watch")} />
           ) : (
             <>
               <textarea
@@ -870,7 +881,11 @@ function WatchlistsTab({
                     try {
                       const r = await addWatchlistItems(selected, ocids);
                       setOcids("");
-                      notify(r.added === 0 ? "Nothing added — all already listed" : `${r.added} added`);
+                      notify(
+                        r.added === 0
+                          ? t("workspace.toast_nothing_added")
+                          : t("workspace.toast_added", { count: r.added }),
+                      );
                       setItems(r.items);
                       load();
                     } catch (e) {
@@ -878,21 +893,21 @@ function WatchlistsTab({
                     }
                   }}
                 >
-                  Add OCIDs
+                  {t("workspace.btn_add_ocids")}
                 </button>
               </div>
               <div style={{ marginTop: 14 }}>
                 {!items ? (
                   <Loading />
                 ) : items.length === 0 ? (
-                  <Empty title="Empty" hint="Nothing tracked here yet." />
+                  <Empty title={t("workspace.empty_items")} hint={t("workspace.empty_items_hint")} />
                 ) : (
                   <TableWrap>
                     <table>
                       <thead>
                         <tr>
-                          <th scope="col">OCID</th>
-                          <th scope="col">Added</th>
+                          <th scope="col">{t("workspace.th_ocid")}</th>
+                          <th scope="col">{t("workspace.th_added")}</th>
                           <th scope="col" />
                         </tr>
                       </thead>
@@ -905,17 +920,17 @@ function WatchlistsTab({
                             <td className="muted mono">{when(it.added_at)}</td>
                             <td>
                               <ConfirmButton
-                                confirmLabel="Remove?"
+                                confirmLabel={t("workspace.confirm_remove")}
                                 onConfirm={async () => {
                                   await deleteWatchlistItem(it.id);
-                                  notify("Removed from watchlist");
+                                  notify(t("workspace.toast_removed"));
                                   getWatchlist(selected)
                                     .then((d) => setItems(d.items))
                                     .catch(() => undefined);
                                   load();
                                 }}
                               >
-                                Remove
+                                {t("workspace.btn_remove")}
                               </ConfirmButton>
                             </td>
                           </tr>
@@ -937,6 +952,7 @@ function WatchlistsTab({
    Saved views
    ========================================================================== */
 function ViewsTab({ notify }: { notify: (m: string) => void }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<SavedView[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState({ name: "", description: "", payload: "" });
@@ -962,15 +978,12 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
 
   return (
     <>
-      <Panel
-        title="New saved view"
-        note="A named filter configuration, stored as JSON so the same slice of the data can be recalled exactly."
-      >
+      <Panel title={t("workspace.new_view")} note={t("workspace.new_view_p")}>
         <form
           onSubmit={async (e) => {
             e.preventDefault();
             if (draft.payload.trim() && !parsed?.ok) {
-              setError(`Payload is not valid JSON: ${parsed?.error}`);
+              setError(t("api.bad_json", { err: parsed?.error }));
               return;
             }
             try {
@@ -980,7 +993,7 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
                 payload: (parsed?.ok ? parsed.value : {}) as Record<string, unknown>,
               });
               setDraft({ name: "", description: "", payload: "" });
-              notify("View saved");
+              notify(t("workspace.toast_view_saved"));
               load();
             } catch (err) {
               setError((err as Error).message);
@@ -988,24 +1001,30 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
           }}
         >
           <div className="form-grid">
-            <Field label="Name" grow>
+            <Field label={t("workspace.f_name")} grow>
               <input
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                placeholder="High value, open tender"
+                placeholder={t("workspace.ph_view_name")}
                 required
               />
             </Field>
-            <Field label="Description" grow>
+            <Field label={t("workspace.f_description")} grow>
               <input
                 value={draft.description}
                 onChange={(e) => setDraft({ ...draft, description: e.target.value })}
               />
             </Field>
             <Field
-              label="Payload (JSON)"
+              label={t("workspace.f_payload")}
               grow
-              hint={parsed?.ok ? "Valid JSON." : draft.payload ? "Not valid JSON yet." : "Optional."}
+              hint={
+                parsed?.ok
+                  ? t("workspace.json_ok")
+                  : draft.payload
+                    ? t("workspace.json_bad")
+                    : t("workspace.json_optional")
+              }
             >
               <textarea
                 value={draft.payload}
@@ -1015,28 +1034,28 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
               />
             </Field>
             <div>
-              <button type="submit">Save view</button>
+              <button type="submit">{t("workspace.btn_save_view")}</button>
             </div>
           </div>
         </form>
       </Panel>
 
-      <Panel title="Saved views">
+      <Panel title={t("workspace.views_h")}>
         {error && <ErrorNote error={error} onRetry={load} />}
         {!items ? (
           <Loading />
         ) : items.length === 0 ? (
-          <Empty title="No saved views" />
+          <Empty title={t("workspace.empty_views")} />
         ) : (
           <TableWrap wide>
             <table>
               <thead>
                 <tr>
-                  <th scope="col">Name</th>
-                  <th scope="col">Description</th>
-                  <th scope="col">Payload</th>
-                  <th scope="col">Updated</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col">{t("workspace.th_name")}</th>
+                  <th scope="col">{t("workspace.f_description")}</th>
+                  <th scope="col">{t("workspace.th_payload")}</th>
+                  <th scope="col">{t("workspace.th_updated")}</th>
+                  <th scope="col">{t("workspace.th_actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1059,17 +1078,17 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
                                 const parsedEdit = JSON.parse(editText) as Record<string, unknown>;
                                 await updateView(v.id, { payload: parsedEdit });
                                 setEditing(null);
-                                notify("View updated");
+                                notify(t("workspace.toast_view_updated"));
                                 load();
                               } catch (err) {
                                 setError((err as Error).message);
                               }
                             }}
                           >
-                            Save
+                            {t("common.save")}
                           </button>
                           <button className="ghost small" onClick={() => setEditing(null)}>
-                            Cancel
+                            {t("common.cancel")}
                           </button>
                         </span>
                       ) : (
@@ -1086,17 +1105,17 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
                             setEditText(v.payload);
                           }}
                         >
-                          Edit
+                          {t("common.edit")}
                         </button>
                         <ConfirmButton
-                          confirmLabel="Delete?"
+                          confirmLabel={t("workspace.confirm_delete")}
                           onConfirm={async () => {
                             await deleteView(v.id);
-                            notify("View deleted");
+                            notify(t("workspace.toast_view_deleted"));
                             load();
                           }}
                         >
-                          Delete
+                          {t("common.delete")}
                         </ConfirmButton>
                       </span>
                     </td>
@@ -1115,6 +1134,7 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
    Activity
    ========================================================================== */
 function ActivityFeed() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<ActivityRecord[] | null>(null);
   useEffect(() => {
     getActivity(20)
@@ -1123,29 +1143,31 @@ function ActivityFeed() {
   }, []);
   if (!items || items.length === 0) return null;
   return (
-    <Panel title="Recent workspace activity" note="Every create, update and delete is recorded, so the working history survives a session.">
+    <Panel title={t("workspace.activity_h")} note={t("workspace.activity_p")}>
       <TableWrap>
         <table>
           <thead>
             <tr>
-              <th scope="col">When</th>
-              <th scope="col">Entity</th>
-              <th scope="col">Action</th>
-              <th scope="col">Detail</th>
+              <th scope="col">{t("workspace.th_when")}</th>
+              <th scope="col">{t("workspace.th_entity")}</th>
+              <th scope="col">{t("workspace.th_action")}</th>
+              <th scope="col">{t("workspace.th_detail")}</th>
             </tr>
           </thead>
           <tbody>
             {items.map((a) => (
               <tr key={a.id}>
                 <td className="muted mono">{when(a.at)}</td>
-                <td>{a.entity}</td>
+                <td>{t(`workspace.entity.${a.entity}`, { defaultValue: a.entity })}</td>
                 <td>
                   <Pill
                     tone={
                       a.action === "delete" ? "risk" : a.action === "create" ? "ok" : "info"
                     }
                   >
-                    {a.action}
+                    {t(`workspace.action.${actionKey(a.action)}`, {
+                      defaultValue: a.action,
+                    })}
                   </Pill>
                 </td>
                 <td className="muted">{a.detail || "—"}</td>
