@@ -21,6 +21,12 @@ shap==0.51.0
 matplotlib==3.11.2
 joblib==1.4.2
 
+# --- contract matrix (scripts/23 reads docs/contract_matrix.yaml) ---
+PyYAML==6.0.3
+
+# --- XAI consistency, section H (scripts/24: LIME vs SHAP) ---
+lime==0.2.0.1
+
 # --- tests ---
 pytest==9.1.1
 

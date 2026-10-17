@@ -1,0 +1,423 @@
+# Contract matrix (матрица контракта) — the fixed acceptance agreement between
+# the business and the model. Machine-readable source of truth; the human
+# report is docs/contract_matrix.md.
+#
+# Acceptance rule: the model is ACCEPTED only when every row is "met" or a
+# documented "not_verifiable". Any "unmet" row fails the contract.
+# scripts/23_check_contract.py recomputes every verifiable status from the
+# artefacts of the last cycle and exits non-zero on any of:
+#   * a row recorded as "met"/"unmet" whose artefact no longer agrees,
+#   * a metric whose artefact (data source) is missing,
+#   * a model KPI without at least one existing business KPI,
+#   * a "not_verifiable" row without a documented reason and doc reference.
+#
+# Row schema:
+#   id            unique row id (B* business, M* model)
+#   title         short name (RU)
+#   type          business | model
+#   linked_to     for model KPIs: >= 1 business KPI id (required)
+#   source        corpus | external | split | tooling
+#   metric        metric and formula
+#   threshold     acceptance threshold (mirrors check + comparator + limit)
+#   check         id in the checker's registry (null only for not_verifiable)
+#   comparator    ">=" | "<=" | ">" | "<" | "=="
+#   limit         numeric threshold the computed value is compared against
+#   artifact       file the value is recomputed from (must exist on disk)
+#   status        met | unmet | not_verifiable — recorded 2026-10-17
+#   note          evidence / current value
+#   verifiable    false => reason + doc_ref are mandatory
+
+meta:
+  version: 1
+  frozen_at: "2026-10-17"
+  scope: "production band configuration (v0 baseline, votes >= 3 of 4 detectors)"
+  acceptance_rule: "model accepted iff every row is 'met' or a documented 'not_verifiable'"
+  checker: scripts/23_check_contract.py
+  human_report: docs/contract_matrix.md
+  provenance: docs/data_provenance.md
+  disclaimer: "Indicators of potential risk, not evidence of corruption."
+
+rows:
+  # ------------------------------------------------------------------
+  # Business KPIs — what the business gets if the model is accepted
+  # ------------------------------------------------------------------
+  - id: B1
+    title: "Обогащение верхнего списка внешней меткой"
+    type: business
+    linked_to: []
+    source: external
+    metric: "precision@200 против метки AAP (доля позитивов в топ-200 ранжирования max_score)"
+    threshold: "precision@200 >= 3x базовой доли корпуса (3 x 0.415% = 1.24%)"
+    check: precision_at_200_all
+    comparator: ">="
+    limit: 0.0124
+    artifact: results/tables/external_metrics.csv
+    status: unmet
+    note: "0 совпадений в топ-200 (precision@200 = 0.0)"
+
+  - id: B2
+    title: "Экономическая польза экранинга"
+    type: business
+    linked_to: []
+    source: split
+    metric: "cost = c_miss*FN + FP при c_miss=200: стоимость правила votes>=3 / стоимость «ничего не флагировать», tuning 2018-2021"
+    threshold: "отношение < 1.0 (правило дешевле, чем не флагировать ничего)"
+    check: cost_ratio_vs_no_flag_tuning_c200
+    comparator: "<"
+    limit: 1.0
+    artifact: results/tables/threshold_sweep.csv
+    status: unmet
+    note: "39,008 против 38,800 (отношение 1.0053)"
+
+  - id: B3
+    title: "Устойчивость полос во времени"
+    type: business
+    linked_to: []
+    source: split
+    metric: "lift (precision / базовая доля метки) правила votes>=3 в каждом периоде отдельно"
+    threshold: "lift >= 1.0 и в 2018-2021, и в 2022-2024"
+    check: consensus_lift_min_period
+    comparator: ">="
+    limit: 1.0
+    artifact: results/tables/threshold_sweep.csv
+    status: unmet
+    note: "tuning 0.805 (правило хуже случайного), holdout 3.093"
+
+  - id: B4
+    title: "Справедливость полос (нет необъяснённого смещения)"
+    type: business
+    linked_to: []
+    source: corpus
+    metric: "число вердиктов «нарушение» + «предупреждение» в аудите смещения (раздел E, 79 групп)"
+    threshold: "0 невыполненных отклонений (критерий остановки C6)"
+    check: bias_unexplained_count
+    comparator: "<="
+    limit: 0
+    artifact: results/methodology/bias_audit.json
+    status: unmet
+    note: "24 нарушения + 8 предупреждений"
+
+  - id: B5
+    title: "Объяснение для каждой процедуры"
+    type: business
+    linked_to: []
+    source: tooling
+    metric: "скрипт объяснения (SHAP, раздел H «право на объяснение») возвращает разбор для любой процедуры корпуса"
+    threshold: "разбор выдаётся без ошибок для произвольного ocid из корпуса"
+    check: explanation_any_ocid
+    comparator: ">="
+    limit: 1.0
+    artifact: scripts/17_explain_ocid.py
+    status: met
+    note: "CLI scripts/17: работает для любого ocid; продуктовый API объяснения не выдаётся"
+
+  - id: B6
+    title: "Юридическая допустимость признаков"
+    type: business
+    linked_to: []
+    source: corpus
+    metric: "защищённые атрибуты (пол, национальность, вероисповедание, возраст) отсутствуют среди 22 признаков; сильные прокси структурных групп документированы"
+    threshold: "0 защищённых признаков; прокси |r|>=0.3 — только определительные, задокументированы"
+    check: protected_attributes_absent
+    comparator: ">="
+    limit: 1.0
+    artifact: results/methodology/bias_audit.json
+    status: met
+    note: "единственный флаг |r|>=0.3 — supplier_award_count_log (r=-0.77) ↔ «первый контракт», это определение"
+
+  - id: B7
+    title: "Воспроизводимость выдачи"
+    type: business
+    linked_to: []
+    source: tooling
+    metric: "Jaccard между рефитом на полном корпусе и продакшн-списком"
+    threshold: "== 1.0 (точное воспроизведение)"
+    check: refit_matches_production
+    comparator: ">="
+    limit: 1.0
+    artifact: results/methodology/cycle_framework.json
+    status: met
+    note: "Jaccard 1.0, консенсус 3,031 воспроизводится точно"
+
+  - id: B8
+    title: "Внешняя проверка пар «заказчик–поставщик»"
+    type: business
+    linked_to: []
+    source: external
+    metric: "внешняя валидация поведенческих признакей-связей на независимом реестре пар"
+    threshold: "внешняя метка, содержащая пары «заказчик–поставщик»"
+    check: null
+    verifiable: false
+    reason: "AAP публикует поставщика, а не пару: внешняя проверка пар структурно невыполнима на доступных источниках"
+    doc_ref: "docs/thesis_text.md, раздел «Что не удалось подтвердить», п.2; cycle_log.md, раздел B"
+    status: not_verifiable
+    note: "документированное «не проверяемо», не «пройдено»"
+
+  - id: B9
+    title: "Верификация внешних реестров (ANSC, судебный, ANI)"
+    type: business
+    linked_to: []
+    source: external
+    metric: "сверка инвентаризации внешних источников с их актуальными публикациями"
+    threshold: "источники проверены из окружения проекта"
+    check: null
+    verifiable: false
+    reason: "legis.md блокирует автоматические запросы (Cloudflare 403), decisions.ansc.md недоступен по DNS; верификация не завершена"
+    doc_ref: "reports/legal_and_sources.md (помечен «требует проверки»); docs/rag_sources.md, раздел «Пробелы»"
+    status: not_verifiable
+    note: "2026-10-17 частично разблокировано: tender.gov.md и faolex.fao.org доступны (корпус RAG скачан); полная верификация — при доступе к legis.md/ANSC или файлах от автора"
+
+  - id: B10
+    title: "Объяснение с нормативными источниками для 100% процедур в high/critical"
+    type: business
+    linked_to: []
+    source: corpus
+    metric: "доля процедур high/critical, чьё объяснение (SHAP top-3 простым языком) содержит хотя бы один нормативный фрагмент корпуса выше порога релевантности"
+    threshold: "== 1.0 (100% процедур)"
+    check: rag_coverage_high_critical
+    comparator: ">="
+    limit: 1.0
+    artifact: results/rag/pipeline_summary.json
+    status: met
+    note: "7662 из 7662 (critical 3031 + high 4631); корпус — закон 131/2015 + методматериал AAP + реестр интердикций (docs/rag_sources.md)"
+
+  # ------------------------------------------------------------------
+  # Model KPIs — what the model must deliver to unlock the business KPI
+  # ------------------------------------------------------------------
+  - id: M1
+    title: "precision@200 на внешних данных"
+    type: model
+    linked_to: [B1]
+    source: external
+    metric: "precision@200 = (AAP-позитивы в топ-200) / 200, продакшн-ранжирование max_score"
+    threshold: ">= 1.24% (3x базовой доли 0.415%)"
+    check: precision_at_200_all
+    comparator: ">="
+    limit: 0.0124
+    artifact: results/tables/external_metrics.csv
+    status: unmet
+    note: "0.0; бутстрап-ДИ [0.0, 0.0]"
+
+  - id: M2
+    title: "recall@200 на внешних данных"
+    type: model
+    linked_to: [B1]
+    source: external
+    metric: "recall@200 = (AAP-позитивы в топ-200) / 633"
+    threshold: ">= 0.05 (топ-200 находит не менее 5% размеченных процедур)"
+    check: recall_at_200_all
+    comparator: ">="
+    limit: 0.05
+    artifact: results/tables/external_metrics.csv
+    status: unmet
+    note: "0.0"
+
+  - id: M3
+    title: "PR-AUC выше базовой доли"
+    type: model
+    linked_to: [B1]
+    source: external
+    metric: "PR-AUC(max_score) / базовая доля позитивов метки (0.415%)"
+    threshold: ">= 1.5 (дискриминация заметно выше случайного уровня)"
+    check: pr_auc_ratio_all
+    comparator: ">="
+    limit: 1.5
+    artifact: results/tables/external_metrics.csv
+    status: unmet
+    note: "отношение 1.054 (PR-AUC 0.004377 при базе 0.004154)"
+
+  - id: M4
+    title: "ROC-AUC на tuning отличается от случайного"
+    type: model
+    linked_to: [B1, B3]
+    source: split
+    metric: "худший (кластерный бутстрап поставщиков) верхний край ДИ ROC-AUC на 2018-2021"
+    threshold: "< 0.5 (ДИ не включает 0.5 — связь со случайностью исключена)"
+    check: auc_tuning_ci_hi
+    comparator: "<"
+    limit: 0.5
+    artifact: results/tables/external_metrics.csv
+    status: unmet
+    note: "AUC 0.407; худший ДИ [0.358, 0.506] включает 0.5"
+
+  - id: M5
+    title: "Калибровка полос (монотонность внешней метки)"
+    type: model
+    linked_to: [B1]
+    source: external
+    metric: "доля AAP-позитивов по полосам low < medium < high < critical"
+    threshold: "строгая монотонность (1.0 = монотонно, 0.0 = есть инверсия)"
+    check: band_label_monotonic
+    comparator: ">="
+    limit: 1.0
+    artifact: results/tables/aap_label_by_band.csv
+    status: unmet
+    note: "инверсия: medium 0.329% < low 0.415% (critical 0.825%, high 0.518%)"
+
+  - id: M6
+    title: "Стабильность KS/PSI (дрейф ранжирования)"
+    type: model
+    linked_to: [B3]
+    source: split
+    metric: "максимальный PSI распределения скоров между tuning и holdout (по трём правилам ранжирования)"
+    threshold: "<= 0.25 (общепринятая граница умеренного дрейфа)"
+    check: drift_psi_max
+    comparator: "<="
+    limit: 0.25
+    artifact: results/tables/drift_periods.csv
+    status: unmet
+    note: "PSI 0.293 / 0.410 / 0.409; KS 0.21-0.26, p=0"
+
+  - id: M7
+    title: "Устойчивость порога по периодам"
+    type: model
+    linked_to: [B3]
+    source: split
+    metric: "минимальный lift правила votes>=3 среди периодов 2018-2021 и 2022-2024"
+    threshold: ">= 1.0 в каждом периоде"
+    check: consensus_lift_min_period
+    comparator: ">="
+    limit: 1.0
+    artifact: results/tables/threshold_sweep.csv
+    status: unmet
+    note: "min lift = 0.805 на 2018-2021"
+
+  - id: M8
+    title: "Экономика порога (C5) на tuning"
+    type: model
+    linked_to: [B2]
+    source: split
+    metric: "cost(votes>=3) / cost(«ничего не флагировать») при c_miss=200 на 2018-2021"
+    threshold: "< 1.0"
+    check: cost_ratio_vs_no_flag_tuning_c200
+    comparator: "<"
+    limit: 1.0
+    artifact: results/tables/threshold_sweep.csv
+    status: unmet
+    note: "1.0053 (критерий остановки C5 провален на tuning)"
+
+  - id: M9
+    title: "Граница смещения (раздел E)"
+    type: model
+    linked_to: [B4]
+    source: corpus
+    metric: "число вердиктов «нарушение»/«предупреждение» аудита смещения (критерий остановки C6)"
+    threshold: "== 0"
+    check: bias_unexplained_count
+    comparator: "<="
+    limit: 0
+    artifact: results/methodology/bias_audit.json
+    status: unmet
+    note: "32 невыполненных отклонения из 79 групп"
+
+  - id: M10
+    title: "Согласованность LIME и SHAP (раздел H)"
+    type: model
+    linked_to: [B5]
+    source: corpus
+    metric: "медиана Spearman(LIME, SHAP) по 60 процедурам; оба метода объясняют одну и ту же функцию выхода IsolationForest (f = expected + Σshap, аддитивность 0.0); устойчивость вердикта проверена на 4 трактовках «вклада»"
+    threshold: ">= 0.70 для вердикта «согласованы» (порог предложен агентом, утверждение — за автором)"
+    check: xai_spearman_median
+    comparator: ">="
+    limit: 0.70
+    artifact: results/methodology/xai_consistency.json
+    status: unmet
+    note: "медиана Spearman -0.68 (совпадение знака 0.11); расхождение устойчиво к трактовке «вклада» (все 4 варианта ниже порога «частично» 0.40); стабильность LIME 0.98 — расхождение систематическое; разбор причин — reports/xai_report.md, разд. 6"
+
+  - id: M11
+    title: "Согласованность детекторов (κ)"
+    type: model
+    linked_to: [B7]
+    source: corpus
+    metric: "средняя попарная Cohen's kappa четырёх детекторов"
+    threshold: ">= 0.40 (критерий остановки C1)"
+    check: kappa_mean
+    comparator: ">="
+    limit: 0.40
+    artifact: results/methodology/agreement_matrix.json
+    status: unmet
+    note: "κ = 0.2497 (минимальная пара 0.089)"
+
+  - id: M12
+    title: "Стабильность состава топ-200 по сидам"
+    type: model
+    linked_to: [B7]
+    source: tooling
+    metric: "средний Jaccard top-200 против базового сида за 20 прогонов"
+    threshold: ">= 0.60 (критерий остановки C2)"
+    check: seed_top200_jaccard_mean
+    comparator: ">="
+    limit: 0.60
+    artifact: results/methodology/robustness_seeds.json
+    status: unmet
+    note: "0.4696 (минимум 0.2987)"
+
+  - id: M13
+    title: "Стабильность числа консенсусов по сидам"
+    type: model
+    linked_to: [B7]
+    source: tooling
+    metric: "cv (%) числа консенсусов за 20 сидов"
+    threshold: "<= 10% (критерий остановки C2)"
+    check: seed_consensus_cv_pct
+    comparator: "<="
+    limit: 10.0
+    artifact: results/methodology/robustness_seeds.json
+    status: met
+    note: "cv 4.758% (2,807-3,259)"
+
+  - id: M14
+    title: "Допустимость признаков (прокси-скан)"
+    type: model
+    linked_to: [B6]
+    source: corpus
+    metric: "список признаков с |r| >= 0.3 к структурным группам (раздел E, E.4) совпадает с задокументированным"
+    threshold: "['supplier_award_count_log'] и ни одного защищённого атрибута среди признаков"
+    check: protected_attributes_absent
+    comparator: ">="
+    limit: 1.0
+    artifact: results/methodology/bias_audit.json
+    status: met
+    note: "прокси определительный (r=-0.77); защищённых атрибутов в данных нет"
+
+  - id: M15
+    title: "Наличие объяснения для каждой процедуры (раздел I)"
+    type: model
+    linked_to: [B5]
+    source: tooling
+    metric: "функциональный тест: scripts/17 объясняет произвольный ocid корпуса (вердикты детекторов + 5 сильнейших SHAP-вкладов)"
+    threshold: "exit code 0 и непустой SHAP-разбор для произвольного ocid"
+    check: explanation_any_ocid
+    comparator: ">="
+    limit: 1.0
+    artifact: scripts/17_explain_ocid.py
+    status: met
+    note: "для LOF/OCSVM пер-feature объяснение невычислимо по построению — сказано явно в выдаче"
+
+  - id: M16
+    title: "Качество нормативного слоя: recall@3 (критерий C7)"
+    type: model
+    linked_to: [B10]
+    source: corpus
+    metric: "recall@3 на самосупервизном retrieval-тесте корпуса (запрос из топ-IDF-термов статьи, ожидаемый фрагмент — сама статья)"
+    threshold: ">= 0.60 (критерий остановки C7; порог предложен агентом, утверждение — за автором)"
+    check: rag_recall_at_3
+    comparator: ">="
+    limit: 0.60
+    artifact: results/methodology/rag_eval.json
+    status: met
+    note: "recall@3 = 1.0 (recall@1 0.925, MRR 0.9625); тест самосупервизный — ограничение оговорено в reports/rag_eval.md"
+
+  - id: M17
+    title: "Отсутствие галлюцинированных ссылок (критерий C7)"
+    type: model
+    linked_to: [B10]
+    source: corpus
+    metric: "доля цитат, не прошедших дословную перепроверку по фрагментам корпуса (тест retrieval + выборка процедур high/critical)"
+    threshold: "== 0"
+    check: rag_hallucination_rate
+    comparator: "<="
+    limit: 0.0
+    artifact: results/methodology/rag_eval.json
+    status: met
+    note: "0 нарушений из 1105 цитат; ответы извлекательные — цитата структурно не может быть выдумана и всё равно перепроверяется"
