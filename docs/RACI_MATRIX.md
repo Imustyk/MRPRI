@@ -25,7 +25,7 @@ Every task corresponds to real work in the repository - the artefact column name
 | A1 | Verify source endpoints: empty HTTP 200 bodies, date-cursor pagination | `scripts/00_check_api.py; docs/API_INVESTIGATION_REPORT.md` | A/R | I |  |  | C |  |
 | A2 | Build the corpus: OCID inventory + immutable fetch of every package | `scripts/01a_scan_ocids.py; 01b_fetch_records.py` | A/R | I |  |  | C |  |
 | A3 | Normalise to analysis-ready documents (merge compiled releases, parties, lots) | `scripts/02_normalize_mongo.py; src/mtender/normalize.py, ocds.py` | A/R | I | C |  |  |  |
-| A4 | Resolve supplier identity: IDNO extraction, 491 whitespace-padded IDs | `src/mtender/ocds.py, normalize.py (_IDNO_IN_ID, _idno_from)` | A/R | I | C |  |  |  |
+| A4 | Resolve supplier identity: IDNO extraction, 491 whitespace-padded IDs (536 phantoms under the cycle's full v4 normalisation) | `src/mtender/ocds.py, normalize.py (_IDNO_IN_ID, _idno_from)` | A/R | I | C |  |  |  |
 | A5 | Detect and quarantine corrupt values (award total inflated ~10 orders of magnitude) | `src/mtender/normalize.py (plausible_award_total, AWARD_AMOUNT_VS_ESTIMATE_MAX)` | A/R | I | C |  |  |  |
 | A6 | Measure coverage and non-response: 31.3% bid data, 77.3% award data, 2,617 inverted periods | `scripts/02 (validation report); src/mtender/features.py` | A/R | C | I |  |  |  |
 | A7 | Independent cross-checks: MoF monthly extract, AAP blacklist load | `scripts/10_load_mof_opendata.py; 11_load_blacklist.py` | A/R |  | I |  | C |  |
@@ -91,7 +91,7 @@ Every task corresponds to real work in the repository - the artefact column name
 | 20,000-row seeded sample for LOF / SVM | `scripts/06_detect_anomalies.py` | A prefix would fit on 2018 and score 2024. The design is defensible but undocumented outside the code |
 | Spearman as the default correlation | `backend/app/analytics.py` | Changes the headline relationship from +0.001 to +0.989. It is the right choice, and it needs to be argued in Chapter 2, not left in code |
 
-**4. Data defects constrain what may be claimed, and they stay in the data.** The corrupt award value is now guarded at normalisation, but the raw document is immutable and still carries it; 491 supplier IDs remain whitespace-padded upstream; bid data exists for 31.3% of procedures and award data for 77.3%. Chapter 3 must state these as limits on the result. Ownership of the regenerated corpus (full re-ingest vs. the current guarded normalisation) is currently unclear - nobody is `A` for the decision.
+**4. Data defects constrain what may be claimed, and they stay in the data.** The corrupt award value is now guarded at normalisation, but the raw document is immutable and still carries it; 491 supplier IDs remain whitespace-padded upstream (the cycle's `v4_datafix` variant measures the full normalisation at model level: 536 phantom identities merged, behavioural features recomputed); bid data exists for 31.3% of procedures and award data for 77.3%. Chapter 3 must state these as limits on the result. Ownership of the regenerated corpus (full re-ingest vs. the current guarded normalisation) is currently unclear - nobody is `A` for the decision.
 
 **5. Synthetic and real results can be confused.** `backend/ml/pipeline.py` still writes `data/processed/graph.json`, which the API never reads. It exists for the Chapter 3 evaluation experiment. Risk: a synthetic-derived number quoted next to a real one. `A` for keeping the two separated is unassigned.
 

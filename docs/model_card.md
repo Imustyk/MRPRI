@@ -70,7 +70,7 @@ Four groups: financial (`log_award_value`, `log_award_total`, `value_vs_cpv_medi
 - **Feature halves** (`scripts/21`): bands built from one half of the features agree with bands from the other half only at Jaccard ≈ 0.18–0.26 (group split 0.01) — the same order as detector-to-detector agreement; bands are not reproducible from half a feature set.
 - **Per-feature verdicts** (`reports/circularity_check.md`, `results/tables/circularity_verdicts.csv`): 18/22 features show a *confirmed external association* with the AAP label (including inverse ones — `no_bid_data` AUC 0.21, `cancelled` 0.49), 1 is confirmed internally only (`single_bidder`: external association present but direction inconsistent across periods), 3 are unconfirmed (`long_deadline`, `no_award_after_tender`, the constant `accelerated_like`). "Confirmed" means a confirmed association with this single label source — not validity as a risk indicator; internally-confirmed features may be used as model description only, never as evidence.
 
-## 6a. Iterative validation (versions v0–v3; protocol in `cycle_log.md`)
+## 6a. Iterative validation (versions v0–v4; protocol in `cycle_log.md`)
 
 The model was put through an iterative polishing loop: one change per cycle, the same metric suite each time (`scripts/20`), decisions made on the 2018–2021 tuning split only (194 AAP positives), holdout 2022–2024 (439) touched once per cycle for final assessment, improvement counted only if the paired-bootstrap ΔROC-AUC CI excludes zero.
 
@@ -80,10 +80,11 @@ The model was put through an iterative polishing loop: one change per cycle, the
 | v1 | drop duplicate share column | +0.003 [−0.003, +0.010] | consensus −21.5%, κ 0.250→0.217 | not adopted (within CI) |
 | v2 | rank combination max→mean percentile | **−0.033 [−0.056, −0.009]** | top-200 seed Jaccard 0.479→0.671 | rejected (significant tuning regression) |
 | v3 | drop behavioural group | −0.025 [−0.056, +0.004] | consensus −50.8%, κ→0.186, PSI 0.29→0.60 | not adopted |
+| v4 | data-artifact fixes (`apply_datafix`): full supplier-id normalisation (536 phantom ids merged, 14,477→13,941; behavioural features recomputed), explicit P99.9 caps on the two value features that had none in production (`log_award_value` ≤ 17.50, `log_award_total` ≤ 18.76), 7,712 placeholder localities cleaned, duplicate column dropped as in v1 | +0.002 [−0.006, +0.011] | consensus −21.4% (3,031→2,381), κ 0.250→0.217, PSI 0.29→0.38 | not adopted (within CI; defects fixed, external metrics unchanged) |
 
-**Stopped after 3 cycles with no improvement beyond the CI** (3 of 10 budget spent). Proposed convergence criteria — mean pairwise κ ≥ 0.40, top-200 seed Jaccard ≥ 0.60, consensus-count cv ≤ 10%, yearly consensus-share range ≥ 0.25, threshold beats flag-nothing at c_miss = 200 on both splits, section-E bias audit with no "violation" and no "warning" verdicts (C6, added at the author's request and applied retroactively to every version), RAG explanation layer with zero hallucinated references and recall@3 ≥ 0.60 (C7, added at the author's request), circularity checks passed — are met by **no version** (best: v2 at 4/8, passing C2, C5-on-holdout and C7).
+**Stopped after 4 cycles with no improvement beyond the CI** (4 of 10 budget spent). Proposed convergence criteria — mean pairwise κ ≥ 0.40, top-200 seed Jaccard ≥ 0.60, consensus-count cv ≤ 10%, yearly consensus-share range ≥ 0.25, threshold beats flag-nothing at c_miss = 200 on both splits, section-E bias audit with no "violation" and no "warning" verdicts (C6, added at the author's request and applied retroactively to every version), RAG explanation layer with zero hallucinated references and recall@3 ≥ 0.60 (C7, added at the author's request), circularity checks passed — are met by **no version** (best: v2 at 4/8, passing C2, C5-on-holdout and C7).
 
-**Completion criterion for the polishing loop** (proposed to the author): the closing statement *"the model converges and agrees with independent sources"* is permissible only when **all four** conditions hold — (1) ensemble convergence (mean pairwise κ ≥ 0.40); (2) stability across seeds, bootstrap and periods (no sign change of the external association between the tuning and holdout splits); (3) circularity checks fully executed (section B); (4) holdout metrics stable between the last two versions (overlapping bootstrap CIs of holdout-AUC). Status at the end of the cycle: **2 of 4** — (3) and (4) hold (v2 holdout-AUC 0.544 [0.516, 0.570] vs v3 0.580 [0.558, 0.601], CIs overlap); (1) and (2) do not (κ 0.19–0.25; the AUC sign flips between periods in every version). The honest current statement is therefore *not* "the ensemble converges and agrees with independent sources": it is that the ensemble is reproducible and documented, but its bands have not passed independent external validation and do not meet the convergence criteria. In all cases the output remains an indicator of potential risk, not evidence of corruption. Dynamics: `reports/cycle_dynamics.md`, `results/figures/cycle_dynamics.png`, `results/tables/cycle_metrics.csv`.
+**Completion criterion for the polishing loop** (proposed to the author): the closing statement *"the model converges and agrees with independent sources"* is permissible only when **all four** conditions hold — (1) ensemble convergence (mean pairwise κ ≥ 0.40); (2) stability across seeds, bootstrap and periods (no sign change of the external association between the tuning and holdout splits); (3) circularity checks fully executed (section B); (4) holdout metrics stable between the last two versions (overlapping bootstrap CIs of holdout-AUC). Status at the end of cycle 3: **2 of 4** — (3) and (4) hold (v2 holdout-AUC 0.544 [0.516, 0.570] vs v3 0.580 [0.558, 0.601], CIs overlap); (1) and (2) do not (κ 0.19–0.25; the AUC sign flips between periods in every version). After cycle 4, condition (4) read as "the last two versions" stops holding: v3 [0.558, 0.601] and v4 [0.504, 0.554] do not overlap (v4 still overlaps v0 [0.490, 0.544]); status after cycle 4: **1 of 4**. The honest current statement is therefore *not* "the ensemble converges and agrees with independent sources": it is that the ensemble is reproducible and documented, but its bands have not passed independent external validation and do not meet the convergence criteria. In all cases the output remains an indicator of potential risk, not evidence of corruption. Dynamics: `reports/cycle_dynamics.md`, `results/figures/cycle_dynamics.png`, `results/tables/cycle_metrics.csv`.
 
 ## 7. Decision-boundary economics
 
@@ -114,10 +115,10 @@ No rule beats "flag nothing" at `c_miss` ≤ 50. The screening pays only under `
 
 ## 9. Recommendations (NOT applied; author's decision required)
 
-1. **Merge the duplicate share column** — consensus 3,031 → 2,379 (−21.5%), external AUC 0.4935 → 0.4974.
+1. **Merge the duplicate share column** — measured in cycle 4 (`v4_datafix`): consensus 3,031 → 2,381 (−21.4%), external AUC 0.4935 → 0.5031, tuning Δ +0.002 [−0.006, +0.011] — within CI; the shrink is caused by the duplicate, not by the id normalisation (v1 consensus 2,379).
 2. **Add a recalibration trigger** for the vote threshold (drift PSI 0.29–0.41; consensus share 4.3% → 0.69%).
 3. **Normalise percentiles within (value band × procedure type)** or state explicitly that ≥ 50 MDL contracts carry a low-information critical band.
-4. **Fix the placeholder locality** (7,712 rows) before the next run.
+4. **Fix the placeholder locality** (7,712 rows) — cleaned in `v4_datafix` (display/audit groups only; locality is not a model feature).
 5. **Record seed/parameters as part of the list version** (membership Jaccard 0.71 across seeds).
 6. Decide whether direct awards (51.5% of the corpus) are in scope at all.
 
@@ -187,7 +188,7 @@ decisions, the risk-indicator methodology) are documented, not hidden.
 .venv/bin/python scripts/17_explain_ocid.py --ocid <OCID>     # right to an explanation
 .venv/bin/python scripts/18_bias_audit.py                     # fairness audit
 .venv/bin/python scripts/19_final_verification.py             # re-derives every number above
-.venv/bin/python scripts/20_cycle_framework.py --variants v0 v1 v2 v3  # iterative cycle (v0–v3)
+.venv/bin/python scripts/20_cycle_framework.py --variants v0 v1 v2 v3 v4  # iterative cycle (v0–v4)
 .venv/bin/python scripts/21_circularity_check.py              # circularity check, section B
 .venv/bin/python scripts/22_cycle_dynamics.py                 # cycle → metrics dynamics
 .venv/bin/python scripts/23_check_contract.py                 # contract matrix: accept / not accept

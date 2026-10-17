@@ -4,6 +4,51 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-datafix-2026-10-18] — Iteration cycle 4 (v4_datafix): author's data-artifact fixes, measured
+
+Author-requested data-quality fixes, measured in the cycle protocol rather than applied on
+trust. **Production behaviour unchanged** (v0 remains the shipped configuration; replacing
+it is the author's explicit decision).
+
+### Added
+
+- `scripts/20_cycle_framework.py`: variant `v4_datafix` and `apply_datafix` — full
+  supplier-id normalisation (strip + internal-whitespace collapse + case folding:
+  **536 phantom supplier ids merged**, 14,477 → 13,941; behavioural features recomputed,
+  1,953 rows change `buyer_supplier_repeat_share`), explicit P99.9 winsorisation caps on
+  the two value features that had none in production (`log_award_value` ≤ 17.50,
+  `log_award_total` ≤ 18.76; the other three capped features already had caps in
+  `features.py`), cleanup of **7,712 literal 'locality' placeholder** rows in
+  `buyer_locality` (region is not a model feature — display/audit groups only), plus the
+  byte-identical duplicate column dropped as in v1.
+- `reports/cycle_4.md`, cycle-4 entry in `cycle_log.md`; `tests/test_cycle_protocol.py`
+  extended (variant set now v0–v4, functional `apply_datafix` test) — **150 tests total**.
+
+### Measured result
+
+v4 vs v0: tuning ΔAUC **+0.0022 [−0.0058, +0.0105]** — within the CI; consensus
+3,031 → **2,381** (≈ v1: the shrink comes from the duplicate, not the id normalisation);
+mean pairwise κ 0.250 → **0.217**; PSI 0.29 → 0.38; stop criteria **3/8** (unchanged).
+Conclusion: data defects are fixed and were **not** the cause of the contract-matrix
+failure — external metrics did not change beyond the interval. Contract matrix after the
+run (`scripts/23`): 9 met / 16 unmet / 2 not verifiable — unchanged. All headline numbers
+reproduce (`scripts/19`: v0–v3 anchors byte-identical; v4 is an extra row). Cycle-4
+completion criterion after this cycle: 1 of 4 (holdout CIs of the last two versions v3
+and v4 no longer overlap).
+
+### Changed
+
+- `docs/annotation.md` rewritten to the verified figures at the author's request: label
+  source stated as the AAP interdiction list (Lista de interdicție), 13,986 suppliers in
+  production (13,941 under full normalisation), 25 verifiable + 2 documented-not-verifiable
+  matrix rows, 150 tests, period-dependent AUC (0.41 tuning / 0.53 holdout), pay-off
+  statement matched to the artefacts (no rule beats flag-nothing at c_miss 10 and 50),
+  bias-audit headline findings, keywords.
+- `docs/model_card.md`, `docs/thesis_text.md`, `docs/METHODOLOGY_CYCLE.md`,
+  `docs/PROJECT_OVERVIEW.md`, `docs/RACI_MATRIX.md`: v4 cycle recorded; phantom-id counts
+  reconciled as 491 (strip-only) / 536 (full normalisation); completion criterion status
+  updated after cycle 4.
+
 ## [MTA-explanation-layer-2026-10-17] — Section H (LIME vs SHAP), RAG explanation layer, stop criterion C7
 
 Author-requested additions on top of the completed methodology cycle. **No production

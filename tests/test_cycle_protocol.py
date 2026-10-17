@@ -104,13 +104,46 @@ def test_variant_prefix_resolution():
     s20 = _load_script("20_cycle_framework.py")
     assert "v0_baseline" in s20.VARIANTS
     assert set(s20.VARIANTS) == {"v0_baseline", "v1_merge_duplicate",
-                                 "v2_mean_rank", "v3_drop_behavioural"}
+                                 "v2_mean_rank", "v3_drop_behavioural",
+                                 "v4_datafix"}
     # only the duplicate column separates v1 from v0
     assert s20.VARIANTS["v1_merge_duplicate"]["drop"] == ["winner_share_of_buyer_awards"]
+    # v4 = the v1 duplicate drop plus the measured data-artifact fixes
+    assert s20.VARIANTS["v4_datafix"]["drop"] == ["winner_share_of_buyer_awards"]
+    assert s20.VARIANTS["v4_datafix"]["datafix"] is True
     # the constant feature is part of the production feature set (documents why
     # the ANOVA guard above matters)
     from src.mtender.features import FEATURE_COLUMNS
     assert "accelerated_like" in FEATURE_COLUMNS
+
+
+def test_apply_datafix_merges_phantoms_and_caps():
+    """v4: whitespace/case phantoms merge; caps and locality cleanup apply."""
+    s20 = _load_script("20_cycle_framework.py")
+    df = pd.DataFrame({
+        "ocid": ["o1", "o2", "o3", "o4"],
+        "buyer_id": ["MD-IDNO-1", "MD-IDNO-1", "MD-IDNO-2", None],
+        "winner_id": ["MD-IDNO-9 ", "md-idno-9", "MD-IDNO-8", None],
+        "buyer_locality": ["locality", "mun.Chişinău", " LOCALITY ", "or.Orhei"],
+        "log_award_value": [8.0, 9.0, 10.0, 30.0],
+        "log_award_total": [8.5, 9.5, 10.5, 31.0],
+    })
+    out = s20.apply_datafix(df, caps={"log_award_value": 12.0,
+                                      "log_award_total": 13.0})
+    # one supplier after the merge: buyer 1 repeated the same (split) winner
+    assert out.loc[0, "buyer_supplier_repeat_share"] == 1.0
+    assert out.loc[1, "buyer_supplier_repeat_share"] == 1.0
+    # explicit ceilings applied
+    assert out["log_award_value"].max() <= 12.0
+    assert out["log_award_total"].max() <= 13.0
+    # placeholder localities cleaned, real ones untouched
+    assert pd.isna(out.loc[0, "buyer_locality"])
+    assert pd.isna(out.loc[2, "buyer_locality"])
+    assert out.loc[1, "buyer_locality"] == "mun.Chişinău"
+    # the byte-identical duplicate stays a duplicate after the recompute
+    pd.testing.assert_series_equal(out["winner_share_of_buyer_awards"],
+                                   out["buyer_supplier_repeat_share"],
+                                   check_names=False)
 
 
 def test_stop_criteria_include_bias_audit_c6():

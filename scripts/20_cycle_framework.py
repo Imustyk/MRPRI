@@ -15,6 +15,13 @@ bands = votes, ranking = max of percentile ranks):
     v2_mean_rank         rank combination max-percentile -> mean-percentile
                          (bands unchanged; only the within-band ordering changes)
     v3_drop_behavioural  drop the four behavioural features
+    v4_datafix           the author-requested data-artifact fixes, measured as
+                         one variant: merge phantom supplier identities
+                         (whitespace/case in ``winner_id``) and recompute the
+                         behavioural features, explicit winsorisation caps on
+                         the two uncapped value features, cleanup of the
+                         literal ``buyer_locality`` placeholder string, and the
+                         v1 duplicate drop (see ``apply_datafix``)
 
 For every variant the suite measures, with the SAME protocol each time:
 
@@ -66,7 +73,7 @@ from src.mtender.eval_metrics import (  # noqa: E402
     wilson_ci,
 )
 from src.mtender.external_labels import build_label_table  # noqa: E402
-from src.mtender.features import FEATURE_COLUMNS  # noqa: E402
+from src.mtender.features import FEATURE_COLUMNS, add_behavioural_features  # noqa: E402
 
 SEED = 42
 OUTLIER_RATE = 0.05
@@ -104,7 +111,82 @@ VARIANTS = {
                            "rank": "max_score"},
     "v2_mean_rank": {"drop": [], "rank": "mean_rank"},
     "v3_drop_behavioural": {"drop": list(BEHAVIOURAL), "rank": "max_score"},
+    "v4_datafix": {"drop": ["winner_share_of_buyer_awards"],
+                   "rank": "max_score", "datafix": True},
 }
+
+#: v4 data-artifact fixes: the only value features shipped WITHOUT an explicit
+#: ceiling (``value_vs_cpv_median`` <= 20, ``value_zscore_cpv`` <= 10 and
+#: ``estimate_to_award_ratio`` <= 20 are already capped in
+#: ``src/mtender/features.py`` - the caps below close the remaining gap).
+DATAFIX_CAP_QUANTILE = 0.999
+DATAFIX_CAP_FEATURES = ("log_award_value", "log_award_total")
+
+#: The literal placeholder that leaked into ``buyer_locality`` in the 2026-09-25
+#: corpus: the raw JSON *value* is the word "locality" itself (7,712 rows).
+#: Region is not a model feature, so cleaning it changes no detector decision -
+#: it removes a fake locality from displays and from the audit's group labels.
+LOCALITY_PLACEHOLDER = "locality"
+
+
+def apply_datafix(frame: pd.DataFrame,
+                  caps: dict[str, float] | None = None) -> pd.DataFrame:
+    """The author-requested data-artifact fixes, applied to the feature frame.
+
+    Each fix is measured through the standard suite, not assumed to help:
+
+    1. ``winner_id`` - strip/collapse internal whitespace and case-fold, then
+       recompute the behavioural features on the merged identities. Trailing
+       spaces had split one supplier into several (phantom suppliers), which
+       understated the pair/supplier counts the behavioural features use.
+    2. ``buyer_id`` - the same normalisation, defensively.
+    3. explicit winsorisation of ``log_award_value`` / ``log_award_total`` at
+       the corpus P99.9 (or at the explicit ``caps`` a test provides).
+    4. ``buyer_locality`` - the literal placeholder string is cleaned to NA.
+
+    ``winner_share_of_buyer_awards`` (byte-identical duplicate of
+    ``buyer_supplier_repeat_share``) is dropped by the variant spec itself.
+    """
+    out = frame.copy()
+
+    def _norm(series: pd.Series) -> pd.Series:
+        return (series.astype("string")
+                .str.replace(r"\s+", " ", regex=True)
+                .str.strip()
+                .str.upper()
+                .replace({"": pd.NA, "NAN": pd.NA, "NONE": pd.NA}))
+
+    raw_winner = out["winner_id"].copy() if "winner_id" in out.columns else None
+    if "winner_id" in out.columns:
+        out["winner_id"] = _norm(out["winner_id"])
+    if "buyer_id" in out.columns:
+        out["buyer_id"] = _norm(out["buyer_id"])
+    out = add_behavioural_features(out)
+
+    applied_caps: dict[str, float] = {}
+    for col in DATAFIX_CAP_FEATURES:
+        if col not in out.columns:
+            continue
+        cap = float((caps or {}).get(
+            col, out[col].astype(float).quantile(DATAFIX_CAP_QUANTILE)))
+        applied_caps[col] = cap
+        out[col] = out[col].astype(float).clip(upper=cap)
+
+    phantoms = placeholder_rows = 0
+    if raw_winner is not None:
+        raw_str = raw_winner.dropna().astype("string")
+        phantoms = int(raw_str.nunique()
+                       - raw_str.str.replace(r"\s+", " ", regex=True)
+                       .str.strip().str.upper().nunique())
+    if "buyer_locality" in out.columns:
+        loc = out["buyer_locality"].astype("string").str.strip().str.lower()
+        placeholder_rows = int((loc == LOCALITY_PLACEHOLDER).sum())
+        out.loc[loc == LOCALITY_PLACEHOLDER, "buyer_locality"] = pd.NA
+
+    print(f"  datafix: {phantoms} phantom supplier ids merged; "
+          f"caps {', '.join(f'{k}<= {v:.2f}' for k, v in applied_caps.items())}; "
+          f"{placeholder_rows} placeholder localities cleaned", flush=True)
+    return out
 
 
 def evaluate_c6_bias_audit(results_dir=None) -> tuple[bool, str]:
@@ -328,6 +410,7 @@ def main() -> int:
           flush=True)
 
     X_base = df[cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    X_base_datafix: pd.DataFrame | None = None
     baseline_votes = df["n_models_flagging"].fillna(0).astype(int).to_numpy()
     baseline_rank = df["max_score"].to_numpy()
 
@@ -354,7 +437,16 @@ def main() -> int:
         print(f"\n=== {name} ({len(variant_cols)} features, rank={spec['rank']}) ===",
               flush=True)
         t_v = time.time()
-        X = X_base[variant_cols]
+        if spec.get("datafix"):
+            if X_base_datafix is None:
+                df_fix = apply_datafix(df)
+                X_base_datafix = (df_fix[cols].apply(pd.to_numeric,
+                                                     errors="coerce")
+                                  .fillna(0.0))
+            base = X_base_datafix
+        else:
+            base = X_base
+        X = base[variant_cols]
         fit = fit_ensemble(X, stage06)
         ranking = fit[spec["rank"]]
         rankings[name] = ranking
@@ -365,6 +457,7 @@ def main() -> int:
             "n_features": len(variant_cols),
             "dropped": spec["drop"],
             "ranking": spec["rank"],
+            "datafix": bool(spec.get("datafix")),
             "external": {
                 "all": external_block(y, ranking, votes, args.boot),
                 "tuning_2018_2021": external_block(

@@ -232,6 +232,11 @@ logarithmic bins automatically once max/median exceeds 1000.
 Counted raw, that yields **14,477** distinct suppliers. After stripping, **13,986** — 491 phantom
 identities, a 3.4% overcount. Any exact-match join on `winner_id` will miss those rows.
 
+The cycle's `v4_datafix` variant (`scripts/20`) measures the full normalisation (strip + collapse
+internal whitespace runs + case-fold): **13,941** distinct suppliers — 536 phantom identities
+merged, i.e. 45 more than strip-only (internal-whitespace and case variants on top of the padded
+ones). The behavioural features are recomputed on the merged identities.
+
 The blacklist matching in step 09 is **not** affected: it matches on `winner_name` through
 `names.normalise_name`, which collapses all whitespace runs to single spaces. The FastAPI adapter
 also strips via `_s()`. Only ID-keyed aggregations need the normalisation.
