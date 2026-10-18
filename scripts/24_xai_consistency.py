@@ -77,7 +77,7 @@ BOOT_REPS = 1000
 VERDICT_THRESHOLDS = {
     "consistent_if": {"median_spearman": 0.70, "mean_sign_agreement": 0.80},
     "partially_if": {"median_spearman": 0.40},
-    "note": "Пороги предложены агентом; утверждение — за автором.",
+    "note": "Пороги предложены агентом; утверждены автором (MTA-0007).",
 }
 
 

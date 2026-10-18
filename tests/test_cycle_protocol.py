@@ -20,6 +20,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -105,7 +106,8 @@ def test_variant_prefix_resolution():
     assert "v0_baseline" in s20.VARIANTS
     assert set(s20.VARIANTS) == {"v0_baseline", "v1_merge_duplicate",
                                  "v2_mean_rank", "v3_drop_behavioural",
-                                 "v4_datafix", "v4b_datafix_keep_duplicate"}
+                                 "v4_datafix", "v4b_datafix_keep_duplicate",
+                                 "v5_group_percentile"}
     # only the duplicate column separates v1 from v0
     assert s20.VARIANTS["v1_merge_duplicate"]["drop"] == ["winner_share_of_buyer_awards"]
     # v4 = the v1 duplicate drop plus the measured data-artifact fixes
@@ -114,6 +116,11 @@ def test_variant_prefix_resolution():
     # v4b = the same fixes with the duplicate kept (isolates the data-fix effect)
     assert s20.VARIANTS["v4b_datafix_keep_duplicate"]["drop"] == []
     assert s20.VARIANTS["v4b_datafix_keep_duplicate"]["datafix"] is True
+    # v5 changes ONLY the ranking (within-group percentile); features/votes
+    # stay exactly v0's - one change per cycle
+    assert s20.VARIANTS["v5_group_percentile"]["drop"] == []
+    assert s20.VARIANTS["v5_group_percentile"]["rank"] == "group_pct_max"
+    assert "datafix" not in s20.VARIANTS["v5_group_percentile"]
     # the constant feature is part of the production feature set (documents why
     # the ANOVA guard above matters)
     from src.mtender.features import FEATURE_COLUMNS
@@ -218,3 +225,98 @@ def test_c7_fails_on_low_recall(tmp_path):
     ok, detail = s20.evaluate_c7_rag(results_dir=tmp_path)
     assert ok is False
     assert "recall@3=0.3" in detail
+
+
+def test_group_labels_are_deterministic():
+    """v5: same frame in -> same band edges, same labels, same counters."""
+    s20 = _load_script("20_cycle_framework.py")
+    rng = np.random.default_rng(3)
+    n = 1000
+    df = pd.DataFrame({
+        "log_award_value": rng.integers(1_000, 40_000_000,
+                                        size=n).astype(float),
+        "procurement_method_details": rng.choice(
+            ["directaward", "opentender", "microvalue"], size=n),
+    })
+    labels_a, meta_a = s20.build_group_labels(df)
+    labels_b, meta_b = s20.build_group_labels(df)
+    assert meta_a["band_edges"] == meta_b["band_edges"]
+    assert meta_a["group_sizes"] == meta_b["group_sizes"]
+    assert meta_a["groups_merged_small"] == meta_b["groups_merged_small"]
+    np.testing.assert_array_equal(labels_a, labels_b)
+    # 5 quantile bands -> 6 edges (data-derived, no randomness anywhere)
+    assert len(meta_a["band_edges"]) == 6
+    assert meta_a["n_groups"] == len(meta_a["group_sizes"])
+    assert sum(meta_a["group_sizes"].values()) == n
+    # every final group either meets the floor or is counted as left small
+    small = [g for g, c in meta_a["group_sizes"].items()
+             if c < s20.GROUP_MIN_N]
+    assert len(small) == meta_a["groups_left_small"]
+
+
+def test_group_percentile_is_uniform_within_group():
+    """v5 statistic: inside a group percentiles are exactly the 1/n..n/n grid."""
+    s20 = _load_script("20_cycle_framework.py")
+    scores = pd.DataFrame({"mad": [1.0, 5.0, 3.0, 4.0, 2.0, 10.0],
+                           "if": [2.0, 1.0, 4.0, 3.0, 5.0, 9.0]})
+    groups = np.array(["g1", "g1", "g1", "g2", "g2", "g2"])
+    out = s20.group_percentile_max(scores, groups)
+    # g1: mad pct = (1/3, 3/3, 2/3), if pct = (2/3, 1/3, 3/3) -> max row-wise
+    np.testing.assert_allclose(out[:3], [2 / 3, 1.0, 1.0])
+    # g2: mad pct = (2/3, 1/3, 3/3), if pct = (1/3, 2/3, 3/3)
+    np.testing.assert_allclose(out[3:], [2 / 3, 2 / 3, 1.0])
+    # uniformity by construction: within a group the per-detector percentiles
+    # are the equidistant grid 1/n .. n/n (rank-based)
+    pct_g1 = scores.iloc[:3].rank(pct=True)
+    for col in ("mad", "if"):
+        np.testing.assert_allclose(np.sort(pct_g1[col].to_numpy()),
+                                   np.arange(1, 4) / 3)
+
+
+def test_small_groups_merge_with_counters():
+    """v5: groups under the floor merge - same type first, fallback recorded."""
+    s20 = _load_script("20_cycle_framework.py")
+    # single band (all values equal) -> no same-type candidate, the thin
+    # group must fall back to the largest group of the same band
+    df = pd.DataFrame({
+        "log_award_value": [10.0] * 50 + [10.0] * 550,
+        "procurement_method_details": ["tiny"] * 50 + ["big"] * 550,
+    })
+    labels, meta = s20.build_group_labels(df, n_bands=2, min_n=100)
+    assert meta["groups_merged_fallback"] == 1
+    assert meta["group_sizes"] == {"big|b0": 600}
+    assert set(labels) == {"big|b0"}
+    # same-type path: type "t" spans two bands, the thin band moves into the
+    # nearest band of the same type
+    df2 = pd.DataFrame({
+        "log_award_value": [1.0] * 50 + [2.0] * 300 + [3.0] * 300,
+        "procurement_method_details": ["t"] * 650,
+    })
+    labels2, meta2 = s20.build_group_labels(df2, n_bands=2, min_n=100)
+    assert meta2["groups_merged_small"] == 1
+    assert meta2["groups_merged_fallback"] == 0
+    assert meta2["group_sizes"] == {"t|b1": 650}
+    assert set(labels2) == {"t|b1"}
+
+
+def test_v5_block_in_cycle_artefact_if_present():
+    """When the cycle artefact carries v5 its group/size metadata must exist."""
+    s20 = _load_script("20_cycle_framework.py")
+    path = s20.RESULTS / "methodology" / "cycle_framework.json"
+    if not path.exists():
+        pytest.skip("cycle artefact not present")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    block = (payload.get("variants") or {}).get("v5_group_percentile")
+    if block is None:
+        pytest.skip("v5 not part of the measured artefact yet")
+    for key in ("group_percentile", "size_composition", "external",
+                "agreement", "stability", "drift", "stop_criteria_passed"):
+        assert key in block
+    gp = block["group_percentile"]
+    assert gp["n_groups"] >= 1
+    assert gp["groups_merged_small"] >= 0
+    assert len(gp["band_edges"]) >= 2
+    sc = block["size_composition"]
+    for slice_name in ("tuning", "all"):
+        assert 0.0 <= sc[slice_name]["top200_share_ge_50m"] <= 1.0
+        assert 0.0 <= sc[slice_name]["corpus_share_ge_50m"] <= 1.0

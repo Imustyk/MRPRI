@@ -57,7 +57,7 @@ THRESHOLDS = {
     "hallucination_rate": 0.0,
     "refusal_ok_rate": 1.0,
     "coverage_share": 1.0,
-    "note": "Пороги предложены агентом; утверждение — за автором.",
+    "note": "Пороги предложены агентом; утверждены автором (MTA-0007).",
 }
 
 #: topics provably absent from the normative corpus (law + AAP seminar + AAP

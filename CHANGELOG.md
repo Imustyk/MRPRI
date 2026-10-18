@@ -4,6 +4,63 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0007-2026-10-18] — Iteration cycle 5 (v5_group_percentile): within-group percentile ranking, measured
+
+Author-requested cycle 5 (main cycle; budget 5 of 10). **Production behaviour unchanged**
+(v0 remains the shipped configuration; replacing it is the author's explicit decision).
+Thresholds are now **author-approved** (κ ≥ 0.40; Spearman LIME/SHAP ≥ 0.70 / 0.40;
+C7 recall@3 ≥ 0.60 ∧ hallucinations = 0) — the "proposed by the agent, approval pending"
+wording in scripts 20/22/24/26 and the current-state docs was updated accordingly.
+
+### Added
+
+- `scripts/20_cycle_framework.py`: variant `v5_group_percentile` — each detector's score is
+  ranked **inside its group «cost band × procedure type»** and the ranking is the max over
+  those within-group percentiles; votes/consensus stay exactly v0's rules (one change per
+  cycle). New helpers `build_group_labels` (band edges = corpus quantiles of
+  `log_award_value` — 4 final bands after an edge collision at zero values; groups under
+  100 rows merge into the nearest band of the same type, with a recorded fallback path;
+  24 final groups, 14 fallback merges, min group 168) and `group_percentile_max`; group
+  metadata written to `results/methodology/v5_group_bands.json`.
+- Every variant now carries a `size_composition` block (money-band shares of the top-200
+  list and of the audit's high+ band) — the explicit check that a within-band normalisation
+  MOVES size rather than removing it.
+- `scripts/27_delta_cluster_boot.py` generalised to any variant pair
+  (`--variant/--baseline/--out`); defaults reproduce the cycle-4 v4b measurement.
+- `tests/test_cycle_protocol.py`: +4 tests (deterministic band boundaries, exact 1/n..n/n
+  within-group percentiles, the small-group merge counters, the v5 artefact block) —
+  **154 tests total**.
+
+### Measured result
+
+v5 vs v0: consensus **identical** (3,031; κ 0.2497 — votes untouched, by construction).
+Stability improves: top-200 seed Jaccard 0.479 → **0.656** (C2 ≥ 0.60 passes for the first
+time), consensus-count cv 4.76% → **2.98%**, PSI 0.293 → **0.148** (KS 0.207 → 0.107).
+Size dominance of the tuning top-200 falls: ≥ 50 m contracts 10.9× → **2.9×** the corpus
+share, ≥ 5 m 3.3× → **0.6×** (an overshoot into under-representation) — size is MOVED, not
+removed, and the votes-based audit bands do not move at all (C6 stays 24/8, C3 stays
+0.159). AUC (control, not an acceptance criterion): tuning 0.407 → 0.431, Δ +0.023 —
+procedure bootstrap [−0.002, +0.048], supplier-cluster bootstrap [−0.123, +0.090]
+(`scripts/27`, 1,000 replicates, 2,717 clusters) — crosses zero, no significance claim;
+holdout **0.518 → 0.425** (sign negative in both splits). Stop criteria **4/8**. Contract
+matrix (`scripts/23 --soft`): 9 met / 16 unmet / 2 not verifiable — unchanged. Closing
+status stays **1 of 4** (computed from the artefacts by `scripts/22`; the holdout-CI chain
+is now also broken at v4b–v5). Verdict: **compromised, not adopted** — the expected
+size-vs-cohesion trade-off is confirmed, external validation did not improve. All headline
+numbers reproduce (`scripts/19`: v0–v3 anchors byte-identical; v5 is an extra row).
+
+### Changed
+
+- Threshold wording: "proposed by the agent, author approval pending" → "approved by the
+  author (MTA-0007)" in `scripts/20`, `scripts/22`, `scripts/24`, `scripts/26`,
+  `docs/contract_matrix.md` (M10, M16), `docs/thesis_text.md`, `docs/METHODOLOGY_CYCLE.md`.
+- `scripts/22_cycle_dynamics.py`: v5 verdict; protocol line now reads "cycle 4 — additional
+  author measurement (v4/v4b); cycle 5 — main cycle per the author's task (MTA-0007);
+  5 of 10 spent".
+- `docs/model_card.md`, `docs/thesis_text.md`, `docs/METHODOLOGY_CYCLE.md`,
+  `docs/annotation.md` (protocol v0–v5, 154 tests), `cycle_log.md` (cycle-5 entry),
+  `reports/cycle_5.md` (new cycle report).
+
 ## [MTA-datafix-2026-10-18] — Iteration cycle 4 (v4_datafix): author's data-artifact fixes, measured
 
 Author-requested data-quality fixes, measured in the cycle protocol rather than applied on
