@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0010-2026-10-18] — Thesis section «Label limits and cycles v0–v6» (no new calculations)
+
+Documentation-only task (no new computations, no new cycle: budget stays 6 of 10, production
+stays v0). `docs/thesis_text.md` gains section 10а «Ограничения метки и итоги циклов v0–v6»:
+what the AAP label measures (22 entries, 18 exact matches, 17 suppliers, 633 procedures, base
+rate 0.415%, 259 of 633 from one supplier, decisions postdating procedures, selection bias →
+the label is weak and narrow, AUC against it cannot be the sole acceptance criterion); one
+consolidated v0–v6 table (change, κ, consensus, paired ΔAUC tuning with the supplier-cluster
+CI where measured, holdout AUC, decision — every number taken verbatim from the existing
+artefacts); three findings (no ΔAUC improvement beyond the CI by any change; the failure is a
+data/task property, not an export artifact — v0 bands already carry the size bias; the
+MTA-0009 random-5%-control: C3/B4 reproduced by the normalisation alone, κ / signal retention /
+residual ≥ 50 m share not). The audit-E-on-control note states the mandated wording — the
+control audit ran on **5 repeats out of 200** (200 bootstrap replicates each) and v6's total
+of 41 verdicts is **above the random-flag baseline** of 5–12, the excess not attributed to
+detector quality. Also propagated the same wording correction (from «detector verdicts») into
+`reports/cycle_6.md` F, `reports/random_flags_control.md` (`scripts/28` template),
+`cycle_log.md`, `docs/model_card.md`. No numbers changed anywhere; annotation unchanged
+(≤ 250 words, 166 tests).
+
 ## [MTA-0009-2026-10-18] — Random-5%-within-group control for v6 (cycle-6 correction, no new cycle)
 
 Author-requested correction to cycle 6, **not a new cycle** (budget stays 6 of 10, no v7 is
@@ -48,8 +68,9 @@ median — a small detector-driven under-flagging of direct awards); ≥ 50 m ra
 control (b): the size signal survives normalisation); v0-critical retention 0.0003 / 0.0195
 (vs 1.00 / 0.492 — outside both); κ ≈ 0.0002 (vs 0.2497 / 0.2991). Audit verdicts on random
 votes: 5–12 unexplained (medians 8 and 5) vs 41 (v6) and 32 (v0) — random flags show only the
-multiple-comparison false-positive baseline, so ~30 of v6's 41 verdicts reflect the detectors'
-flag structure, not the normalisation. Honest reading fixed in `reports/cycle_6.md` F and
+multiple-comparison false-positive baseline (audit on 5 repeats per control out of 200): v6's
+total of 41 is **above the random-flag baseline**, but the excess is not attributed to
+detector quality without a further breakdown. Honest reading fixed in `reports/cycle_6.md` F and
 `reports/random_flags_control.md`: **the C3/B4 equalisation is a property of the
 normalisation; what distinguishes v6 from a random flag with the same share is κ, signal
 retention and the residual size concentration** — and none of it passes the thresholds

@@ -514,7 +514,7 @@ def _write_markdown(per: pd.DataFrame, controls: dict, audit_rows: list,
         "",
         "## 3. Вывод (без смягчений)",
         "",
-        _conclusion(reference, comparison, controls),
+        _conclusion(reference, comparison, controls, args.repeats),
         "",
         "## 4. Пометки",
         "",
@@ -542,7 +542,8 @@ def _write_markdown(per: pd.DataFrame, controls: dict, audit_rows: list,
                                                      encoding="utf-8")
 
 
-def _conclusion(reference: dict, comparison: dict, controls: dict) -> str:
+def _conclusion(reference: dict, comparison: dict, controls: dict,
+                n_repeats: int) -> str:
     """The author's MTA-0009 decision rule, applied to the measured distributions.
 
     Two branches can be true at once for different metrics, and both are
@@ -595,15 +596,18 @@ def _conclusion(reference: dict, comparison: dict, controls: dict) -> str:
         f"против {kap_a['median']:g} у независимых случайных флагов (у контроля (б) "
         "детекторов нет вовсе).",
 
-        f"**3. Аудит смещения (E) на голосах контроля:** невыполненных вердиктов "
+        f"**3. Аудит смещения (E) на голосах контроля** (повторов с аудитом: "
+        f"{a.get('audit', {}).get('replicates', '—')} из {n_repeats} — аудит "
+        "тяжёлый, полный прогон на всех повторах не выполнялся): невыполненных "
+        "вердиктов "
         f"{_fmt(aud_a)} (а) и {_fmt(aud_b)} (б) против {vb['audit_unexplained_verdicts']} "
         f"у v6 и {va['audit_unexplained_verdicts']} у v0 — случайные флаги дают "
         "лишь базовый уровень ложных срабатываний (единичные предупреждения на "
-        "79 групп при множественных сравнениях), то есть примерно 30 из 41 "
-        "вердикта v6 отражают структуру флагов детекторов, а не нормировку: C6 — "
-        "не чистый артефакт нормировки, но и не нулевой шум. Он по-прежнему не "
-        "может быть одиночным критерием приёмки (и не является им — модель не "
-        "принята).",
+        "79 групп при множественных сравнениях), то есть суммарный счётчик v6 "
+        "**выше базового уровня случайных флагов** (5–12); избыток не разложен "
+        "по причинам и не может быть отнесён к качеству детекторов без "
+        "дополнительного разбора. C6 по-прежнему не может быть одиночным "
+        "критерием приёмки (и не является им — модель не принята).",
 
         "Вывод цикла 6 не меняется: **не принимается — компромисс**; production v0; "
         "матрица контракта 9/16/2; статус 1 из 4. Контроль MTA-0009 показывает, что "
