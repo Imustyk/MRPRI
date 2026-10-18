@@ -129,6 +129,17 @@ VARIANTS = {
     # dominance the section-E audit found. Votes/consensus stay exactly v0's
     # (one change per cycle: only the ranking changes).
     "v5_group_percentile": {"drop": [], "rank": "group_pct_max"},
+    # v6: normalisation BEFORE the flags - every detector's flag is the top
+    # OUTLIER_RATE fraction INSIDE its «cost band x procedure type» group,
+    # consensus = >= 3 of 4 votes, ranking = v5's within-group percentile max.
+    # By construction each detector flags ~5% of every group: risk becomes
+    # relative inside the group and blind to a whole-group anomaly (the
+    # group-level consensus load is measured in the block below). Bands of
+    # low/medium/high/critical therefore change, so the section-E audit is
+    # re-run on v6's own votes (bias_audit_v6.json, scripts/18 --variant
+    # v6_group_flags); the production v0 audit artefact is not overwritten.
+    "v6_group_flags": {"drop": [], "rank": "group_pct_max",
+                       "group_flags": True, "audit": "bias_audit_v6.json"},
 }
 
 #: v4 data-artifact fixes: the only value features shipped WITHOUT an explicit
@@ -219,15 +230,18 @@ def build_group_labels(frame: pd.DataFrame,
                        value_col: str = GROUP_VALUE_COL,
                        type_col: str = GROUP_TYPE_COL,
                        n_bands: int = GROUP_N_BANDS,
-                       min_n: int = GROUP_MIN_N
+                       min_n: int = GROUP_MIN_N,
+                       edges: np.ndarray | list | None = None
                        ) -> tuple[np.ndarray, dict]:
-    """«Cost band x procedure type» group labels for the v5 ranking.
+    """«Cost band x procedure type» group labels for the v5/v6 ranking.
 
     Rule (fixed before the measurement, author's MTA-0007 brief):
 
     1. the cost bands are the quantiles of ``value_col`` over the WHOLE
        corpus - the boundaries are data-derived, so they are returned in the
-       meta dict and written to the artefact;
+       meta dict and written to the artefact; passing ``edges`` explicitly
+       (MTA-0008: scripts/18 re-runs the audit with the SAVED boundaries from
+       v5_group_bands.json) skips the quantile step and reuses them verbatim;
     2. a group with fewer than ``min_n`` rows is merged into the NEAREST band
        of the SAME procedure type (ties: the larger group, then the lower
        band index); a type whose rows live in a single band cannot absorb
@@ -242,10 +256,16 @@ def build_group_labels(frame: pd.DataFrame,
     same labels out - no randomness anywhere.
     """
     values = pd.to_numeric(frame[value_col], errors="coerce").to_numpy(dtype=float)
-    if np.isnan(values).any():
-        raise ValueError(f"{value_col} has NaN - bands would not be reproducible")
-    edges = np.unique(np.quantile(values, np.linspace(0.0, 1.0, n_bands + 1)))
-    band = np.searchsorted(edges[1:-1], values, side="right")
+    if edges is None:
+        if np.isnan(values).any():
+            raise ValueError(f"{value_col} has NaN - bands would not be reproducible")
+        band_edges = np.unique(np.quantile(values,
+                                           np.linspace(0.0, 1.0, n_bands + 1)))
+        edges_source = "quantiles of the whole corpus"
+    else:
+        band_edges = np.unique(np.asarray(edges, dtype=float))
+        edges_source = "provided (saved artefact)"
+    band = np.searchsorted(band_edges[1:-1], values, side="right")
     typ = (frame[type_col].astype("string").fillna("unknown")
            .str.strip().str.lower().to_numpy())
     labels = np.array([f"{t}|b{b}" for t, b in zip(typ, band)], dtype=object)
@@ -282,9 +302,10 @@ def build_group_labels(frame: pd.DataFrame,
     meta = {
         "value_col": value_col,
         "type_col": type_col,
+        "edges_source": edges_source,
         "n_bands_requested": int(n_bands),
-        "n_bands_final": int(len(edges) - 1),
-        "band_edges": [round(float(e), 6) for e in edges],
+        "n_bands_final": int(len(band_edges) - 1),
+        "band_edges": [round(float(e), 6) for e in band_edges],
         "n_groups": int(final.size),
         "groups_merged_small": int(merged_small),
         "groups_merged_fallback": int(merged_fallback),
@@ -307,29 +328,51 @@ def group_percentile_max(scores: pd.DataFrame, groups) -> np.ndarray:
     return pct.max(axis=1).to_numpy()
 
 
-def evaluate_c6_bias_audit(results_dir=None) -> tuple[bool, str]:
+def group_flag_frame(scores: pd.DataFrame, groups,
+                     rate: float = OUTLIER_RATE) -> pd.DataFrame:
+    """v6: a detector's flag = the top ``rate`` fraction INSIDE its group.
+
+    The within-group percentile grid is exactly 1/n..n/n, so ``> 1 - rate``
+    selects the top ceil(rate*n) rows per group (ties share the boundary
+    rank and may push the realised share slightly above ``rate`` - it is
+    measured, not assumed). The side effect the author asked to check: the
+    flag share is ~5% in EVERY group by construction, so «risk» becomes
+    relative inside the group and blind to a whole-group anomaly.
+    """
+    g_pct = scores.groupby(np.asarray(groups)).rank(pct=True)
+    return g_pct > (1.0 - rate)
+
+
+def evaluate_c6_bias_audit(results_dir=None,
+                           artefact: str = "bias_audit.json") -> tuple[bool, str]:
     """Stop criterion C6 - the section-E bias audit, evaluated corpus-level.
 
     The audit (``scripts/18_bias_audit.py``) is run on the production band
     configuration and shared by every variant until a variant is actually
     proposed for adoption, at which point the audit is re-run on its bands.
-    C6 passes only when no group verdict is "нарушение" (deviation the
-    legitimate factors do not explain) or "предупреждение" (point estimate
-    outside the band): both are "remaining deviations not explained by
-    legitimate factors" in the criterion's wording. A missing audit artefact
-    fails C6 rather than passing it silently.
+    v6 changes the votes themselves (within-group 5% flags), so it is audited
+    on its own votes in a separate artefact ``bias_audit_v6.json`` (the
+    production v0 artefact is never overwritten); C6 for v6 reads it via the
+    variant's ``audit`` key. C6 passes only when no group verdict is
+    "нарушение" (deviation the legitimate factors do not explain) or
+    "предупреждение" (point estimate outside the band): both are "remaining
+    deviations not explained by legitimate factors" in the criterion's
+    wording. A missing audit artefact fails C6 rather than passing it
+    silently.
     """
     base = results_dir if results_dir is not None else RESULTS
-    path = Path(base) / "methodology" / "bias_audit.json"
+    path = Path(base) / "methodology" / artefact
     if not path.exists():
-        return False, (f"{path} not found - run scripts/18_bias_audit.py first")
+        return False, (f"{path} not found - run scripts/18_bias_audit.py first"
+                       + (" (--variant v6_group_flags)"
+                          if "v6" in artefact else ""))
     payload = json.loads(path.read_text(encoding="utf-8"))
     counts = payload.get("verdict_counts") or {}
     unexplained = int(counts.get("нарушение", 0)) + int(counts.get("предупреждение", 0))
     limit = STOP_CRITERIA["max_unexplained_bias_deviations"]
     detail = (f"нарушение={counts.get('нарушение', 0)}, "
               f"предупреждение={counts.get('предупреждение', 0)} "
-              f"(limit {limit}; corpus-level audit of the production bands)")
+              f"(limit {limit}; corpus-level audit, artefact {artefact})")
     return unexplained <= limit, detail
 
 
@@ -378,7 +421,8 @@ def fit_sample(n_rows: int, seed: int) -> np.ndarray:
 def fit_ensemble(X: pd.DataFrame, stage06, seed: int = SEED,
                  if_contamination: float = OUTLIER_RATE,
                  lof_k: int = 20, svm_nu: float = OUTLIER_RATE,
-                 groups: np.ndarray | None = None) -> dict:
+                 groups: np.ndarray | None = None,
+                 group_flags: bool = False) -> dict:
     """Fit the four production detectors on exactly ``X`` (as in scripts/06/16)."""
     from sklearn.ensemble import IsolationForest
     from sklearn.neighbors import LocalOutlierFactor
@@ -429,6 +473,18 @@ def fit_ensemble(X: pd.DataFrame, stage06, seed: int = SEED,
         out["group_pct_max"] = group_percentile_max(scores, groups)
         out["group_pct_mean"] = (scores.groupby(np.asarray(groups))
                                  .rank(pct=True).mean(axis=1).to_numpy())
+    if group_flags:
+        # v6: the global-contamination flags above are REPLACED by the
+        # within-group top-5% flags; the detector fits and scores are
+        # identical, only the flag extraction is normalised inside the group
+        if groups is None:
+            raise ValueError("group_flags=True requires group labels")
+        ff = group_flag_frame(scores, groups, OUTLIER_RATE)
+        flags = {c: ff[c].to_numpy().astype(int) for c in ff.columns}
+        votes_g = (flags["mad"] + flags["if"] + flags["lof"] + flags["svm"])
+        out.update({"votes": votes_g,
+                    "consensus": (votes_g >= 3).astype(np.uint8),
+                    "flags": flags})
     return out
 
 
@@ -558,6 +614,7 @@ def main() -> int:
     rankings: dict[str, np.ndarray] = {}
     group_labels: np.ndarray | None = None
     group_meta: dict | None = None
+    votes_by_variant: dict[str, np.ndarray] = {}
 
     for name in variants_requested:
         spec = VARIANTS[name]
@@ -588,10 +645,13 @@ def main() -> int:
                       f"left small {group_meta['groups_left_small']}); "
                       f"band edges {group_meta['band_edges']}", flush=True)
             group_kwargs = {"groups": group_labels}
+        if spec.get("group_flags"):
+            group_kwargs["group_flags"] = True
         fit = fit_ensemble(X, stage06, **group_kwargs)
         ranking = fit[spec["rank"]]
         rankings[name] = ranking
         votes = fit["votes"]
+        votes_by_variant[name] = votes
         consensus = fit["consensus"]
 
         block = {
@@ -625,6 +685,68 @@ def main() -> int:
                 "min_group_n": group_meta["min_group_n"],
                 "min_n_rule": group_meta["min_n_rule"],
             }
+
+        if spec.get("group_flags"):
+            # v6 side effect to check explicitly (MTA-0008): with a top-5%
+            # flag inside EVERY group the per-detector flag share is ~5%
+            # everywhere BY CONSTRUCTION - «risk» is relative inside the group
+            # and theoretically blind to a whole-group anomaly. Report the
+            # consensus load per group (max/min share vs the corpus), the B4
+            # direct-award position, and the AUC stratified by cost band.
+            gser = pd.Series(np.asarray(group_labels), index=df.index)
+            per_group = (pd.DataFrame({"g": gser, "cons": consensus})
+                         .groupby("g")
+                         .agg(n=("cons", "size"), n_consensus=("cons", "sum")))
+            per_group["share"] = per_group["n_consensus"] / per_group["n"]
+            corpus_share = float(consensus.mean())
+            gmin = per_group["share"].idxmin()
+            gmax = per_group["share"].idxmax()
+            block["group_vote_stats"] = {
+                "corpus_share_consensus": round(corpus_share, 6),
+                "min_group": {"group": str(gmin),
+                              "n": int(per_group.loc[gmin, "n"]),
+                              "n_consensus": int(per_group.loc[gmin, "n_consensus"]),
+                              "share": round(float(per_group.loc[gmin, "share"]), 6),
+                              "ratio_to_corpus": round(float(per_group.loc[gmin, "share"]
+                                                             / corpus_share), 4)},
+                "max_group": {"group": str(gmax),
+                              "n": int(per_group.loc[gmax, "n"]),
+                              "n_consensus": int(per_group.loc[gmax, "n_consensus"]),
+                              "share": round(float(per_group.loc[gmax, "share"]), 6),
+                              "ratio_to_corpus": round(float(per_group.loc[gmax, "share"]
+                                                             / corpus_share), 4)},
+                "note": ("each detector flags the top 5% of every group by "
+                         "construction - a group where EVERYTHING is anomalous "
+                         "cannot be seen by a within-group rule"),
+            }
+            direct = (df[GROUP_TYPE_COL].astype("string").str.strip()
+                      .str.lower().to_numpy() == "directaward")
+            hp_v6 = votes >= 2
+            block["b4_directaward"] = {
+                "corpus_share": round(float(direct.mean()), 4),
+                "share_of_high_plus": (round(float(direct[hp_v6].mean()), 4)
+                                       if hp_v6.any() else None),
+                "high_plus_rate_direct": (round(float(hp_v6[direct].mean()), 4)
+                                          if direct.any() else None),
+                "high_plus_rate_corpus": round(float(hp_v6.mean()), 4),
+                "ratio": (round(float(hp_v6[direct].mean() / hp_v6.mean()), 4)
+                          if direct.any() and hp_v6.any() else None),
+            }
+            band_of = np.array([int(g.rsplit("|b", 1)[1])
+                                for g in np.asarray(group_labels)])
+            auc_rows = []
+            for b in sorted(set(band_of.tolist())):
+                m_base = band_of == b
+                row = {"band": b, "n": int(m_base.sum()),
+                       "positives": int(y[m_base].sum())}
+                for split_name, m in (("tuning", m_base & tuning_mask),
+                                      ("holdout", m_base & holdout_mask)):
+                    yt, rt = y[m], ranking[m]
+                    row[f"auc_{split_name}"] = (
+                        round(roc_auc(yt, rt), 4) if yt.min() != yt.max()
+                        else None)
+                auc_rows.append(row)
+            block["auc_by_cost_band"] = auc_rows
 
         # size dominance of the prioritised list and of the audit's high+
         # band: the expected trade-off of a within-band normalisation is that
@@ -767,6 +889,18 @@ def main() -> int:
     c6_ok, c6_detail = evaluate_c6_bias_audit()
     print(f"\nC6 bias audit (section E): {'PASS' if c6_ok else 'FAIL'} - "
           f"{c6_detail}", flush=True)
+    c6_cache: dict[str, tuple[bool, str]] = {"bias_audit.json": (c6_ok,
+                                                                c6_detail)}
+
+    def c6_for(name: str) -> tuple[bool, str]:
+        """C6 from the variant's own audit artefact (v6: bias_audit_v6.json)."""
+        art = VARIANTS[name].get("audit", "bias_audit.json")
+        if art not in c6_cache:
+            c6_cache[art] = evaluate_c6_bias_audit(artefact=art)
+            ok_i, det_i = c6_cache[art]
+            print(f"\nC6 bias audit ({art}, variant {name}): "
+                  f"{'PASS' if ok_i else 'FAIL'} - {det_i}", flush=True)
+        return c6_cache[art]
     c7_ok, c7_detail = evaluate_c7_rag()
     print(f"\nC7 RAG explanation layer: {'PASS' if c7_ok else 'FAIL'} - "
           f"{c7_detail}", flush=True)
@@ -786,6 +920,7 @@ def main() -> int:
                     < c_miss * ext["positives"])
 
     for name, block in results.items():
+        c6_variant_ok, _ = c6_for(name)
         crit = {
             "C1_agreement_kappa>=0.40": block["agreement"]["mean_kappa"]
             >= STOP_CRITERIA["min_mean_pairwise_kappa"],
@@ -799,9 +934,9 @@ def main() -> int:
                 block["external"]["tuning_2018_2021"]),
             "C5_rule_beats_no_flag@200_holdout": beats_no_flag(
                 block["external"]["holdout_2022_2024"]),
-            # corpus-level: the section-E audit of the production bands, shared
-            # by every variant until a variant's bands are audited on adoption
-            "C6_bias_audit_no_unexplained_deviations": c6_ok,
+            # corpus-level: the section-E audit - the production bands for
+            # v0..v5 (shared), v6's OWN re-computed bands (bias_audit_v6.json)
+            "C6_bias_audit_no_unexplained_deviations": c6_variant_ok,
             # corpus-level: the RAG layer (explanations with normative sources)
             "C7_rag_zero_hallucinations_and_recall3>=0.60": c7_ok,
         }
@@ -810,6 +945,60 @@ def main() -> int:
         print(f"\n{name}: stop criteria {sum(crit.values())}/{len(crit)}")
         for k, v in crit.items():
             print(f"  {'PASS' if v else 'FAIL'} {k}")
+
+    # ---- signal loss: what v6's within-group flags no longer see ---------
+    # (author's MTA-0008 request: which share of v0-critical procedures v6
+    # loses, where the >= 50M contracts go, and the 10 largest losses for
+    # manual review - the block that shows whether the audit improved or the
+    # model simply stopped seeing the big contracts)
+    if "v0_baseline" in votes_by_variant and "v6_group_flags" in votes_by_variant:
+        v0v = votes_by_variant["v0_baseline"]
+        v6v = votes_by_variant["v6_group_flags"]
+        crit0, crit6 = v0v >= 3, v6v >= 3
+        lost = crit0 & ~crit6
+        award_arr = pd.to_numeric(df["award_total"],
+                                  errors="coerce").fillna(0.0).to_numpy()
+        big = award_arr >= 50e6
+        lost_big = lost & big
+        gone = np.flatnonzero(lost_big)
+        order = gone[np.argsort(-award_arr[gone])][:10]
+        sig = {
+            "v0_critical_n": int(crit0.sum()),
+            "v6_critical_n": int(crit6.sum()),
+            "kept_n": int((crit0 & crit6).sum()),
+            "lost_n": int(lost.sum()),
+            "lost_share": round(float(lost.sum() / max(int(crit0.sum()), 1)), 4),
+            "v0_critical_ge_50m_n": int((crit0 & big).sum()),
+            "v6_critical_ge_50m_n": int((crit6 & big).sum()),
+            "lost_ge_50m_n": int(lost_big.sum()),
+            "v6_votes_of_lost": {str(int(k)): int(v) for k, v in
+                                 pd.Series(v6v[lost]).value_counts()
+                                 .sort_index().items()},
+            "v6_votes_of_lost_ge_50m": {str(int(k)): int(v) for k, v in
+                                        pd.Series(v6v[lost_big]).value_counts()
+                                        .sort_index().items()},
+            "top10_lost_ge_50m": [
+                {"ocid": str(df["ocid"].iloc[i]),
+                 "award_total": float(award_arr[i]),
+                 "votes_v0": int(v0v[i]), "votes_v6": int(v6v[i]),
+                 "group": (str(group_labels[i])
+                           if group_labels is not None else None)}
+                for i in order],
+        }
+        (RESULTS / "methodology" / "v6_signal_loss.json").write_text(
+            json.dumps(sig, ensure_ascii=False, indent=2), encoding="utf-8")
+        if "v6_group_flags" in results:
+            results["v6_group_flags"]["signal_loss_vs_v0"] = {
+                k: sig[k] for k in ("v0_critical_n", "v6_critical_n",
+                                    "kept_n", "lost_n", "lost_share",
+                                    "v0_critical_ge_50m_n",
+                                    "v6_critical_ge_50m_n", "lost_ge_50m_n")}
+        print(f"\nv6 signal loss vs v0-critical: lost {sig['lost_n']}/"
+              f"{sig['v0_critical_n']} ({sig['lost_share']:.1%}), "
+              f"of them >=50M: {sig['lost_ge_50m_n']} "
+              f"(v0-critical >=50M {sig['v0_critical_ge_50m_n']} -> "
+              f"v6-critical >=50M {sig['v6_critical_ge_50m_n']}); "
+              f"v6 votes of the lost: {sig['v6_votes_of_lost']}", flush=True)
 
     out = {
         "protocol": {
@@ -820,9 +1009,12 @@ def main() -> int:
                                 "power to resolve AUC differences below ~0.03 is low",
             "stop_criteria": STOP_CRITERIA,
             "c6_scope": (
-                "corpus-level section-E bias audit (production bands) from "
-                "results/methodology/bias_audit.json; re-run scripts/18_bias_audit.py "
-                "on the bands of a variant proposed for adoption"
+                "corpus-level section-E bias audit from "
+                "results/methodology/bias_audit.json (production bands, v0 "
+                "config shared by v0..v5); v6 changes the votes themselves "
+                "and is audited on its own bands in bias_audit_v6.json "
+                "(scripts/18_bias_audit.py --variant v6_group_flags; the "
+                "production artefact is never overwritten)"
             ),
         },
         "variants": results,

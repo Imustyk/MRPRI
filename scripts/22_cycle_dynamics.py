@@ -59,9 +59,25 @@ CYCLE_VERDICTS = {
                            "процедуры»: консенсус/κ идентичны v0 (меняется "
                            "только ранжирование); стабильность top-200 и PSI "
                            "выросли, размер-доминирование в топ-200 снижено "
-                           "(≥50 млн: 11×→2,9×), но holdout AUC ниже 0,5 "
-                           "(0,425) и кластерный ДИ ΔAUC пересекает ноль — "
-                           "компромисс, не принимается; прод остаётся v0",
+                           "(≥50 млн: 11×→2,9×), но holdout AUC 0,425 с ДИ "
+                           "[0,396; 0,452] целиком ниже 0,5 — v5 значимо "
+                           "ранжирует метки AAP как менее рискованные "
+                           "(условие 2 завершения не выполняется); кластерный "
+                           "ДИ ΔAUC пересекает ноль — компромисс, не "
+                           "принимается; прод остаётся v0",
+    "v6_group_flags": "нормировка до флагов: флаг детектора = верхние 5% "
+                      "внутри группы «полоса × тип», консенсус ≥ 3 голосов "
+                      "(доля флагов ~5% в каждой группе по построению — риск "
+                      "относителен внутри группы); первый вариант с C3 "
+                      "(годовой разброс доли консенсуса 0,159→0,537 ≥ 0,25) и "
+                      "κ выросла 0,250→0,299 (порог 0,40 не достигнут); аудит "
+                      "на своих голосах: размер в high+ упал (≥50 млн "
+                      "50,9%→14,6%, disparity 10,5×→3,23×), прямые закупки "
+                      "в допустимой полосе (0,21→1,13), но всего вердиктов 41 "
+                      "против 32 у v0; потеряно 50,8% v0-critical, C5-holdout "
+                      "провален; AUC = v5 (ранжирование то же), holdout 0,425 — "
+                      "значимо ниже 0,5; компромисс, не принимается; прод "
+                      "остаётся v0",
 }
 
 
@@ -75,7 +91,11 @@ def completion_status(variants: dict) -> dict:
 
     (1) convergence: some version reaches mean pairwise kappa >= CRIT_KAPPA;
     (2) period stability: no version flips the sign of the external AUC
-        between the tuning and holdout splits;
+        between the tuning and holdout splits, AND no version is significantly
+        NEGATIVE (a split whose AUC bootstrap CI lies entirely below 0.5):
+        the author's MTA-0008 ruling - a stably negative association is
+        stability of a wrong-direction association, not convergence, and is
+        not credited to this condition;
     (3) circularity: section B (scripts/21) — fixed artefact, 7/7;
     (4) the holdout-AUC bootstrap CIs of every consecutive version pair
         overlap — a single broken link fails the condition (conservative
@@ -90,7 +110,19 @@ def completion_status(variants: dict) -> dict:
         return ((e["tuning_2018_2021"]["roc_auc"] - 0.5)
                 * (e["holdout_2022_2024"]["roc_auc"] - 0.5) < 0)
 
+    def _anti_splits(block) -> list[str]:
+        """Splits whose AUC CI lies entirely below 0.5 (anti-correlated)."""
+        e = block["external"]
+        out = []
+        for split in ("tuning_2018_2021", "holdout_2022_2024"):
+            ci = e[split].get("roc_auc_ci")
+            if ci and ci[1] < 0.5:
+                out.append(split)
+        return out
+
     flips = [n for n, b in variants.items() if _flip(b)]
+    anti = {n: _anti_splits(b) for n, b in variants.items()
+            if _anti_splits(b)}
     bad_pairs = []
     for a, b in zip(names, names[1:]):
         cia = variants[a]["external"]["holdout_2022_2024"]["roc_auc_ci"]
@@ -99,13 +131,14 @@ def completion_status(variants: dict) -> dict:
             bad_pairs.append(f"{a}–{b}")
     checks = {
         "сходимость (κ≥0.40)": kappa_max >= CRIT_KAPPA,
-        "устойчивость знака внешней связи по периодам": not flips,
+        "устойчивость и знак внешней связи по периодам (ДИ не ниже 0,5)":
+            not flips and not anti,
         "круговая логика (scripts/21, 7/7)": True,
         "цепочка ДИ holdout последовательных версий": not bad_pairs,
     }
     return {"checks": checks, "passed": sum(checks.values()),
             "kappa_max": kappa_max, "sign_flips": flips,
-            "bad_pairs": bad_pairs}
+            "anti_associated": anti, "bad_pairs": bad_pairs}
 
 
 def completion_phrase(variants: dict) -> str:
@@ -113,11 +146,15 @@ def completion_phrase(variants: dict) -> str:
     st = completion_status(variants)
     passed = ", ".join(k for k, ok in st["checks"].items() if ok)
     failed = ", ".join(k for k, ok in st["checks"].items() if not ok)
+    anti_txt = "; ".join(f"{n} (ДИ ниже 0,5: {', '.join(s)})"
+                         for n, s in st["anti_associated"].items()) or "—"
     return (f"статус — {st['passed']} из {len(st['checks'])}. Выполнены: "
             f"{passed or '—'}; не выполнены: {failed or '—'}. Данные: "
             f"максимальная κ {st['kappa_max']:.3f} (порог {CRIT_KAPPA:.2f} "
             f"утверждён автором, MTA-0007); знак AUC "
-            f"меняется между 2018–2021 и 2022–2024: {', '.join(st['sign_flips'])}; "
+            f"меняется между 2018–2021 и 2022–2024: {', '.join(st['sign_flips']) or '—'}; "
+            f"значимо отрицательная связь (ДИ AUC целиком ниже 0,5 — в условие 2 "
+            f"не засчитывается, MTA-0008): {anti_txt}; "
             f"ДИ holdout без пересечения: {', '.join(st['bad_pairs'])} "
             f"(для вариантов гигиены данных v4/v4b сравнение с предыдущей "
             f"версией некорректно буквально — их ДИ пересекается с v0).")
@@ -225,7 +262,8 @@ def main() -> int:
         "остановка по протоколу после 3 циклов подряд без улучшения за "
         "пределами ДИ (цикл 4 — дополнительный авторский замер артефактов "
         "данных: варианты v4 и v4b; цикл 5 — основной цикл по задаче автора "
-        "MTA-0007, вариант v5; израсходовано 5 из 10); "
+        "MTA-0007, вариант v5; цикл 6 — по задаче автора MTA-0008, вариант "
+        "v6; израсходовано 6 из 10); "
         "критерии остановки: C1 κ≥0.40, C2 Jaccard(top-200)≥0.60 и cv "
         "консенсуса ≤10%, C3 годовой разброс доли консенсуса ≥0.25, C5 правило "
         "порога бьёт «не флагировать ничего» при c_miss=200 в обоих периодах, "

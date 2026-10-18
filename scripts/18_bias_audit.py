@@ -61,7 +61,14 @@ Outputs:
     results/figures/bias_audit.png, results/methodology/bias_audit.json
 
 Usage:
-    .venv/bin/python scripts/18_bias_audit.py [--rescan]
+    .venv/bin/python scripts/18_bias_audit.py [--rescan] [--variant v6_group_flags]
+
+``--variant v6_group_flags`` (MTA-0008): re-run the audit on the votes of the
+cycle-6 variant - flags normalised to the top 5% inside the «cost band ×
+procedure type» group - instead of the production votes. The bands
+(low/medium/high/critical) follow the votes, so the whole audit recomputes.
+All outputs get the ``_v6`` suffix (bias_audit_v6.json, ...); the production
+v0 artefacts are never overwritten.
 """
 
 from __future__ import annotations
@@ -72,6 +79,7 @@ import json
 import re
 import sys
 import warnings
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -300,6 +308,48 @@ def bootstrap_disparity(g_flag: np.ndarray, rest_flag: np.ndarray,
     return point, float(np.quantile(arr, 0.025)), float(np.quantile(arr, 0.975))
 
 
+def _arg_value(flag: str) -> str | None:
+    argv = sys.argv
+    if flag in argv:
+        i = argv.index(flag)
+        if i + 1 < len(argv):
+            return argv[i + 1]
+    return None
+
+
+def variant_votes(variant: str) -> pd.Series:
+    """Detector votes of a cycle variant (scripts/20), indexed by ocid.
+
+    v6 replaces each detector's global-contamination flag with the top 5%
+    INSIDE its «cost band x procedure type» group, so its votes - and the
+    audit bands derived from them - differ from production. The group band
+    edges are read from the SAVED v5_group_bands.json artefact (author's
+    MTA-0008 instruction), so the audited groups are exactly the cycle's.
+    The fit is deterministic (seed 42), reproducing scripts/20's votes.
+    """
+    import importlib.util
+    s20_path = ROOT / "scripts" / "20_cycle_framework.py"
+    spec = importlib.util.spec_from_file_location("s20_cycle_framework", s20_path)
+    s20 = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(s20)
+    vspec = s20.VARIANTS[variant]
+    feats_full = pd.read_csv(DATA_FEATURES / "features.csv", low_memory=False)
+    cols = [c for c in FEATURE_COLUMNS if c in feats_full.columns]
+    X = feats_full[cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    bands_path = RESULTS / "methodology" / "v5_group_bands.json"
+    edges = None
+    if bands_path.exists():
+        edges = json.loads(bands_path.read_text(encoding="utf-8"))["band_edges"]
+    groups, _meta = s20.build_group_labels(feats_full, edges=edges)
+    fit = s20.fit_ensemble(X, s20._load_stage06(), groups=groups,
+                           group_flags=bool(vspec.get("group_flags")))
+    print(f"variant {variant}: votes computed on {len(feats_full):,} "
+          f"procedures (consensus >= 3: {int((fit['votes'] >= 3).sum()):,}); "
+          f"groups {_meta['n_groups']} from {bands_path.name if edges is not None else 'quantiles'}")
+    return pd.Series(fit["votes"], index=feats_full["ocid"].astype(str))
+
+
 def main() -> int:
     warnings.filterwarnings("ignore")
     corpus = load_scored_corpus()
@@ -328,7 +378,21 @@ def main() -> int:
     df["ocds_buyer_type"] = df["ocds_buyer_type"].fillna("")
     df["supplier_regions"] = df["supplier_regions"].fillna("")
 
+    votes_variant = _arg_value("--variant")
+    suffix = ""
+    votes_source = "production scores (n_models_flagging; v0 configuration)"
     votes = df["n_models_flagging"].astype(int)
+    if votes_variant:
+        vmap = variant_votes(votes_variant)
+        mapped = df["ocid"].astype(str).map(vmap)
+        missing = int(mapped.isna().sum())
+        votes = mapped.fillna(0).astype(int)
+        suffix = "_" + votes_variant.split("_")[0]     # "_v6"
+        votes_source = (f"cycle variant {votes_variant} (detector flags = top "
+                        f"5% inside the «cost band x procedure type» group)")
+        if missing:
+            print(f"warning: {missing} ocids missing from features.csv -> votes 0")
+    df["votes_audit"] = votes
     df["high_plus"] = (votes >= 2).astype(int)      # high + critical
     df["critical"] = (votes >= 3).astype(int)
     df["band"] = np.select([votes == 0, votes == 1, votes == 2],
@@ -551,7 +615,7 @@ def main() -> int:
             })
 
     groups = pd.DataFrame(rows)
-    groups.to_csv(TABLES / "bias_audit_groups.csv", index=False)
+    groups.to_csv(TABLES / f"bias_audit_groups{suffix}.csv", index=False)
 
     # ---- E.4: features as proxies for structural groups -------------------
     proxy_targets = {
@@ -573,7 +637,7 @@ def main() -> int:
         row["flagged_structural_proxy"] = bool(worst >= 0.3)
         proxy_rows.append(row)
     proxies = pd.DataFrame(proxy_rows).sort_values("max_abs_corr", ascending=False)
-    proxies.to_csv(TABLES / "bias_audit_feature_proxies.csv", index=False)
+    proxies.to_csv(TABLES / f"bias_audit_feature_proxies{suffix}.csv", index=False)
 
     # ---- AAP label coverage (selection bias of the external source) -------
     coverage = []
@@ -589,11 +653,13 @@ def main() -> int:
                 "label_rate_in_group": round(len(part) / max(len(base), 1), 6),
             })
     coverage_df = pd.DataFrame(coverage)
-    coverage_df.to_csv(TABLES / "bias_audit_label_coverage.csv", index=False)
+    coverage_df.to_csv(TABLES / f"bias_audit_label_coverage{suffix}.csv", index=False)
 
     calibration_within = int(groups["calibration_ok"].sum())
     summary = {
         "n_procedures": int(len(df)),
+        "votes_source": votes_source,
+        "variant": votes_variant,
         "n_dimensions": int(groups["group_dimension"].nunique()),
         "high_plus_share_corpus": round(float(df["high_plus"].mean()), 6),
         "critical_share_corpus": round(float(df["critical"].mean()), 6),
@@ -666,12 +732,12 @@ def main() -> int:
     REPORTS.mkdir(exist_ok=True)
     out_dir = RESULTS / "methodology"
     out_dir.mkdir(exist_ok=True)
-    (out_dir / "bias_audit.json").write_text(
+    (out_dir / f"bias_audit{suffix}.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
     )
 
     print(f"corpus {len(df):,}; high+critical {df['high_plus'].mean():.4f}; "
-          f"critical {df['critical'].mean():.4f}")
+          f"critical {df['critical'].mean():.4f} [{votes_source}]")
     print("\nverdicts:")
     print(groups["verdict"].value_counts().to_string())
     print("\nflagged groups:")
@@ -682,15 +748,15 @@ def main() -> int:
     print("\ntop structural proxies:")
     print(proxies.head(10)[["feature", "max_abs_corr", "flagged_structural_proxy"]]
           .to_string(index=False))
-    print(f"\ntable  -> {TABLES / 'bias_audit_groups.csv'}")
-    print(f"table  -> {TABLES / 'bias_audit_feature_proxies.csv'}")
-    print(f"report -> {REPORTS / 'bias_audit.md'}")
-    _plot(groups, df)
-    _write_markdown(groups, proxies, coverage_df, summary)
+    print(f"\ntable  -> {TABLES / f'bias_audit_groups{suffix}.csv'}")
+    print(f"table  -> {TABLES / f'bias_audit_feature_proxies{suffix}.csv'}")
+    print(f"report -> {REPORTS / f'bias_audit{suffix}.md'}")
+    _plot(groups, df, suffix)
+    _write_markdown(groups, proxies, coverage_df, summary, suffix)
     return 0
 
 
-def _plot(groups: pd.DataFrame, df: pd.DataFrame) -> None:
+def _plot(groups: pd.DataFrame, df: pd.DataFrame, suffix: str = "") -> None:
     try:
         import matplotlib
 
@@ -732,12 +798,13 @@ def _plot(groups: pd.DataFrame, df: pd.DataFrame) -> None:
     fig.suptitle("Bias audit - bands as behaviour vs bands as group membership "
                  "(indicator of potential risk, not evidence of corruption)", fontsize=10)
     fig.tight_layout()
-    fig.savefig(FIGURES / "bias_audit.png", dpi=140)
-    print(f"figure -> {FIGURES / 'bias_audit.png'}")
+    fig.savefig(FIGURES / f"bias_audit{suffix}.png", dpi=140)
+    print(f"figure -> {FIGURES / f'bias_audit{suffix}.png'}")
 
 
 def _write_markdown(groups: pd.DataFrame, proxies: pd.DataFrame,
-                    coverage: pd.DataFrame, summary: dict) -> None:
+                    coverage: pd.DataFrame, summary: dict,
+                    suffix: str = "") -> None:
     def table(frame: pd.DataFrame, cols: list[str]) -> str:
         """Markdown table without a tabulate dependency (repo keeps deps minimal)."""
         view = frame[cols].astype(str).fillna("")
@@ -759,10 +826,15 @@ def _write_markdown(groups: pd.DataFrame, proxies: pd.DataFrame,
         return f"{100 * part / max(whole, 1):.1f}%"
 
     lines = [
-        "# Аудит смещения (bias audit) полос риска",
+        "# Аудит смещения (bias audit) полос риска"
+        + (f" — вариант {summary['variant']}" if summary.get("variant") else ""),
         "",
-        "Дата: 2026-10-17. Корпус: 152,378 процедур, полосы по числу голосов детекторов "
+        f"Дата: {date.today().isoformat()}. Корпус: 152,378 процедур, полосы по числу голосов детекторов "
         "(high+ = 2 и более голоса, critical = 3 и более).",
+        "",
+        *([f"**Голоса:** {summary['votes_source']} — артефакт пересчёта для цикла "
+           "протокола, прод-аудит v0 (`bias_audit.json`) не перезаписан."]
+          if summary.get("variant") else []),
         "",
         "Индикатор потенциального риска, а не доказательство коррупции: все доли ниже — "
         "это частоты попадания в экранинговую полосу, а не частоты нарушений.",
@@ -931,12 +1003,12 @@ def _write_markdown(groups: pd.DataFrame, proxies: pd.DataFrame,
         + ". Процедуры без данных о заявках и ценах остаются в корпусе и в аудите, "
         "но их признаки усечены — это ограничение, а не основание для исключения.",
         "",
-        "Таблицы: `results/tables/bias_audit_groups.csv`, "
-        "`results/tables/bias_audit_feature_proxies.csv`, "
-        "`results/tables/bias_audit_label_coverage.csv`; "
-        "график: `results/figures/bias_audit.png`.",
+        f"Таблицы: `results/tables/bias_audit_groups{suffix}.csv`, "
+        f"`results/tables/bias_audit_feature_proxies{suffix}.csv`, "
+        f"`results/tables/bias_audit_label_coverage{suffix}.csv`; "
+        f"график: `results/figures/bias_audit{suffix}.png`.",
     ]
-    (REPORTS / "bias_audit.md").write_text("\n".join(lines), encoding="utf-8")
+    (REPORTS / f"bias_audit{suffix}.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 if __name__ == "__main__":

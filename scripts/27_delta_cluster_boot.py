@@ -95,6 +95,8 @@ def _fit_variant(s20, spec: dict, df: pd.DataFrame, cols: list[str],
     X = df_use[cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
     kwargs = ({"groups": group_labels}
               if spec.get("rank", "").startswith("group_pct") else {})
+    if spec.get("group_flags"):
+        kwargs["group_flags"] = True
     return s20.fit_ensemble(X, stage06, **kwargs)[spec["rank"]]
 
 

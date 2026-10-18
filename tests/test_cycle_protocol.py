@@ -107,7 +107,7 @@ def test_variant_prefix_resolution():
     assert set(s20.VARIANTS) == {"v0_baseline", "v1_merge_duplicate",
                                  "v2_mean_rank", "v3_drop_behavioural",
                                  "v4_datafix", "v4b_datafix_keep_duplicate",
-                                 "v5_group_percentile"}
+                                 "v5_group_percentile", "v6_group_flags"}
     # only the duplicate column separates v1 from v0
     assert s20.VARIANTS["v1_merge_duplicate"]["drop"] == ["winner_share_of_buyer_awards"]
     # v4 = the v1 duplicate drop plus the measured data-artifact fixes
@@ -121,6 +121,12 @@ def test_variant_prefix_resolution():
     assert s20.VARIANTS["v5_group_percentile"]["drop"] == []
     assert s20.VARIANTS["v5_group_percentile"]["rank"] == "group_pct_max"
     assert "datafix" not in s20.VARIANTS["v5_group_percentile"]
+    # v6: normalisation BEFORE the flags - within-group top-5% flags, audited
+    # on its own votes (bias_audit_v6.json; production audit untouched)
+    assert s20.VARIANTS["v6_group_flags"]["drop"] == []
+    assert s20.VARIANTS["v6_group_flags"]["rank"] == "group_pct_max"
+    assert s20.VARIANTS["v6_group_flags"]["group_flags"] is True
+    assert s20.VARIANTS["v6_group_flags"]["audit"] == "bias_audit_v6.json"
     # the constant feature is part of the production feature set (documents why
     # the ANOVA guard above matters)
     from src.mtender.features import FEATURE_COLUMNS
@@ -320,3 +326,98 @@ def test_v5_block_in_cycle_artefact_if_present():
     for slice_name in ("tuning", "all"):
         assert 0.0 <= sc[slice_name]["top200_share_ge_50m"] <= 1.0
         assert 0.0 <= sc[slice_name]["corpus_share_ge_50m"] <= 1.0
+
+
+def test_group_labels_accept_saved_edges():
+    """MTA-0008: passing the SAVED band edges reproduces the cycle's groups."""
+    s20 = _load_script("20_cycle_framework.py")
+    df = pd.DataFrame({"log_award_value": [1.0, 2.0, 3.0] * 100,
+                       "procurement_method_details": ["t"] * 300})
+    labels_a, meta_a = s20.build_group_labels(df, n_bands=2, min_n=10)
+    labels_b, meta_b = s20.build_group_labels(df, edges=meta_a["band_edges"],
+                                              min_n=10)
+    np.testing.assert_array_equal(labels_a, labels_b)
+    assert meta_a["edges_source"].startswith("quantiles")
+    assert meta_b["edges_source"].startswith("provided")
+    assert meta_a["band_edges"] == meta_b["band_edges"]
+
+
+def test_group_flags_are_top5_within_group():
+    """v6: the flag is the top 5% INSIDE the group - equal share by construction."""
+    s20 = _load_script("20_cycle_framework.py")
+    n = 200
+    rng = np.random.default_rng(7)
+    scores = pd.DataFrame({"mad": rng.permutation(np.arange(1, n + 1)).astype(float),
+                           "if": rng.permutation(np.arange(1, n + 1)).astype(float)})
+    groups = np.array(["g1"] * 100 + ["g2"] * 100)
+    ff = s20.group_flag_frame(scores, groups, 0.05)
+    # no ties -> exactly the top 5 rows of every group per detector
+    for col in ("mad", "if"):
+        for g in ("g1", "g2"):
+            assert int(ff.loc[groups == g, col].sum()) == 5
+    # the flag share is identical across groups BY CONSTRUCTION - the side
+    # effect the author asked to record: a whole-group anomaly is invisible
+    shares = ff.groupby(groups).mean()
+    assert (shares["mad"] == 0.05).all()
+    assert (shares["if"] == 0.05).all()
+
+
+def _blk(t_auc, t_ci, h_auc, h_ci, kappa=0.25):
+    """Minimal variant block for completion_status (scripts/22)."""
+    return {"agreement": {"mean_kappa": kappa},
+            "external": {"tuning_2018_2021": {"roc_auc": t_auc,
+                                              "roc_auc_ci": list(t_ci)},
+                         "holdout_2022_2024": {"roc_auc": h_auc,
+                                               "roc_auc_ci": list(h_ci)}}}
+
+
+def test_completion_status_stably_negative_not_credited():
+    """MTA-0008: a stably negative association fails condition (2).
+
+    No sign flip (both AUCs below 0.5) but a CI entirely below 0.5 is a
+    significant anti-association - it is NOT credited as period stability.
+    """
+    s22 = _load_script("22_cycle_dynamics.py")
+    key = "устойчивость и знак внешней связи по периодам (ДИ не ниже 0,5)"
+    # healthy: positive association, overlapping CIs, no flip -> passes
+    ok = s22.completion_status(
+        {"a": _blk(0.55, [0.51, 0.59], 0.56, [0.52, 0.60])})
+    assert ok["checks"][key] is True
+    assert ok["anti_associated"] == {}
+    # v5-like: no flip (0.43 / 0.42) but both CIs lie below 0.5 -> fails
+    v5 = s22.completion_status(
+        {"a": _blk(0.43, [0.387, 0.471], 0.4248, [0.396, 0.452])})
+    assert v5["checks"][key] is False
+    assert v5["anti_associated"] == {"a": ["tuning_2018_2021",
+                                           "holdout_2022_2024"]}
+    assert v5["sign_flips"] == []
+    # a classical sign flip still fails (and its negative tuning half counts)
+    fl = s22.completion_status(
+        {"a": _blk(0.43, [0.39, 0.47], 0.56, [0.52, 0.60])})
+    assert fl["checks"][key] is False
+    assert fl["sign_flips"] == ["a"]
+    assert "tuning_2018_2021" in fl["anti_associated"]["a"]
+
+
+def test_v6_block_in_cycle_artefact_if_present():
+    """When the cycle artefact carries v6 its audit/side-effect blocks must exist."""
+    s20 = _load_script("20_cycle_framework.py")
+    path = s20.RESULTS / "methodology" / "cycle_framework.json"
+    if not path.exists():
+        pytest.skip("cycle artefact not present")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    block = (payload.get("variants") or {}).get("v6_group_flags")
+    if block is None:
+        pytest.skip("v6 not part of the measured artefact yet")
+    for key in ("group_vote_stats", "b4_directaward", "auc_by_cost_band",
+                "signal_loss_vs_v0", "group_percentile", "external",
+                "stability", "stop_criteria_passed"):
+        assert key in block
+    gv = block["group_vote_stats"]
+    # the corpus share is a weighted average of the per-group shares
+    assert (gv["min_group"]["share"] <= gv["corpus_share_consensus"]
+            <= gv["max_group"]["share"])
+    # direct procurement is the majority of the corpus (51.5%)
+    assert block["b4_directaward"]["corpus_share"] > 0.5
+    sl = block["signal_loss_vs_v0"]
+    assert sl["kept_n"] + sl["lost_n"] <= sl["v0_critical_n"]

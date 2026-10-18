@@ -4,6 +4,62 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0008-2026-10-18] — Iteration cycle 6 (v6_group_flags): flags normalised within group, bias audit re-run on its own votes, cycle-5 corrections
+
+Author-requested cycle 6 (budget 6 of 10). **Production behaviour unchanged** (v0 remains
+the shipped configuration). Author's decision recorded 2026-10-18 (`docs/METHODOLOGY_CYCLE.md`):
+v6 may lower AUC against AAP if the bias audit (C6/B4) improves — **AUC against AAP stays a
+"no worse" control, not an acceptance criterion**. Cycle-5 corrections: the "C2 passes for the
+first time" claim was wrong (v2 passed C2-topN with Jaccard 0.671) and has been fixed in
+`reports/cycle_5.md`, `cycle_log.md`, `CHANGELOG.md`, `docs/model_card.md`, `scripts/22`;
+holdout v5 is now stated directly (CI [0.396, 0.452] excludes 0.5 — v5 significantly ranks
+AAP labels as LESS risky); a stably negative association no longer counts toward completion
+condition (2) in `scripts/22` (test `test_completion_status_stably_negative_not_credited`);
+`reports/cycle_5.md` gained the ΔAUC sign-change paragraph (tuning +0.023, holdout −0.093 —
+the AAP label reflects size/competition; a label limitation).
+
+### Added
+
+- `scripts/20_cycle_framework.py`: variant `v6_group_flags` — a detector's flag is the top
+  5% (`OUTLIER_RATE`) **inside its «cost band × procedure type» group** (`group_flag_frame`,
+  groups/edges from the saved `v5_group_bands.json` rule), consensus = ≥ 3 votes, ranking =
+  v5's within-group percentile max (so external AUC equals v5's by construction).
+  `build_group_labels` accepts saved `edges` (`edges_source` recorded); `fit_ensemble` takes
+  `group_flags`; `evaluate_c6_bias_audit(artefact=...)` reads a per-variant audit.
+  New blocks for v6: `group_vote_stats` (consensus load per group vs corpus), `b4_directaward`,
+  `auc_by_cost_band`; post-loop `signal_loss_vs_v0` + `results/methodology/v6_signal_loss.json`.
+- `scripts/18_bias_audit.py --variant v6_group_flags`: the section-E audit re-run on v6's own
+  votes — separate artefacts `bias_audit_v6.json` / `_v6` tables / figure / `reports/bias_audit_v6.md`
+  (self-describing header, votes source); **the production v0 audit is never overwritten**.
+- `scripts/27_delta_cluster_boot.py`: passes `group_flags` for v6.
+
+### Measured result
+
+κ 0.2497 → **0.2991** (threshold 0.40 still unmet); consensus 3,031 → 2,965 (−2.2%), high+
+7,662 → 6,969; **C3 passes for the first time among all versions** (yearly consensus-share
+ratio 0.159 → **0.537** ≥ 0.25); top-200 seed Jaccard 0.656 (= v5), cv 3.54%, PSI 0.148.
+Bias audit on v6's own votes (79 groups): violations 24 → 29, warnings 8 → 12 — **41
+unexplained deviations vs v0's 32** (10 groups fixed, 19 broken: industry ×6, supplier size
+×4, supplier region ×3 … — size/procedure-type bias is moved, not removed). The author's
+size metrics improve markedly: ≥ 50 m contracts' share of high+ **50.9% → 14.6%**, disparity
+10.48× → **3.23×** (target [0.8, 1.25] not reached), all other cost bands now допустимо;
+**B4 fixed**: direct-award disparity 0.21 → **1.13** (in band; 18.3% → 54.5% of high+ vs 51.5%
+of corpus), all five procedure types допустимо. Cost of the fix: **50.8% of v0-critical
+procedures leave the band** (707 of 1,539 lost with 2 votes), ≥ 50 m criticals 74 → 22, and
+7 of the 10 largest lost contracts (178–996 m, all in band b3) get **zero** v6 votes — the
+within-group rule is blind to a whole-group anomaly, as the author predicted; C5 fails in
+both splits for the first time among versions (holdout +1.1% over "flag nothing"). Control
+AUC (ranking = v5's): Δ tuning +0.023, procedure CI [−0.002, +0.048], supplier-cluster CI
+[−0.123, +0.090] — crosses zero; holdout 0.4248 [0.396, 0.452] — CI excludes 0.5. Stratified
+AUC by cost band: 0.69/0.70 in the cheapest band only (19 positives — power caveat), 0.36–0.46
+elsewhere. Stop criteria **4/8** (C2-topN, C2-cv, **C3**, C7). Verdict: **compromised, not
+adopted** — first size-audit improvement in three cycles, thresholds unmet (C6 41, C1 κ 0.299,
+≥ 50 m 3.23×) plus a C5 regression; **cycle 7 not started without the author's decision**.
+Contract matrix (`scripts/23 --soft`): 9 met / 16 unmet / 2 not verifiable — unchanged.
+Closing status **1 of 4** — condition (2) fails for every version (tuning CI entirely below
+0.5 in v0–v6, holdout additionally in v5/v6). All headline numbers reproduce
+(`scripts/19`), pytest **158 tests**, annotation ≤ 250 words (protocol v0–v6).
+
 ## [MTA-0007-2026-10-18] — Iteration cycle 5 (v5_group_percentile): within-group percentile ranking, measured
 
 Author-requested cycle 5 (main cycle; budget 5 of 10). **Production behaviour unchanged**
@@ -34,15 +90,18 @@ wording in scripts 20/22/24/26 and the current-state docs was updated accordingl
 ### Measured result
 
 v5 vs v0: consensus **identical** (3,031; κ 0.2497 — votes untouched, by construction).
-Stability improves: top-200 seed Jaccard 0.479 → **0.656** (C2 ≥ 0.60 passes for the first
-time), consensus-count cv 4.76% → **2.98%**, PSI 0.293 → **0.148** (KS 0.207 → 0.107).
+Stability improves: top-200 seed Jaccard 0.479 → **0.656** (C2 ≥ 0.60 passes — as it did
+for v2, whose top-200 Jaccard was 0.671), consensus-count cv 4.76% → **2.98%**, PSI 0.293 → **0.148** (KS 0.207 → 0.107).
 Size dominance of the tuning top-200 falls: ≥ 50 m contracts 10.9× → **2.9×** the corpus
 share, ≥ 5 m 3.3× → **0.6×** (an overshoot into under-representation) — size is MOVED, not
 removed, and the votes-based audit bands do not move at all (C6 stays 24/8, C3 stays
 0.159). AUC (control, not an acceptance criterion): tuning 0.407 → 0.431, Δ +0.023 —
 procedure bootstrap [−0.002, +0.048], supplier-cluster bootstrap [−0.123, +0.090]
 (`scripts/27`, 1,000 replicates, 2,717 clusters) — crosses zero, no significance claim;
-holdout **0.518 → 0.425** (sign negative in both splits). Stop criteria **4/8**. Contract
+holdout **0.518 → 0.425**, holdout CI [0.396, 0.452] excludes 0.5 — v5 significantly
+ranks AAP labels as LESS risky (corrected per MTA-0008: a stably negative association
+does NOT count toward completion condition 2; and C2-topN/C2-cv passing is not "for the
+first time" — v2 passed them too, with top-200 Jaccard 0.671). Stop criteria **4/8**. Contract
 matrix (`scripts/23 --soft`): 9 met / 16 unmet / 2 not verifiable — unchanged. Closing
 status stays **1 of 4** (computed from the artefacts by `scripts/22`; the holdout-CI chain
 is now also broken at v4b–v5). Verdict: **compromised, not adopted** — the expected
