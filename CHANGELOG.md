@@ -4,6 +4,45 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0013-2026-10-18] — Second external check: the «procedure contested» label — verdict (б), signal indistinguishable from random (measurement only, no cycle)
+
+`scripts/31_ansc_external_check.py` (no network imports at all, local raw OCDS
++ existing artefacts only): the label `contested = 1` for a document with
+`documentType == "complaints"` at ANY OCDS level — **6,970 document rows →
+6,967 unique (3 duplicates removed), exactly 1,665 procedures** (matches
+MTA-0012; 36 planning-notice packages keep a `-PN-` ocid inside while the
+corpus indexes the same procedure under the base `MD-…` — the label
+registers both, same identity-artefact logic as v4). Populations: corpus
+152,378 / 1,665 (1.09%); MAIN competitive `n_bidders >= 2` (unique tenderers
+over `tender.bids.details[]`) 33,613 / 1,222 (3.64%); non-competitive
+118,765 / 443 (0.37% — 10× lower, not zero; `n_bidders = 0` mixes direct
+awards with no-bid-data procedures). The FIXED v0 ranking
+(`tender_anomaly_scores.csv::max_score`) on the main population: **ROC-AUC
+0.5112, buyer-cluster bootstrap CI [0.4889; 0.5571] (2,019 clusters, 1,000
+reps, seed 42) — includes 0.5**; procedure CI [0.4965; 0.5275]; precision@100
+6.0% / @200 4.5% / @500 3.4% (base 3.64%, top-500 below base). Baselines:
+size-only 0.5112 (identical to v0 to 5 decimals), bidders-only 0.4865, random
+200 repeats q97.5% = 0.5160 (v0 does not exceed it). Stratification over the
+v5/v6 «band × type» groups: 21 groups present, only 7 with ≥ 50 positives;
+AUC above 0.5 only in `opentender` mid/large bands (0.54–0.58), below 0.5 in
+small/microvalue. Leakage diagnostic (pre-registered criterion: value can
+change after the complaint — award counts, amendments, statuses, amounts →
+exactly 10 of 22 features: `multi_award_tender`, `amended`, `n_amendments`,
+`cancelled`, `no_award_after_tender`, `log_award_value`, `log_award_total`,
+`estimate_to_award_ratio`, `value_vs_cpv_median`, `value_zscore_cpv`):
+re-fitting v0 without them through the existing `scripts/20` code path
+(`fit_ensemble`, diagnostic only — no cycle framework, votes, bands or
+production artefacts written) gives AUC 0.4646, CI [0.4165; 0.5607] — also
+includes 0.5, so `determined_by_leakage = false`. **Pre-registered conclusion
+rule → verdict (б): the v0 signal on this label is indistinguishable from
+random**; the label means «спорная процедура», not a violation; not a reason
+to re-tune thresholds; no decision on replacing v0 — measurement, not an
+acceptance cycle (production v0, budget 6/10, votes/bands untouched, no v7).
+15 new tests (`tests/test_ansc_external_check.py`: label builder + dedup +
+PN-alias on synthetic packages in a temp dir, buyer-cluster bootstrap,
+conclusion rule а/б/в, no-network regression, `python -I` standalone), 196
+total green; scripts/19 reproduces; annotation unchanged (250 words).
+
 ## [MTA-0012-2026-10-18] — ANSC label reconnaissance inside the raw OCDS (feasibility, no training, no new cycle)
 
 Local-only inventory plus a policed 50-document sample — a feasibility report,
