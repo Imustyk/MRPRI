@@ -22,6 +22,11 @@ bands = votes, ranking = max of percentile ranks):
                          the two uncapped value features, cleanup of the
                          literal ``buyer_locality`` placeholder string, and the
                          v1 duplicate drop (see ``apply_datafix``)
+    v4b_datafix_keep_duplicate
+                         the same data-artifact fixes WITHOUT the duplicate
+                         drop, so the two effects are separable: v4b vs v0 =
+                         the data fixes alone; v4 vs v4b = the duplicate drop
+                         under the fixed data
 
 For every variant the suite measures, with the SAME protocol each time:
 
@@ -113,6 +118,10 @@ VARIANTS = {
     "v3_drop_behavioural": {"drop": list(BEHAVIOURAL), "rank": "max_score"},
     "v4_datafix": {"drop": ["winner_share_of_buyer_awards"],
                    "rank": "max_score", "datafix": True},
+    # v4b: the same fixes with the duplicate kept, to separate the two effects
+    # (v4b vs v0 = the data fixes alone; v4 vs v4b = the duplicate drop)
+    "v4b_datafix_keep_duplicate": {"drop": [], "rank": "max_score",
+                                   "datafix": True},
 }
 
 #: v4 data-artifact fixes: the only value features shipped WITHOUT an explicit

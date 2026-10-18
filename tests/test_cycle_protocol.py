@@ -105,12 +105,15 @@ def test_variant_prefix_resolution():
     assert "v0_baseline" in s20.VARIANTS
     assert set(s20.VARIANTS) == {"v0_baseline", "v1_merge_duplicate",
                                  "v2_mean_rank", "v3_drop_behavioural",
-                                 "v4_datafix"}
+                                 "v4_datafix", "v4b_datafix_keep_duplicate"}
     # only the duplicate column separates v1 from v0
     assert s20.VARIANTS["v1_merge_duplicate"]["drop"] == ["winner_share_of_buyer_awards"]
     # v4 = the v1 duplicate drop plus the measured data-artifact fixes
     assert s20.VARIANTS["v4_datafix"]["drop"] == ["winner_share_of_buyer_awards"]
     assert s20.VARIANTS["v4_datafix"]["datafix"] is True
+    # v4b = the same fixes with the duplicate kept (isolates the data-fix effect)
+    assert s20.VARIANTS["v4b_datafix_keep_duplicate"]["drop"] == []
+    assert s20.VARIANTS["v4b_datafix_keep_duplicate"]["datafix"] is True
     # the constant feature is part of the production feature set (documents why
     # the ANOVA guard above matters)
     from src.mtender.features import FEATURE_COLUMNS
