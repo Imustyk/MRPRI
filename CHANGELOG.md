@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0014-2026-10-18] — Text-only follow-up to MTA-0013: thesis paragraph, cycle_log entry, annotation verdict (no computations)
+
+No computations, no artefact changes — texts only. `docs/thesis_text.md`
+section 10а gains point 4 «Вторая внешняя проверка: метка „процедура
+оспорена“ (ANSC)» after the random-5%-flags control: 1,665 procedures; the
+competitive population 33,613 / 1,222 positives (3.64%); v0 AUC 0.5112 with
+the buyer-cluster CI [0.489; 0.557]; size-only gives the same 0.5112; random
+200 repeats mean 0.5006 (q97.5 0.516, not exceeded); leakage check — 10 of 22
+features, re-fit without them 0.4646 [0.417; 0.561] (both CIs include 0.5);
+conclusion **(б)** by the pre-registered rule; the label means «спорная
+процедура», not a violation, and is not a reason to re-tune thresholds; the
+three groups with AUC 0.54–0.58 (opentender, licitație deschisă mid/large)
+are explicitly **a hypothesis for future verification, not a conclusion**;
+label coverage for 2023–2024 is incomplete (0.83% / 0.22% of procedures
+against ≈2.4% in 2021–2022), so yearly splits are unreliable.
+`cycle_log.md` gains the entry «Вторая внешняя проверка MTA-0013
+(измерение, не цикл; тексты MTA-0014)» — measurement, not a cycle: no v7,
+votes/bands untouched, **budget stays 6 of 10**, production v0.
+`docs/annotation.md` conclusion (author's choice via clarification, the
+original prompt was truncated) replaced with the joint summary of both
+external checks: «Внешние метки (AAP, ANSC) не подтверждают превосходства
+над размером. Полезна для приоритизации экспертизы; сигналы — не
+доказательство коррупции. Дальше: перенос на Prozorro.» — exactly 250 words
+(limit). Checks: scripts/19 EXIT=0, pytest 196 passed.
+
 ## [MTA-0013-2026-10-18] — Second external check: the «procedure contested» label — verdict (б), signal indistinguishable from random (measurement only, no cycle)
 
 `scripts/31_ansc_external_check.py` (no network imports at all, local raw OCDS
