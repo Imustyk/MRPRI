@@ -4,6 +4,37 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0012-2026-10-18] — ANSC label reconnaissance inside the raw OCDS (feasibility, no training, no new cycle)
+
+Local-only inventory plus a policed 50-document sample — a feasibility report,
+not a label in the model (production stays v0, budget stays 6 of 10).
+`scripts/29_ansc_docs_inventory.py` scans all 152,378 raw OCDS packages
+(read-only) at the four document levels: **430,959 documents** (tender
+342,220 / award 68,377 / contract 20,362 / planning 0), all on
+`storage.mtender.gov.md`; `documentType = complaints` exists for **6,970
+documents of 1,665 procedures** — the only structural complaint trace (the
+`complaints` array is absent everywhere; `enquiries` 19,810, `amendments`
+26,462+2,676). Keyword search (ro/ru, diacritic-insensitive): `03D-` 524
+procedures, `ANSC` 67, `contestați` 37, full agency names ~0, weak `decizi`
+6,502 (award-decision noise) — union of STRONG candidates = **2,183
+procedures = 1.43% of the corpus** (per-year: 2018 0.65% … 2021–22 ~3.2% …
+2024 0.27%); the author's known pair (03D-159-26, 2026) is outside the
+2018–2024 corpus. `scripts/30_ansc_sample_parse.py` refuses to run without
+`--allow-network`, downloads ≤ 50 docs stratified by year from
+storage.mtender.gov.md only (≥ 2 s pauses, academic User-Agent, host checked
+after redirects; on 403/429/anti-bot it stops — never happened here: **50/50
+downloaded, no block**), each file in its own fresh sandbox folder outside
+the repo, `python -I`, pypdf only, full texts never enter the repo. Text
+extracted from **35/50 = 70%**; 15/50 scans marked «требует OCR» (not run).
+Real decision numbers parsed from live documents: 03D-555-18, 03D-1003-20,
+03D-801-21; outcomes admis 3 / respins 3 / admis_partial 1 (heuristic).
+Verdict in `reports/ansc_labels_feasibility.md`: **partial** — a weak
+"contested / upheld" label covers ~1–1.4% of the corpus and is too small for
+training or external validation; the full ANSC register (manual site check or
+the OCP BI tool) is needed from the author. +15 tests (`tests/test_ansc_parser.py`,
+synthetic strings only + the no-`--allow-network` regression), 181 total.
+Annotation unchanged (250 words).
+
 ## [MTA-0011-2026-10-18] — Text-only: AAP = Agenția Achiziții Publice, unified v5/v6 ΔAUC procedure CI, section-10а wording
 
 No calculations. (1) The AAP interdiction list is published by **Agenția Achiziții Publice** —
