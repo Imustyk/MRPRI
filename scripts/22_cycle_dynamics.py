@@ -58,6 +58,63 @@ CYCLE_VERDICTS = {
 }
 
 
+#: the author-proposed convergence threshold (approval rests with the author)
+CRIT_KAPPA = 0.40
+
+
+def completion_status(variants: dict) -> dict:
+    """The four closing conditions, computed from cycle_framework.json.
+
+    (1) convergence: some version reaches mean pairwise kappa >= CRIT_KAPPA;
+    (2) period stability: no version flips the sign of the external AUC
+        between the tuning and holdout splits;
+    (3) circularity: section B (scripts/21) — fixed artefact, 7/7;
+    (4) the holdout-AUC bootstrap CIs of every consecutive version pair
+        overlap — a single broken link fails the condition (conservative
+        reading; for the data-hygiene variants v4/v4b the literal reading
+        is additionally inappropriate — their CIs overlap v0).
+    """
+    names = list(variants)
+    kappa_max = max(b["agreement"]["mean_kappa"] for b in variants.values())
+
+    def _flip(block):
+        e = block["external"]
+        return ((e["tuning_2018_2021"]["roc_auc"] - 0.5)
+                * (e["holdout_2022_2024"]["roc_auc"] - 0.5) < 0)
+
+    flips = [n for n, b in variants.items() if _flip(b)]
+    bad_pairs = []
+    for a, b in zip(names, names[1:]):
+        cia = variants[a]["external"]["holdout_2022_2024"]["roc_auc_ci"]
+        cib = variants[b]["external"]["holdout_2022_2024"]["roc_auc_ci"]
+        if not (cia[0] <= cib[1] and cib[0] <= cia[1]):
+            bad_pairs.append(f"{a}–{b}")
+    checks = {
+        "сходимость (κ≥0.40)": kappa_max >= CRIT_KAPPA,
+        "устойчивость знака внешней связи по периодам": not flips,
+        "круговая логика (scripts/21, 7/7)": True,
+        "цепочка ДИ holdout последовательных версий": not bad_pairs,
+    }
+    return {"checks": checks, "passed": sum(checks.values()),
+            "kappa_max": kappa_max, "sign_flips": flips,
+            "bad_pairs": bad_pairs}
+
+
+def completion_phrase(variants: dict) -> str:
+    """Human-readable closing-criterion status from the artefacts only."""
+    st = completion_status(variants)
+    passed = ", ".join(k for k, ok in st["checks"].items() if ok)
+    failed = ", ".join(k for k, ok in st["checks"].items() if not ok)
+    return (f"статус — {st['passed']} из {len(st['checks'])}. Выполнены: "
+            f"{passed or '—'}; не выполнены: {failed or '—'}. Данные: "
+            f"максимальная κ {st['kappa_max']:.3f} (порог {CRIT_KAPPA:.2f} "
+            f"предложен агентом, утверждение за автором); знак AUC "
+            f"меняется между 2018–2021 и 2022–2024: {', '.join(st['sign_flips'])}; "
+            f"ДИ holdout без пересечения: {', '.join(st['bad_pairs'])} "
+            f"(для вариантов гигиены данных v4/v4b сравнение с предыдущей "
+            f"версией некорректно буквально — их ДИ пересекается с v0).")
+
+
 def main() -> int:
     payload = json.loads(
         (RESULTS / "methodology" / "cycle_framework.json").read_text(encoding="utf-8"))
@@ -169,18 +226,7 @@ def main() -> int:
         "`reports/bias_audit.md`).\n"
         "Критерий завершения шлифовки (закрывающее утверждение «модель сходится "
         "и согласуется с независимыми источниками» допустимо только при всех "
-        "четырёх условиях): сходимость (κ≥0.40), устойчивость по сидам/бутстрапу/"
-        "периодам, круговая логика проверена, holdout-метрики двух последних "
-        "версий стабильны. На конец цикла 3 статус — 2 из 4: выполнены круговая "
-        "логика и стабильность holdout между последними версиями (v2 0.544 "
-        "[0.516, 0.570] и v3 0.580 [0.558, 0.601] — ДИ пересекаются), не "
-        "выполнены сходимость (κ 0.186–0.250) и устойчивость периодов (знак AUC "
-        "меняется между 2018–2021 и 2022–2024 во всех версиях). После цикла 4 "
-        "статус — 1 из 4 (консервативная трактовка условия «две последние "
-        "версии»: ДИ holdout v3 [0.558, 0.601] и v4 [0.504, 0.554] не "
-        "пересекаются; для вариантов гигиены данных (v4, v4b) буквальная "
-        "трактовка некорректна — их ДИ пересекается с v0 [0.490, 0.544], "
-        "v4b [0.488, 0.541]). "
+        "четырёх условиях): " + completion_phrase(variants) + " "
         "Индикаторы потенциального риска, а не доказательство коррупции.\n")
     REPORTS.mkdir(exist_ok=True)
     report_path = REPORTS / "cycle_dynamics.md"

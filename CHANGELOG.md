@@ -26,6 +26,12 @@ it is the author's explicit decision).
   data-fix effect and the duplicate-drop effect are separable.
 - `reports/cycle_4.md`, cycle-4 entry in `cycle_log.md`; `tests/test_cycle_protocol.py`
   extended (variant set now v0–v4, functional `apply_datafix` test) — **150 tests total**.
+- `scripts/27_delta_cluster_boot.py`: paired ΔAUC bootstrap of v4b vs v0 on tuning in
+  BOTH resampling flavours — procedure-level and supplier-cluster (the AAP label is
+  supplier-level, so the cluster interval is the honest one): 1,000 replicates, 2,717
+  supplier clusters; procedure [−0.0046, −0.0006], cluster [−0.0097, +0.0015] — the
+  cluster CI crosses zero, which is why the data-fix effect is reported without a
+  significance claim.
 
 ### Measured result
 
@@ -34,11 +40,14 @@ v4 vs v0: tuning ΔAUC **+0.0022 [−0.0058, +0.0105]** — within the CI; conse
 stop criteria **3/8** (unchanged). Variant `v4b_datafix_keep_duplicate` (the same
 fixes with the duplicate KEPT) separates the effects: consensus 3,034 ≈ v0 and
 κ 0.248 ≈ v0 — the v4 consensus/κ changes are the duplicate drop's, not the id
-normalisation's; and the fixes alone give a small but **significant tuning
-regression −0.0023 [−0.0046, −0.0006]** (v4b vs v0). Conclusion: data defects are
+normalisation's; and the fixes alone shift tuning AUC by ≈ **−0.002**
+(`scripts/27_delta_cluster_boot.py`, 1,000 replicates: procedure bootstrap
+[−0.0046, −0.0006]; supplier-cluster bootstrap [−0.0097, +0.0015] — crosses
+zero, so no significance claim) (v4b vs v0). Conclusion: data defects are
 fixed and were **not** the cause of the contract-matrix failure — external metrics
 did not change beyond the interval in v4, while the isolated v4b measurement
-detects a slight degradation from the cleanup itself. Contract matrix after the
+shows a slight non-significant (cluster-level) degradation from the cleanup
+itself. Contract matrix after the
 run (`scripts/23`): 9 met / 16 unmet / 2 not verifiable — unchanged. All headline
 numbers reproduce (`scripts/19`: v0–v3 anchors byte-identical; v4/v4b are extra
 rows). Cycle-4 completion criterion after this cycle: 1 of 4 (conservative reading —
@@ -58,6 +67,16 @@ v0).
   `docs/PROJECT_OVERVIEW.md`, `docs/RACI_MATRIX.md`: v4 cycle recorded; phantom-id counts
   reconciled as 491 (strip-only) / 536 (full normalisation); completion criterion status
   updated after cycle 4.
+- `scripts/22_cycle_dynamics.py`: the polishing-close status is now COMPUTED from
+  `cycle_framework.json` (max κ vs the agent-proposed 0.40 threshold, sign flips of the
+  external AUC between splits, holdout-CI overlap chain of consecutive versions) instead
+  of hardcoded prose — renders «1 из 4» with the data behind it; the PSI attribution in
+  cycle 4 corrected (growth follows the duplicate drop, v1: 0.32 — the caps are present
+  in v4b too, where PSI is 0.29; exact decomposition not performed).
+- `docs/annotation.md` trimmed to **250 words** with the author's wording fixes
+  («измеряют прежде всего размер», the extractive-design clause after the
+  zero-hallucination figure, and «the fixes alone leave κ and consensus unchanged»
+  in item 5); the «band × type percentiles» future item cut for space.
 
 ## [MTA-explanation-layer-2026-10-17] — Section H (LIME vs SHAP), RAG explanation layer, stop criterion C7
 
