@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0015-2026-10-18] — Annotation polish: second external label named, factual test count, sharper verdict wording (annotation only)
+
+`docs/annotation.md` only, ≤ 250 words (exactly 250 after the edit). The
+«Цель и метод» paragraph now names **both** external labels: «внешние метки —
+интердикции AAP (633 процедуры) и жалобы ANSC (1 665 процедур)» (NBSP in
+«1 665»); the stale test count «166 тестов» replaced with the factual
+**196** (verified via `pytest --collect-only -q`: 196 tests collected).
+The conclusion re-worded per the author's choice (prompt item 3 was
+truncated; clarified via a question): «Внешние метки (AAP, ANSC) не
+подтверждают превосходства над размером; **на AAP — хуже случайного.**» —
+«не подтверждают» alone was weaker than the fact (on AAP/tuning the ranking
+is significantly below 0.5, i.e. worse than random; on ANSC it coincides
+with size), so the AAP clause states it directly. To stay within the limit
+the following micro-trims were applied (agreed with the author beforehand;
+no numbers, verdicts or caveats changed): «измеряют прежде всего размер» →
+«измеряют размер»; «метрики не изменились в пределах ДИ (дельта AUC …» →
+«метрики в пределах ДИ (AUC …»; «исправления сами по себе не меняют» →
+«исправления не меняют»; «Дальше: перенос на Prozorro» → «Дальше:
+Prozorro». Checks: scripts/19 EXIT=0, pytest 196 passed, annotation 250
+words.
+
 ## [MTA-0014-2026-10-18] — Text-only follow-up to MTA-0013: thesis paragraph, cycle_log entry, annotation verdict (no computations)
 
 No computations, no artefact changes — texts only. `docs/thesis_text.md`
