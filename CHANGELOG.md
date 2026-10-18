@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0011-2026-10-18] — Text-only: AAP = Agenția Achiziții Publice, unified v5/v6 ΔAUC procedure CI, section-10а wording
+
+No calculations. (1) The AAP interdiction list is published by **Agenția Achiziții Publice** —
+the previous attribution to the Competition Council was wrong: fixed in `docs/thesis_text.md`
+(§3 line 19 and §10а) and `reports/legal_and_sources.md:42`; a repo-wide grep for the old
+attribution now returns nothing
+(other "Consiliul …" hits are buyer names — rayon councils — and stay
+untouched).
+(2) The v5/v6 tuning ΔAUC procedure CI is unified to the single value of
+`scripts/27_delta_cluster_boot.py` (1 000 replicates, seed 42; exact artefact bounds
+−0.002085 / 0.048152, `results/methodology/delta_v5_vs_v0_boot.json`) — **[−0.002; +0.048]**:
+replaced in the thesis §10а table (was `scripts/20`'s [−0.0043; +0.0487]) and in
+`reports/cycle_6.md` (4-decimal rendering unified to 3-decimal, `scripts/27` named in the row
+header); `reports/cycle_5.md`, `docs/model_card.md`, `cycle_log.md` and this CHANGELOG already
+carried the scripts/27 value and needed no change. `reports/cycle_dynamics.md` remains
+generated from `scripts/20`'s framework JSON and keeps the scripts/20 CI there (outside the
+author's file list). (3) Section 10а wording per the author: the point-2 header is now
+«Провал внешней валидности — свойство данных и задачи, а не артефактов выгрузки», and the
+temporal-skew sentence reads «обратный временно́й перекос: интердикции датированы 2023–2026
+годами, процедуры — 2018–2024, то есть часть интердикций относится к более позднему периоду,
+чем сами процедуры» — interdictions, not "decisions", matching the AAP renaming. Annotation
+unchanged (250 words); 166 tests.
+
 ## [MTA-0010-2026-10-18] — Thesis section «Label limits and cycles v0–v6» (no new calculations)
 
 Documentation-only task (no new computations, no new cycle: budget stays 6 of 10, production
