@@ -290,14 +290,21 @@ def quintile_labels(series: pd.Series, name: str) -> pd.Series:
 
 
 def bootstrap_disparity(g_flag: np.ndarray, rest_flag: np.ndarray,
-                        seed: int = 42) -> tuple[float, float, float]:
-    """Point estimate and 95% CI of (share_highplus_group / share_highplus_rest)."""
+                        seed: int = 42,
+                        n_boot: int | None = None) -> tuple[float, float, float]:
+    """Point estimate and 95% CI of (share_highplus_group / share_highplus_rest).
+
+    ``n_boot`` defaults to the module BOOT so the production call is
+    unchanged; ``audit_group_table`` threads its own parameter through here
+    (the MTA-0009 random-flag control re-runs the audit on random votes).
+    """
     if rest_flag.size == 0 or g_flag.size == 0 or rest_flag.mean() == 0:
         return float("nan"), float("nan"), float("nan")
     point = float(g_flag.mean() / rest_flag.mean())
     rng = np.random.default_rng(seed)
+    n_boot = BOOT if n_boot is None else int(n_boot)
     draws = []
-    for _ in range(BOOT):
+    for _ in range(n_boot):
         g = rng.choice(g_flag, size=g_flag.size, replace=True).mean()
         r = rng.choice(rest_flag, size=rest_flag.size, replace=True).mean()
         if r > 0:
@@ -350,8 +357,76 @@ def variant_votes(variant: str) -> pd.Series:
     return pd.Series(fit["votes"], index=feats_full["ocid"].astype(str))
 
 
-def main() -> int:
-    warnings.filterwarnings("ignore")
+DIM_STRATA = {
+    "buyer size (procedures per buyer)": ["money_band", "proc_type"],
+    "buyer type (central/local)": ["money_band", "proc_type"],
+    "buyer spend (total awarded, budget proxy)": ["money_band", "proc_type"],
+    "buyer region (locality)": ["money_band", "proc_type"],
+    "supplier region (OCDS address)": ["money_band", "proc_type"],
+    "industry (CPV 2 digits)": ["money_band", "proc_type"],
+    "procedure type": ["money_band"],
+    "contract value band": ["proc_type"],
+    "supplier seniority": ["money_band", "proc_type"],
+    "supplier size (awards won)": ["money_band", "proc_type"],
+    "publication year": ["money_band", "proc_type"],
+    "audit period (tuning/holdout)": ["money_band", "proc_type"],
+    "publication completeness": ["proc_type"],
+}
+
+#: audited group dimensions -> the frame column that carries their labels
+GROUPS = {
+    "buyer size (procedures per buyer)": "buyer_size",
+    "buyer type (central/local)": "buyer_type",
+    "buyer spend (total awarded, budget proxy)": "buyer_spend",
+    "buyer region (locality)": "region_group",
+    "supplier region (OCDS address)": "supplier_region_group",
+    "industry (CPV 2 digits)": "industry",
+    "procedure type": "proc_type",
+    "contract value band": "money_band",
+    "supplier seniority": "supplier_seniority",
+    "supplier size (awards won)": "supplier_size",
+    "publication year": "pub_year",
+    "audit period (tuning/holdout)": "audit_period",
+    "publication completeness": "pub_completeness",
+}
+
+
+def stratum_keys(frame: pd.DataFrame, cols: list[str]) -> pd.Series:
+    """Vectorised ``a|b|...`` keys (``agg(..., axis=1)`` is far too slow
+    to run once per group over the full corpus)."""
+    keys = frame[cols[0]].astype(str)
+    for col in cols[1:]:
+        keys = keys + "|" + frame[col].astype(str)
+    return keys
+
+
+def standardised_expectation(df: pd.DataFrame, sub: pd.DataFrame,
+                             strata_cols: list[str],
+                             cell_cache: dict) -> float:
+    """Mean over the group of the corpus rate within each stratum cell."""
+    key = tuple(strata_cols)
+    if key not in cell_cache:
+        full_keys = stratum_keys(df, strata_cols)
+        cell_cache[key] = (full_keys.value_counts(),
+                           df["high_plus"].groupby(full_keys).mean())
+    counts, rates = cell_cache[key]
+    keys = stratum_keys(sub, strata_cols)
+    cell_rate = keys.map(rates)
+    cell_n = keys.map(counts)
+    corpus_rate = float(df["high_plus"].mean())
+    return float(np.where(cell_n >= 50, cell_rate, corpus_rate).mean())
+
+
+def build_audit_frame(rescan: bool = False) -> pd.DataFrame:
+    """Corpus + OCDS party attributes + every audit dimension column.
+
+    Votes-independent by construction: the frame carries NO band columns -
+    callers set ``high_plus``/``critical``/``band`` themselves and pass the
+    frame to ``audit_group_table``. Extracted from ``main`` so the MTA-0009
+    random-5%-flags control (``scripts/28_random_flags_control.py``) audits
+    control vote vectors on the exact production frame instead of
+    reimplementing it.
+    """
     corpus = load_scored_corpus()
     feats = pd.read_csv(DATA_FEATURES / "features.csv", low_memory=False)
     # award_total / cpv_primary already come from the label table: only the
@@ -366,7 +441,7 @@ def main() -> int:
     # ---- OCDS party attributes (buyer type, supplier region) --------------
     # Cached read-only extraction: base ocid -> first non-empty value over the
     # package's records (award-stage EV/AC records hold the supplier address).
-    party = load_party_attributes(rescan="--rescan" in sys.argv)
+    party = load_party_attributes(rescan=rescan)
     base_attrs = (
         party.assign(base=party["ocid"].str.replace(r"-(EV|AC|PN)-.*$", "",
                                                     regex=True))
@@ -378,25 +453,6 @@ def main() -> int:
     df["ocds_buyer_type"] = df["ocds_buyer_type"].fillna("")
     df["supplier_regions"] = df["supplier_regions"].fillna("")
 
-    votes_variant = _arg_value("--variant")
-    suffix = ""
-    votes_source = "production scores (n_models_flagging; v0 configuration)"
-    votes = df["n_models_flagging"].astype(int)
-    if votes_variant:
-        vmap = variant_votes(votes_variant)
-        mapped = df["ocid"].astype(str).map(vmap)
-        missing = int(mapped.isna().sum())
-        votes = mapped.fillna(0).astype(int)
-        suffix = "_" + votes_variant.split("_")[0]     # "_v6"
-        votes_source = (f"cycle variant {votes_variant} (detector flags = top "
-                        f"5% inside the «cost band x procedure type» group)")
-        if missing:
-            print(f"warning: {missing} ocids missing from features.csv -> votes 0")
-    df["votes_audit"] = votes
-    df["high_plus"] = (votes >= 2).astype(int)      # high + critical
-    df["critical"] = (votes >= 3).astype(int)
-    df["band"] = np.select([votes == 0, votes == 1, votes == 2],
-                           ["low", "medium", "high"], default="critical")
     df["money_band"] = pd.cut(df["award_total"].fillna(0), bins=MONEY_EDGES,
                               labels=MONEY_LABELS, right=False).astype(str)
     df["proc_type"] = df["procurement_method_details"].where(
@@ -450,77 +506,27 @@ def main() -> int:
         [has_bid & has_award, has_award],
         ["bid+award data", "award data only"], default="no bid/award data")
 
-    # ranking percentiles used by the band/percentile columns (E.3)
+    # ranking percentile column used by the band/percentile columns (E.3)
     df["max_score"] = pd.to_numeric(df["max_score"], errors="coerce")
+    return df
+
+
+def audit_group_table(df: pd.DataFrame, n_boot: int = BOOT) -> pd.DataFrame:
+    """The 13-dimension group table with verdicts (section E).
+
+    ``df`` must carry the votes-dependent columns (``high_plus``, ``band``)
+    next to the dimension columns built by ``build_audit_frame``.
+    Deterministic given the same frame: every bootstrap call is seeded (42).
+    ``n_boot`` exists only so the MTA-0009 random-flag control can re-run the
+    audit on hundreds of random vote vectors cheaply; the production call
+    keeps the module default (BOOT = 500).
+    """
     top_decile_at = float(df["max_score"].quantile(0.9))
     corpus_tpr = float(df.loc[df["is_aap_positive"] == 1, "high_plus"].mean())
-
-    # ---- strata for direct standardisation --------------------------------
-    # A dimension must not be controlled by its own factor: standardising
-    # "procedure type" over (money band x procedure type) would force its
-    # conditional gap to ~0 by construction and hide the very effect the audit
-    # is supposed to measure. Each dimension is therefore standardised over the
-    # legitimate factors it is *not* itself. "Publication completeness" is the
-    # exception that proves the rule: its money band is built from award_total,
-    # which is missing exactly when publication is incomplete - controlling it
-    # would absorb the audited effect, so only the procedure type is used.
-    DIM_STRATA = {
-        "buyer size (procedures per buyer)": ["money_band", "proc_type"],
-        "buyer type (central/local)": ["money_band", "proc_type"],
-        "buyer spend (total awarded, budget proxy)": ["money_band", "proc_type"],
-        "buyer region (locality)": ["money_band", "proc_type"],
-        "supplier region (OCDS address)": ["money_band", "proc_type"],
-        "industry (CPV 2 digits)": ["money_band", "proc_type"],
-        "procedure type": ["money_band"],
-        "contract value band": ["proc_type"],
-        "supplier seniority": ["money_band", "proc_type"],
-        "supplier size (awards won)": ["money_band", "proc_type"],
-        "publication year": ["money_band", "proc_type"],
-        "audit period (tuning/holdout)": ["money_band", "proc_type"],
-        "publication completeness": ["proc_type"],
-    }
-
-    def stratum_keys(frame: pd.DataFrame, cols: list[str]) -> pd.Series:
-        """Vectorised ``a|b|...`` keys (``agg(..., axis=1)`` is far too slow
-        to run once per group over the full corpus)."""
-        keys = frame[cols[0]].astype(str)
-        for col in cols[1:]:
-            keys = keys + "|" + frame[col].astype(str)
-        return keys
 
     # corpus-level rates per stratum cell depend only on the band vector, so
     # they are computed once per stratum tuple, not once per group
     cell_cache: dict[tuple[str, ...], tuple[pd.Series, pd.Series]] = {}
-
-    def standardised_expectation(sub: pd.DataFrame, strata_cols: list[str]) -> float:
-        """Mean over the group of the corpus rate within each stratum cell."""
-        key = tuple(strata_cols)
-        if key not in cell_cache:
-            full_keys = stratum_keys(df, strata_cols)
-            cell_cache[key] = (full_keys.value_counts(),
-                               df["high_plus"].groupby(full_keys).mean())
-        counts, rates = cell_cache[key]
-        keys = stratum_keys(sub, strata_cols)
-        cell_rate = keys.map(rates)
-        cell_n = keys.map(counts)
-        corpus_rate = float(df["high_plus"].mean())
-        return float(np.where(cell_n >= 50, cell_rate, corpus_rate).mean())
-
-    GROUPS = {
-        "buyer size (procedures per buyer)": "buyer_size",
-        "buyer type (central/local)": "buyer_type",
-        "buyer spend (total awarded, budget proxy)": "buyer_spend",
-        "buyer region (locality)": "region_group",
-        "supplier region (OCDS address)": "supplier_region_group",
-        "industry (CPV 2 digits)": "industry",
-        "procedure type": "proc_type",
-        "contract value band": "money_band",
-        "supplier seniority": "supplier_seniority",
-        "supplier size (awards won)": "supplier_size",
-        "publication year": "pub_year",
-        "audit period (tuning/holdout)": "audit_period",
-        "publication completeness": "pub_completeness",
-    }
 
     rows = []
     for label, col in GROUPS.items():
@@ -532,10 +538,12 @@ def main() -> int:
             rest_flag = rest["high_plus"].to_numpy()
             rate = float(g_flag.mean())
             lo, hi = wilson_ci(int(g_flag.sum()), int(g_flag.size))
-            point, dlo, dhi = bootstrap_disparity(g_flag, rest_flag)
+            point, dlo, dhi = bootstrap_disparity(g_flag, rest_flag,
+                                                  n_boot=n_boot)
 
             # conditional (standardised) expectation over the OTHER factors
-            expected = standardised_expectation(sub, DIM_STRATA[label])
+            expected = standardised_expectation(df, sub, DIM_STRATA[label],
+                                                cell_cache)
             gap_pp = (rate - expected) * 100
             tol_pp = max(ABS_TOLERANCE_PP, REL_TOLERANCE * expected * 100)
 
@@ -614,10 +622,40 @@ def main() -> int:
                 "reasons": "; ".join(reasons),
             })
 
-    groups = pd.DataFrame(rows)
+    return pd.DataFrame(rows)
+
+
+def main() -> int:
+    warnings.filterwarnings("ignore")
+    df = build_audit_frame(rescan="--rescan" in sys.argv)
+
+    votes_variant = _arg_value("--variant")
+    suffix = ""
+    votes_source = "production scores (n_models_flagging; v0 configuration)"
+    votes = df["n_models_flagging"].astype(int)
+    if votes_variant:
+        vmap = variant_votes(votes_variant)
+        mapped = df["ocid"].astype(str).map(vmap)
+        missing = int(mapped.isna().sum())
+        votes = mapped.fillna(0).astype(int)
+        suffix = "_" + votes_variant.split("_")[0]     # "_v6"
+        votes_source = (f"cycle variant {votes_variant} (detector flags = top "
+                        f"5% inside the «cost band x procedure type» group)")
+        if missing:
+            print(f"warning: {missing} ocids missing from features.csv -> votes 0")
+    df["votes_audit"] = votes
+    df["high_plus"] = (votes >= 2).astype(int)      # high + critical
+    df["critical"] = (votes >= 3).astype(int)
+    df["band"] = np.select([votes == 0, votes == 1, votes == 2],
+                           ["low", "medium", "high"], default="critical")
+
+    groups = audit_group_table(df)
     groups.to_csv(TABLES / f"bias_audit_groups{suffix}.csv", index=False)
 
     # ---- E.4: features as proxies for structural groups -------------------
+    buyer_counts = df.groupby("buyer_id")["ocid"].transform("size")
+    cpv2 = df["cpv_primary"].astype(str).str[:2]
+
     proxy_targets = {
         "capital_region": (df["region"] == "Chişinău").to_numpy(),
         "large_buyer_top_decile": (
@@ -655,6 +693,7 @@ def main() -> int:
     coverage_df = pd.DataFrame(coverage)
     coverage_df.to_csv(TABLES / f"bias_audit_label_coverage{suffix}.csv", index=False)
 
+    corpus_tpr = float(df.loc[df["is_aap_positive"] == 1, "high_plus"].mean())
     calibration_within = int(groups["calibration_ok"].sum())
     summary = {
         "n_procedures": int(len(df)),

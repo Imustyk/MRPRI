@@ -421,3 +421,137 @@ def test_v6_block_in_cycle_artefact_if_present():
     assert block["b4_directaward"]["corpus_share"] > 0.5
     sl = block["signal_loss_vs_v0"]
     assert sl["kept_n"] + sl["lost_n"] <= sl["v0_critical_n"]
+
+
+# ---------------------------------------------------------------------------
+# MTA-0009: the random-5%-within-group control (scripts/28) and the audited
+# frame extraction from scripts/18
+# ---------------------------------------------------------------------------
+
+
+def test_control_a_flag_counts_match_v6_group_flag_frame():
+    """Control (a) must carry EXACTLY v6's within-group flag share.
+
+    ``group_flag_frame`` selects percentiles ``> 1 - rate`` on the 1/n..n/n
+    grid, i.e. ``n - floor(0.95 * n)`` rows - the control mirrors that rule so
+    the only difference between v6 and the control is the signal, not the
+    normalisation.
+    """
+    s20 = _load_script("20_cycle_framework.py")
+    s28 = _load_script("28_random_flags_control.py")
+    for n in (168, 240, 1000, 11061, 60916):
+        scores = pd.DataFrame({"d": np.arange(n, dtype=float)})
+        groups = np.full(n, "g")
+        v6_flags = int(np.asarray(s20.group_flag_frame(scores, groups))[:, 0].sum())
+        control = int(s28.flag_counts_per_group(np.array([n]))[0])
+        assert v6_flags == control == n - int(np.floor(0.95 * n))
+
+
+def test_allocate_proportional_sums_and_caps():
+    s28 = _load_script("28_random_flags_control.py")
+    sizes = np.array([168, 30475, 60916, 11061])
+    alloc = s28.allocate_proportional(sizes, 2965)
+    assert int(alloc.sum()) == 2965
+    assert (alloc <= sizes).all()
+    # each group is within one row of the exact proportional share
+    exact = sizes * 2965 / sizes.sum()
+    assert np.abs(alloc - exact).max() < 1.0
+
+
+def test_control_b_band_sizes_exact_and_critical_nested():
+    """Control (b): consensus = v6's consensus, high+ = v6's high+, critical < high+."""
+    s28 = _load_script("28_random_flags_control.py")
+    sizes = np.array([200, 300, 500])
+    idx_lists = [np.arange(0, 200), np.arange(200, 500), np.arange(500, 1000)]
+    votes = s28.control_b_votes(idx_lists, sizes, n_high=50, n_crit=20,
+                                rng=np.random.default_rng(3))
+    assert set(np.unique(votes).tolist()) <= {0, 2, 3}
+    assert int((votes >= 3).sum()) == 20
+    assert int((votes >= 2).sum()) == 50
+    # proportional allocation: group 1 (n=200) gets 10 high+ of which 4 critical
+    assert int((votes[:200] >= 2).sum()) == 10
+    assert int((votes[:200] >= 3).sum()) == 4
+
+
+def test_control_a_votes_per_group_share():
+    s28 = _load_script("28_random_flags_control.py")
+    sizes = np.array([200, 400])
+    idx_lists = [np.arange(0, 200), np.arange(200, 600)]
+    votes, flags = s28.control_a_votes(idx_lists, sizes,
+                                       np.random.default_rng(5))
+    assert flags.shape == (600, 4)
+    for d in range(4):                       # 5% of every group, every detector
+        assert int(flags[:200, d].sum()) == 10
+        assert int(flags[200:, d].sum()) == 20
+    assert int(votes.sum()) == 4 * (10 + 20)
+    # deterministic given the seed
+    votes2, flags2 = s28.control_a_votes(idx_lists, sizes,
+                                         np.random.default_rng(5))
+    np.testing.assert_array_equal(votes, votes2)
+    np.testing.assert_array_equal(flags, flags2)
+
+
+def test_yearly_consensus_ratio_matches_scripts20_formula():
+    """C3 = min/max yearly consensus share over years with n >= 500 (scripts/20)."""
+    s28 = _load_script("28_random_flags_control.py")
+    year = np.array([2018] * 1000 + [2019] * 1000 + [2020] * 1000 + [2021] * 100)
+    cons = np.array([True] * 40 + [False] * 960          # 4.0%
+                  + [True] * 20 + [False] * 980          # 2.0%
+                  + [True] * 10 + [False] * 990          # 1.0%
+                  + [False] * 100)                       # small year: no weight
+    assert s28.yearly_consensus_ratio(year, cons) == 0.25
+    # a year with zero consensus drags the ratio to 0
+    cons0 = cons.copy()
+    cons0[:1000] = False
+    assert s28.yearly_consensus_ratio(year, cons0) == 0.0
+    # no consensus in any year -> undefined, not a crash
+    assert s28.yearly_consensus_ratio(year, np.zeros(3100, dtype=bool)) is None
+
+
+def test_disparity_rate_matches_audit_definition():
+    """disparity = rate(high+ | group) / rate(high+ | complement) - scripts/18."""
+    s28 = _load_script("28_random_flags_control.py")
+    group = np.zeros(1000, dtype=bool)
+    group[:200] = True
+    high = np.zeros(1000, dtype=bool)
+    high[:20] = True                       # 20/200 = 0.10 in the group
+    high[200:240] = True                   # 40/800 = 0.05 in the complement
+    assert s28.disparity_rate(group, high) == 2.0
+    # no complement -> undefined, not zero
+    assert s28.disparity_rate(np.ones(1000, dtype=bool), high) is None
+
+
+def test_control_metrics_deterministic_on_fixed_seed():
+    s28 = _load_script("28_random_flags_control.py")
+    sizes = np.array([300, 700])
+    idx_lists = [np.arange(0, 300), np.arange(300, 1000)]
+    year = np.full(1000, 2020)
+    direct = np.zeros(1000, dtype=bool)
+    direct[:100] = True
+    ge50 = np.zeros(1000, dtype=bool)
+    ge50[:5] = True
+    v0_crit = np.zeros(1000, dtype=bool)
+    v0_crit[:50] = True
+    votes_a, _ = s28.control_a_votes(idx_lists, sizes, np.random.default_rng(7))
+    m1 = s28.control_metrics(votes_a, year, direct, ge50, v0_crit)
+    votes_b = s28.control_b_votes(idx_lists, sizes, 50, 20,
+                                  np.random.default_rng(9))
+    m2 = s28.control_metrics(votes_b, year, direct, ge50, v0_crit)
+    votes_a2, _ = s28.control_a_votes(idx_lists, sizes, np.random.default_rng(7))
+    m3 = s28.control_metrics(votes_a2, year, direct, ge50, v0_crit)
+    assert m1 == m3
+    # control (b) exact band sizes are visible in the metrics
+    assert m2["consensus_n"] == 20 and m2["high_plus_n"] == 50
+    # retention is computed against the v0-critical mask
+    assert m2["kept_v0_critical_share"] <= 1.0
+
+
+def test_audit_group_table_production_default_is_boot():
+    """The refactored scripts/18 keeps the production bootstrap count."""
+    import inspect
+    s18 = _load_script("18_bias_audit.py")
+    assert hasattr(s18, "build_audit_frame")
+    sig = inspect.signature(s18.audit_group_table)
+    assert sig.parameters["n_boot"].default == s18.BOOT == 500
+    bsig = inspect.signature(s18.bootstrap_disparity)
+    assert bsig.parameters["n_boot"].default is None  # -> module BOOT in prod

@@ -4,6 +4,60 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0009-2026-10-18] — Random-5%-within-group control for v6 (cycle-6 correction, no new cycle)
+
+Author-requested correction to cycle 6, **not a new cycle** (budget stays 6 of 10, no v7 is
+created, production stays v0, the cycle-6 verdict "not adopted — compromise", the contract
+matrix 9/16/2 and the closing status 1 of 4 are unchanged). Question: are v6's improvements
+(C3 passing, B4 within band, size dominance down) achieved by the within-group flag
+normalisation itself rather than by detector quality? The control keeps the normalisation and
+throws the detector signal away (no detector score is used anywhere).
+
+### Added
+
+- `scripts/28_random_flags_control.py`: two controls, 200 repeats each with fixed seeds —
+  (a) 4 independent random 5%-within-group flags (exact per-group flag count of v6's
+  `group_flag_frame`), consensus ≥ 3; (b) rank-consensus-matched: v6's band sizes (consensus
+  2,965, high+ 6,969) drawn at random inside the groups proportional to group size, critical
+  nested in high+ (the low/medium split of (b) is undefined and unused by every compared
+  metric). Per repeat: C3 (`scripts/20` formula), direct-award share/disparity of high+,
+  ≥ 50 m rate/disparity (`scripts/18` formula), signal retention (share of v0-critical kept),
+  mean pairwise κ; the full section-E audit re-run on control votes with the production code
+  path (`scripts/18.audit_group_table`, 5 repeats per control, 200 bootstrap replicates) —
+  **production audit artefacts v0/v6 are never overwritten**. Outputs:
+  `results/methodology/random_flags_control.json`, `results/tables/random_flags_control.csv`,
+  `reports/random_flags_control.md`. The v0 self-check inside the script reproduces every
+  artefact value (C3 0.1586, B4 0.2099, ≥ 50 m rate 0.5085, disparity 10.4829, 3,031/7,662).
+- `scripts/18_bias_audit.py` refactored into module functions `build_audit_frame()` and
+  `audit_group_table(df, n_boot=BOOT)` (behaviour byte-identical: both audits regenerated and
+  diffed against the pre-refactor artefacts — only two self-description fields
+  `votes_source`/`variant` appear in the production JSON, by MTA-0008 design);
+  `bootstrap_disparity` gains an optional `n_boot` (production default unchanged).
+- `reports/cycle_6.md`: new section F (the control table and the honest reading) and the
+  explicit power caveat for the cheapest-band stratified AUC ("19 positives — insufficient
+  power; enrichment not claimed").
+
+### Measured result
+
+Control (a)/(b) medians [p2.5; p97.5] vs v0 / v6: C3 0.318 [0; 0.597] / 0.869 [0.748; 0.943]
+(vs 0.159 / 0.537 — random flags with the same bands pass C3 *better* than v6);
+B4 direct disparity 0.998 [0.936; 1.074] / 1.000 [0.997; 1.002] (vs 0.21 / 1.13 — the return to
+the OK band is reproduced by random flags; v6's 1.13 sits outside control (a), +13% over its
+median — a small detector-driven under-flagging of direct awards); ≥ 50 m rate in high+
+0.0136 [0.005; 0.024] / 0.044 [0.029; 0.063] (vs 0.509 / 0.146 — v6 far outside both, 3.3×
+control (b): the size signal survives normalisation); v0-critical retention 0.0003 / 0.0195
+(vs 1.00 / 0.492 — outside both); κ ≈ 0.0002 (vs 0.2497 / 0.2991). Audit verdicts on random
+votes: 5–12 unexplained (medians 8 and 5) vs 41 (v6) and 32 (v0) — random flags show only the
+multiple-comparison false-positive baseline, so ~30 of v6's 41 verdicts reflect the detectors'
+flag structure, not the normalisation. Honest reading fixed in `reports/cycle_6.md` F and
+`reports/random_flags_control.md`: **the C3/B4 equalisation is a property of the
+normalisation; what distinguishes v6 from a random flag with the same share is κ, signal
+retention and the residual size concentration** — and none of it passes the thresholds
+(v6 still not adopted). 8 new tests (flag-count mirror of `group_flag_frame`, proportional
+allocation and nesting of control (b), C3/disparity formulas against the production
+definitions, determinism, production bootstrap default) — **166 passed**; annotation test
+count updated.
+
 ## [MTA-0008-2026-10-18] — Iteration cycle 6 (v6_group_flags): flags normalised within group, bias audit re-run on its own votes, cycle-5 corrections
 
 Author-requested cycle 6 (budget 6 of 10). **Production behaviour unchanged** (v0 remains
