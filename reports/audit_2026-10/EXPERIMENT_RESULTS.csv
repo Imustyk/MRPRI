@@ -1,0 +1,6 @@
+regime,n_runs,spearman_max_score_mean,spearman_max_score_min,spearman_ci95_low_mean,spearman_ci95_high_mean,topk_overlap_50_mean,topk_overlap_100_mean,topk_overlap_200_mean,topk_overlap_200_min,topk_overlap_500_mean,jaccard_high_plus_mean,jaccard_critical_mean,band_change_pct_mean,ks_max_score_mean,spearman_mad_mean,spearman_if_mean,spearman_lof_mean,spearman_ocsvm_mean
+round,1,0.574,0.574,0.5689,0.5781,0.66,0.64,0.605,0.605,0.648,0.391,0.4051,31.9941,0.1066,0.8711,0.887,0.4453,0.6911
+noise_small,10,0.9617,0.9605,0.96,0.9634,0.93,0.916,0.958,0.945,0.9708,0.8942,0.9253,2.0544,0.15,1.0,0.9843,0.9553,0.9912
+noise_moderate,10,0.6459,0.6432,0.6419,0.6499,0.72,0.786,0.827,0.785,0.597,0.4735,0.5075,28.377,0.1294,0.6068,0.907,0.7006,0.9411
+missing_1pct,5,0.9787,0.9774,0.9775,0.9798,0.912,0.908,0.968,0.955,0.9856,0.9107,0.9339,1.1028,0.1522,0.9929,0.998,0.981,0.9818
+missing_5pct,5,0.9027,0.9004,0.9004,0.9051,0.66,0.728,0.801,0.755,0.9148,0.6772,0.7444,5.2441,0.1479,0.9635,0.99,0.9115,0.9121

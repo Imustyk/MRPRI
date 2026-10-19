@@ -14,7 +14,8 @@ The software scores procurement procedures, explains *why* they look unusual (re
 
 | Piece | Role in the thesis |
 |---|---|
-| `scripts/01a`–`08`, `src/mtender/` | The real ETL: walks the live MTender OCDS API, normalises into MongoDB, engineers indicators, scores with four detectors, writes the tables and figures quoted in the thesis |
+| `scripts/01a`–`11`, `src/mtender/` | The real ETL: walks the live MTender OCDS API, normalises into MongoDB, engineers indicators, scores with four detectors, writes the tables and figures quoted in the thesis |
+| `scripts/12`–`32`, `reports/` | The measurement layer: external validation (AAP, ANSC), agreement, thresholds, robustness (seeds / ablation / bias / noise), the v0–v6 cycle protocol, XAI and RAG evaluation, final verification |
 | `backend/app/adapter.py` | Maps the real ETL field names onto the dashboard contract and refuses to fabricate absent indicators |
 | `backend/app/store.py` | Reads `data/processed/tenders.json` and the anomaly scores in MongoDB |
 | `backend/app/main.py` | FastAPI for the dashboard |
@@ -173,7 +174,7 @@ same facts to Python callers.
 
 There are two generators in this repository, and they are **not** equivalent:
 
-| | Real ETL (`scripts/01a`–`08`) | Legacy synthetic (`backend/ml/`) |
+| | Real ETL (`scripts/01a`–`11`) | Legacy synthetic (`backend/ml/`) |
 |---|---|---|
 | Source | live MTender OCDS API | invented records |
 | Storage | MongoDB `mtender` + `data/processed/` | `data/processed/` only |
@@ -634,6 +635,6 @@ Diplom/
 
 1. **Chapter 1** — domain (Law 131/2015, MTender, red flags), goal, tasks, limitations (no court labels).
 2. **Chapter 2** — this codebase: features, architecture, Isolation Forest / LOF / rules, hybrid score.
-3. **Chapter 3** — run the demo, export `tenders_scored.csv`, discuss Precision@K and 5–10 case files from the Procedures page.
+3. **Chapter 3** — run the demo, export `results/tables/tender_anomaly_scores.csv` (the real scored corpus; `data/processed/tenders_scored.csv` is the legacy *synthetic* demo file), discuss Precision@K and 5–10 case files from the Procedures page.
 
 Screenshots: Overview, a critical case, the graph. Cite the disclaimer on every figure: scores are indicators for review, not proof of corruption.

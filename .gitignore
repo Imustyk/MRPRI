@@ -5,6 +5,7 @@
 node_modules/
 __pycache__/
 *.pyc
+.ruff_cache/
 
 # analyst workspace: local SQLite written by the dashboard and the API
 data/workspace/

@@ -4,6 +4,54 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [AUDIT-2026-10-19] — Comprehensive repository audit + noise/input-perturbation sensitivity of v0 (scripts/32)
+
+No MTA number was assigned by the author; framed as a **measurement, not a
+cycle** — cycle budget stays 6 of 10, production stays **v0**, no v7, no
+retraining, votes/bands/thresholds untouched.
+
+* `reports/audit_2026-10/` (new): `AUDIT_REPORT.md` — architecture map,
+  capability matrix vs. the audit checklist, overlap assessment proving that
+  no input-noise robustness existed anywhere, 12 classified defects
+  (B/D/L), fixes, executed check table, final recommendation;
+  `NOISE_SENSITIVITY_REPORT.md` — full experiment write-up (question,
+  pre-registered hypotheses, fidelity gates, method, results with CIs,
+  figures, interpretation, limitations); `EXPERIMENT_RESULTS.csv` — compact
+  machine-readable per-regime table; `MODEL_COMPARISON.md` — every
+  evaluation axis (agreement κ, seed robustness, ablation, AAP/ANSC labels,
+  ΔAUC cluster CIs, chance controls, thresholds) + the new noise axis and
+  the no-change recommendation; `REPRODUCIBILITY.md` — commands, seeds,
+  integrity, artefact map.
+* `scripts/32_noise_sensitivity.py` (new): inference-only robustness of the
+  frozen production ranking — perturbs **source** columns (money ±1 %/±5 %
+  lognormal, counts, dates, publication blocks, 10k-grid rounding) and
+  re-derives all 22 features with the production `engineer_features`;
+  identifiers/CPV/status/procedure types/behavioural shares are invariants.
+  Fidelity gates (per-detector ρ ≥ 0.9999997, 100 % band agreement) must
+  pass before any perturbed score is trusted; resumable progress;
+  `--report-only` rebuilds outputs without rescoring. 31 passes, 484 s.
+* `tests/test_noise_sensitivity.py` (new): 24 synthetic-data tests
+  (determinism, invariants, dependency-consistent re-derivation, ETL fill
+  conventions, metric formulas/bounds, no-network, `python -I --help`).
+* Findings: **H1 rejected** (±1 % → ρ 0.962 [0.960; 0.963] < 0.99;
+  top-200 ≥ 0.945; ≤ 2.1 % band changes); **H2 rejected** (±5 % stress →
+  ρ 0.646, 28.4 % band changes); missing publications best-tolerated
+  (ρ 0.979/0.903); grid rounding worst (ρ 0.574 via 99.4 % value ties);
+  detector drivers: OCSVM 0.966 / IF 0.946 most stable, LOF 0.828,
+  MAD 0.803 (perfect under ±1 %, collapses under count jitter). Instability
+  reported as found; recommendation: **adopt no model change**, apply
+  operational guidance only (top-K ≥ ~200 review granularity, indicative
+  exact ranks, never pre-round monetary inputs).
+* Other audit changes: `.gitignore` (+`.ruff_cache/`), `README.md` (pipeline
+  range 01a–11 + measurement layer 12–32; Chapter 3 now points at
+  `tender_anomaly_scores.csv` instead of the synthetic `tenders_scored.csv`).
+* Audit verifications: data integrity re-hashed against
+  `export_manifest.json` (byte-for-byte match); uvicorn startup smoke per
+  README (`/api/health`, `/api/meta`, `/api/model-kpis` all 200,
+  KPI checks 21/0 failed/3 skipped).
+* Checks: `scripts/19_final_verification.py` EXIT=0 ("all headline numbers
+  reproduce"), `pytest tests/ -q` → **220 passed** (196 + 24).
+
 ## [MTA-0015-2026-10-18] — Annotation polish: second external label named, factual test count, sharper verdict wording (annotation only)
 
 `docs/annotation.md` only, ≤ 250 words (exactly 250 after the edit). The
