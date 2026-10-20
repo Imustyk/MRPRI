@@ -55,13 +55,19 @@ Documented drops: 7747 module-known cases lack a year or value quartile
 ## 4. The answer form
 
 `results/tables/expert_review_template.csv` is **header-only** — zero rows,
-zero manufactured assessments. Columns (to be filled by real reviewers):
+zero manufactured assessments. The columns implement the five questions the
+review must answer (brief §8), one column per question, plus process fields:
 
-`case_id`, `irregularity` (0 = nothing unusual, 1 = suspicious, 2 = clearly
-irregular, -1 = cannot judge from the given facts), `most_relevant_sign`
-(free text), `amount_suspect` (0/1/NA), `procedure_suspect` (0/1/NA),
-`supplier_or_buyer_link_suspect` (0/1/NA), `confidence` (low/medium/high),
-`review_time_seconds`, `reviewer_id`, `reviewed_at`.
+| Brief question | Column | Coding |
+|---|---|---|
+| Does the case deserve further investigation? | `reviewable` | 0 = no, 1 = yes |
+| Which observable indicator triggered concern? | `indicators_observed` | free text naming observable facts only |
+| Are supporting documents sufficient? | `documents_sufficient` | 0 = no, 1 = yes, 2 = unknown from the given facts |
+| Is the alert explainable? | `explainable` | 0 = no, 1 = yes |
+| Does the case appear to be a false alarm? | `false_alarm` | 0 = no, 1 = yes |
+
+Process/metadata columns: `confidence` (1–5), `review_time_minutes`,
+`reviewer_id`, `comments`.
 
 ## 5. Reviewers and independence
 
@@ -76,18 +82,23 @@ irregular, -1 = cannot judge from the given facts), `most_relevant_sign`
 
 ## 6. Planned measurements (all pending until reviews exist)
 
-- **Reviewable-case precision per group**: share of `irregularity >= 1` among
-  *judgeable* cases (`irregularity != -1`), with Wilson 95% CI.
-- **Lift of `module_selected` vs `matched_control`** on that precision —
-  reviewer-perceived irregularity, not enforcement outcomes.
-- **v0_selected as a calibration reference**: what production-critical flagging
-  looks like to experts.
-- **Inter-reviewer agreement**: Cohen's κ (and per-column agreement) — the
-  label's reliability ceiling.
-- **Per-sign breakdown** (`amount_suspect` / `procedure_suspect` /
-  `link_suspect`) vs the Phase 4 module decomposition (money/competition/pair).
-- **Process metrics**: review time per case, share of `-1` (cannot judge).
-- **Uncertainty**: bootstrap CIs over buyers for group lifts.
+Mirrors `METRIC_DEFINITIONS` in `scripts/36` (written to
+`results/methodology/expert_review_export.json`):
+
+- **Reviewable-case precision**: share of `reviewable = 1` per group, reported
+  with buyer-cluster bootstrap 95% CIs (procedures of one buyer are not
+  independent reviews).
+- **Lift over matched controls**: precision(group) /
+  precision(`matched_control`); undefined while the control precision is 0 —
+  reported as undefined, never imputed.
+- **Inter-reviewer agreement**: pairwise Cohen's κ on the reviewable
+  judgement (`src/mtender.eval_metrics.cohen_kappa`), only when ≥ 2 reviewers
+  see overlapping cases.
+- **Confidence intervals**: percentile bootstrap clustered by buyer.
+- **Average review time**: mean of `review_time_minutes` per group.
+- **Secondary descriptors**: `false_alarm` / `explainable` /
+  `documents_sufficient` shares per group; per-indicator breakdown grouped by
+  the observable indicator the reviewer names (free-text coding, descriptive).
 
 ## 7. Workflow
 

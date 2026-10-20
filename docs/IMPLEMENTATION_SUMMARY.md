@@ -111,13 +111,30 @@ All verification executed on 2026-10-20:
 | Check | Result |
 |---|---|
 | `scripts/19_final_verification.py` | ✅ all headline numbers reproduce |
-| full `pytest` | ✅ **286 passed** |
-| `tests/test_api_real_data.py` (TestClient) | ✅ 20 passed (in the 286) |
+| full `pytest` | ✅ **287 passed** |
+| `tests/test_api_real_data.py` (TestClient) | ✅ 20 passed (in the 287) |
 | `tsc --noEmit` (frontend) | ✅ 0 errors |
 | `npm run build` | ✅ built in 1.17 s |
 | uvicorn smoke, real data | ✅ 152 378 records, origin `real-ocds`, `hash_verified: true`, external AUCs 0.493453 / 0.511196 served, 5-layer explanation |
 | `scripts/35` live (B=1000, seed 42) | ✅ registry + both labels + LOO + temporal written |
 | `scripts/36` live (N=100, seed 42) | ✅ 3×100 blinded, deny-list check pass, template 0 rows |
+| `scripts/37` live | ✅ `docs/figures/external_validation_baselines.png` + `external_validation_paired_vs_v0.png` rendered from artefacts only |
+
+## Before and after (branch-level)
+
+| Axis | Before (`f114452`, 2026-10-19) | After (`72ca368` + follow-up, 2026-10-20) |
+|---|---|---|
+| Provenance/evaluation/XAI routes | none; `/api/meta` served the stale synthetic model name | `/api/dataset` (origin probe + SHA-256 verification), `/api/evaluation` (negatives visible), `/api/explainability`, `/api/tenders/{id}/explanation` with `available: false` degradation |
+| Per-procedure explanation | none | deterministic five-layer (facts → indicators → detector percentiles → references → limitations) |
+| Temporal-leakage control | measured for one label only | availability matrix + stage-aware sets + 13 automated tests |
+| Risk-specific indicators | none (single anomaly lens) | modules A–D + direct-award matched-control track, 24 tests, live run over 152 378 procedures |
+| External-label registry | six scattered sources | uniform schema with honest blocked/pending statuses |
+| External-validation statistics | point estimates | supplier/buyer cluster bootstrap (B=1000), paired vs-v0 CIs, LOO robustness, temporal guard |
+| Expert review | no workflow | blinded 3×100 export, deny-list column check, header-only answer form implementing the five brief questions, metric definitions; results honestly `pending` |
+| Experimental-model comparison | not pre-registered | pre-registered baselines + adoption rule; H1 rejected, no adoption |
+| Charts | none for external validation | `docs/figures/*.png`, reproducible via `scripts/37` |
+| API docs / change log | routes table without research endpoints | README updated; CHANGELOG + cycle_log entries |
+| Tests | — | +67 new on this branch → **287 total** |
 
 ## Guard-rail compliance
 
@@ -136,10 +153,11 @@ All verification executed on 2026-10-20:
 
 ```bash
 .venv/bin/python scripts/19_final_verification.py
-.venv/bin/python -m pytest -q                        # 286 tests
+.venv/bin/python -m pytest -q                        # 287 tests
 .venv/bin/python scripts/34_risk_modules.py          # Phase 4 indicators (live)
 .venv/bin/python scripts/35_external_validation.py   # Phase 5/7 framework (B=1000)
 .venv/bin/python scripts/36_export_expert_review.py --n 100 --seed 42
+.venv/bin/python scripts/37_external_validation_chart.py           # docs/figures/*.png
 npm run build --prefix frontend
 .venv/bin/python -m uvicorn backend.app.main:app --port 8000
 ```

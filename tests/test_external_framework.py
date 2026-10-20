@@ -33,6 +33,7 @@ def _load(script_name: str, module_name: str):
 
 mod35 = _load("35_external_validation.py", "extval35")
 mod36 = _load("36_export_expert_review.py", "exprev36")
+mod37 = _load("37_external_validation_chart.py", "extval37")
 
 
 # --------------------------------------------------------------------------- #
@@ -371,3 +372,67 @@ def test_script36_deterministic_and_requires_module_csv(tmp_path, monkeypatch):
     # without scripts/34 output the experimental group cannot be defined
     monkeypatch.setattr(mod36, "MODULE_CSV", tmp_path / "missing.csv")
     assert mod36.main(["--n", "2", "--outdir", str(tmp_path / "c")]) == 1
+
+
+# --------------------------------------------------------------------------- #
+# scripts/37 - charts
+# --------------------------------------------------------------------------- #
+
+
+def test_script37_chart_from_artefacts(tmp_path):
+    baselines = tmp_path / "baselines.csv"
+    baselines.write_text(
+        "label,rule,metric,point,ci_lo,ci_hi,n_boot_valid,note\n"
+        "aap,v0_max_score,roc_auc,0.53,0.48,0.59,1000,note\n"
+        "aap,v0_max_score,pr_auc,0.006,0.002,0.011,1000,note\n"
+        "aap,module_hits,roc_auc,0.48,0.45,0.54,1000,note\n"
+        "ansc,v0_max_score,roc_auc,0.51,0.49,0.56,1000,note\n"
+        "ansc,module_hits,roc_auc,0.48,0.47,0.53,1000,note\n",
+        encoding="utf-8",
+    )
+    framework = tmp_path / "framework.json"
+    framework.write_text(
+        json.dumps(
+            {
+                "labels": {
+                    "aap": {"n_rows": 100, "positives": 5},
+                    "ansc": {"n_rows": 80, "positives": 7},
+                },
+                "cluster_units": {
+                    "aap": "supplier clusters",
+                    "ansc": "buyer clusters",
+                },
+                "paired_vs_v0": {
+                    "aap": {
+                        "module_hits": {
+                            "roc_auc": {"diff": 0.05, "ci": [0.01, 0.10],
+                                        "verdict": "ci_excludes_0"}
+                        }
+                    },
+                    "ansc": {
+                        "module_hits": {
+                            "roc_auc": {"diff": 0.03, "ci": [-0.01, 0.07],
+                                        "verdict": "ci_includes_0"}
+                        }
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    outdir = tmp_path / "figures"
+    rc = mod37.main(
+        ["--baselines", str(baselines), "--framework", str(framework),
+         "--outdir", str(outdir)]
+    )
+    assert rc == 0
+    for name in ("external_validation_baselines.png",
+                 "external_validation_paired_vs_v0.png"):
+        assert (outdir / name).stat().st_size > 1000, name
+
+    # missing artefacts fail loudly - charts are never drawn from guesses
+    rc = mod37.main(
+        ["--baselines", str(tmp_path / "missing.csv"),
+         "--framework", str(framework), "--outdir", str(outdir)]
+    )
+    assert rc == 1

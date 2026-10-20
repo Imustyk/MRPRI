@@ -100,7 +100,25 @@ population as the historical audit.
   «complaint filed», not a confirmed violation (decision documents are a
   documented blocker). Neither label is ground truth for guilt.
 
-## 5. What this is not
+## 5. Candidates considered and why none was trained now
+
+The brief lists candidate families; each was assessed against the
+pre-registered adoption rule *before* any training:
+
+| Candidate | Status | Reason |
+|---|---|---|
+| Isolation Forest on specialized features | **deferred** | v0 already contains an unsupervised IF component; re-running IF on the Phase 4 indicator counts would score an 8-dimensional count vector whose ranking is measurable *without* retraining — and that measurement (§3) already rejects the family's ranking value on both external labels |
+| LOF within procurement populations | **deferred** | LOF is the least noise-stable production detector (ρ 0.828 under ±1 % perturbation, AUDIT-2026-10-19) and the specialized populations (direct award exists only from 2022) are too small for a defensible neighbourhood |
+| Robust statistical baselines | **already covered** | `amount`, `value_within_cpv`, `n_bidders_fewer` are exactly the pre-registered robust baselines; `amount` significantly wins the AAP label — a finding, not a reason to add a model |
+| Graph anomaly detection | **deferred** | the buyer–supplier network features in Phase 4 module C are the graph *signal*; a graph model would need external labels with enough positives per cluster to evaluate — neither label provides them (AAP: 17 suppliers; ANSC decisions unavailable) |
+| Autoencoders | **not pursued** | the brief allows them only with sufficient data *and* a meaningful evaluation plan; both labels sit at chance for the production score, so an autoencoder could only be adopted against a criterion this data cannot measure honestly — this would be AUC-chasing, explicitly prohibited |
+
+Training any of them now would also require the development/holdout protocol
+that exists only for v0–v6; the v0–v6 budget (6 of 10) stays untouched and no
+new architecture is named v7. Revisit trigger: a label with enforcement
+outcomes (ANSC decisions) or a qualified-expert label with enough positives.
+
+## 6. What this is not
 
 Not a new model version (no v7; budget 6/10 untouched); no retraining; no
 threshold/band/vote changes; no holdout-based selection; no SMOTE/neural
@@ -108,7 +126,7 @@ networks; no fabricated metrics. `results/` artefacts are regenerable and
 gitignored; every number above is reproducible with
 `.venv/bin/python scripts/35_external_validation.py`.
 
-## 6. Reproduction
+## 7. Reproduction
 
 ```bash
 .venv/bin/python scripts/35_external_validation.py     # full framework, B=1000, seed 42

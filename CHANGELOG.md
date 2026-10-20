@@ -45,11 +45,23 @@ selection, no fabricated labels/metrics, `data/raw/**` read-only,
   `docs/EXPERIMENTAL_MODEL_COMPARISON.md` — **H1 rejected, experimental
   module ranking NOT adopted** (paired ΔCI vs v0 excludes 0 against it on
   both external labels: AAP +0.0463 [0.0032, 0.0998], ANSC +0.0274
-  [0.0046, 0.0551]); no threshold/band/vote change results from any phase;
+  [0.0046, 0.0551]) + a candidates-considered table (IF/LOF/baselines/
+  graph/autoencoders) with per-candidate reasons for deferral;
   `docs/IMPLEMENTATION_SUMMARY.md` — the per-phase problem/change/test/
-  improvement/unresolved record and the full verification table.
+  improvement/unresolved record, a before/after comparison table and the
+  full verification table.
+* Follow-up for brief §8–§13 compliance: `scripts/37_external_validation_chart.py`
+  (new) renders `docs/figures/external_validation_baselines.png` and
+  `external_validation_paired_vs_v0.png` strictly from the scripts/35
+  artefacts (missing artefacts abort the render); README research-endpoint
+  documentation; `docs/EXPERT_REVIEW_PROTOCOL.md` questionnaire corrected to
+  the actual answer-form columns (five brief questions: `reviewable`,
+  `indicators_observed`, `documents_sufficient`, `explainable`,
+  `false_alarm`); RAG audit recorded in `docs/REAL_DATA_INTEGRATION_REPORT.md`
+  (citation preservation, provenance, refusal, injection defence, guilt-wording
+  guard — all backed by the existing `tests/test_rag.py`); cycle_log entry.
 * Verification: `scripts/19_final_verification.py` — all headline numbers
-  reproduce; full pytest **286 passed**; `tsc --noEmit` clean; `npm run
+  reproduce; full pytest **287 passed**; `tsc --noEmit` clean; `npm run
   build` success; uvicorn smoke on real data (152 378 records,
   `hash_verified: true`, origin `real-ocds`, external AUCs 0.493453 /
   0.511196 served, 5-layer explanations).

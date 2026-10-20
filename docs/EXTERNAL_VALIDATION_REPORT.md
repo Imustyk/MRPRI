@@ -165,6 +165,16 @@ ROC-AUC (point [cluster CI], clustering by buyer):
 0.502 → 0.468. All periods clear the positive guard; per-period values are
 point estimates.
 
+## 5b. Figures
+
+![Pre-registered rules with cluster-bootstrap CIs on both labels](figures/external_validation_baselines.png)
+
+![Paired difference vs the production score; adoption requires the CI to exclude 0 in the rule's favour](figures/external_validation_paired_vs_v0.png)
+
+Rendered by `scripts/37_external_validation_chart.py` strictly from
+`external_baselines.csv` / `external_validation_framework.json` — no value is
+smoothed, rounded or invented; missing artefacts abort the render.
+
 ---
 
 ## 6. What this changes for the project
