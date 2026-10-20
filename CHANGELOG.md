@@ -4,6 +4,56 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [IMPROVEMENT-2026-10-20] — Iterative improvement protocol, branch `feature/risk-specific-detection` (8 phases, measurement)
+
+Framed per the author's brief as **measurement, not a cycle**: budget stays
+6 of 10, production stays **v0**, no v7, no retraining of the production
+model, votes/bands/thresholds untouched, holdout 2022–2024 never used for
+selection, no fabricated labels/metrics, `data/raw/**` read-only,
+`scripts/00..11` untouched, `results/` stays gitignored.
+
+* `5535ab9` `docs/IMPROVEMENT_PLAN.md` (new): the 8 phases with guard rails,
+  files, verifications and acceptance mapping.
+* Phase 2 — real-data integration (`ddb2f8b` backend, `f395361` frontend):
+  provenance/evaluation/explainability endpoints (`/api/dataset`,
+  `/api/evaluation`, `/api/explainability`,
+  `/api/tenders/{id}/explanation`), real model identity in `/api/meta`,
+  422-instead-of-500/empty-page bug fixes, search/sort performance, 20
+  `TestClient` tests (`tests/test_api_real_data.py`); frontend provenance
+  card, research-evaluation section (negatives visible), layered per-tender
+  explanation panel + MTender links, i18n en/ro/ru. See
+  `docs/REAL_DATA_INTEGRATION_REPORT.md`.
+* Phase 3 — temporal leakage (`9d363b5`): feature-availability matrix +
+  stage-aware column sets (`src/mtender/stage_features.py`), 13 tests,
+  `docs/TEMPORAL_LEAKAGE_AUDIT.md`.
+* Phase 4 — risk-specific detection (`fd693f7`): modules A–D (competition,
+  splitting, buyer–supplier pair recurrence, value outliers; hit semantics
+  documented, anomaly ≠ overpricing), direct-award matched-control track
+  (`src/mtender/risk_modules.py`, `scripts/34_risk_modules.py`), 24 tests,
+  `docs/RISK_SPECIFIC_FEATURES.md`.
+* Phase 5 — external validation + expert review (`10d35bd`):
+  `scripts/35_external_validation.py` — external-label registry with uniform
+  schema and honest blocked/pending statuses, pre-registered baselines,
+  supplier/buyer cluster bootstrap (B=1000, seed 42) with paired vs-v0 CIs,
+  ANSC PN-ocid alias rebuild reproducing MTA-0013 exactly (1 222 positives,
+  v0 AUC 0.5112), AAP leave-one-supplier-out robustness, temporal guard;
+  `scripts/36_export_expert_review.py` — blinded 3×100 expert-review export
+  (fact-only columns behind a deny-list check, key separated, header-only
+  template, deterministic); 9 tests; `docs/EXTERNAL_VALIDATION_REPORT.md`,
+  `docs/EXPERT_REVIEW_PROTOCOL.md`.
+* Phases 6–8 — docs + verification (this commit):
+  `docs/EXPERIMENTAL_MODEL_COMPARISON.md` — **H1 rejected, experimental
+  module ranking NOT adopted** (paired ΔCI vs v0 excludes 0 against it on
+  both external labels: AAP +0.0463 [0.0032, 0.0998], ANSC +0.0274
+  [0.0046, 0.0551]); no threshold/band/vote change results from any phase;
+  `docs/IMPLEMENTATION_SUMMARY.md` — the per-phase problem/change/test/
+  improvement/unresolved record and the full verification table.
+* Verification: `scripts/19_final_verification.py` — all headline numbers
+  reproduce; full pytest **286 passed**; `tsc --noEmit` clean; `npm run
+  build` success; uvicorn smoke on real data (152 378 records,
+  `hash_verified: true`, origin `real-ocds`, external AUCs 0.493453 /
+  0.511196 served, 5-layer explanations).
+
 ## [AUDIT-2026-10-19] — Comprehensive repository audit + noise/input-perturbation sensitivity of v0 (scripts/32)
 
 No MTA number was assigned by the author; framed as a **measurement, not a
