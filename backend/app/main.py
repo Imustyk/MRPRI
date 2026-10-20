@@ -12,6 +12,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from backend.app import store
+from backend.app.adapter import RISK_BANDS
+from backend.app.research_api import router as research_router
 from backend.app.workspace_api import router as workspace_router
 
 app = FastAPI(
@@ -21,6 +23,7 @@ app = FastAPI(
 )
 
 app.include_router(workspace_router)
+app.include_router(research_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -56,7 +59,9 @@ def pipeline_run(
     (``data/processed/tenders.json``), so calling it without ``confirm=true``
     would silently replace real procurement data with invented records.
     Synthetic runs are therefore blocked unless explicitly confirmed, and the
-    response says which dataset is now being served.
+    response says which dataset is now being served. Argument errors surfaced
+    by the pipeline (a missing or unreadable source file) are reported as
+    **422** with the reason, never as an unhandled 500.
     """
     if source not in {"synthetic", "ocds"}:
         raise HTTPException(400, "source must be 'synthetic' or 'ocds'")
@@ -69,7 +74,10 @@ def pipeline_run(
         )
     from backend.ml.pipeline import run_pipeline
 
-    result = run_pipeline(source=source, ocds_path=ocds_path, n_tenders=n_tenders)
+    try:
+        result = run_pipeline(source=source, ocds_path=ocds_path, n_tenders=n_tenders)
+    except (ValueError, FileNotFoundError) as exc:
+        raise HTTPException(422, str(exc)) from exc
     store.invalidate()
     return result
 
@@ -136,22 +144,41 @@ def tenders(
     procedure: str | None = None,
     buyer: str | None = None,
     min_risk: float = Query(0, ge=0, le=100),
+    sort: Literal["default", "risk", "value", "date"] = Query(
+        "default",
+        description=(
+            "Ordering applied after filters and before pagination. 'default' "
+            "keeps the file order (backward compatible); 'risk', 'value' and "
+            "'date' rank descending with missing values last."
+        ),
+    ),
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
     if not store.artefacts_ready():
         raise HTTPException(404, "Run the pipeline first")
+    # A typo in the band filter used to return an empty page as if the data
+    # were empty; an unknown level is a client error, so it is rejected.
+    if level is not None and level not in RISK_BANDS:
+        raise HTTPException(
+            422,
+            f"unknown risk level '{level}'; expected one of: {', '.join(RISK_BANDS)}",
+        )
     rows = store.load_tenders()
     if q:
         needle = q.lower()
-        rows = [
-            r
-            for r in rows
-            if needle in (r.get("title") or "").lower()
-            or needle in (r.get("buyer_name") or "").lower()
-            or needle in (r.get("winner_name") or "").lower()
-            or needle in (r.get("tender_id") or "").lower()
-        ]
+        keys = store.search_keys()
+        if len(keys) == len(rows):
+            rows = [r for r, key in zip(rows, keys) if needle in key]
+        else:  # cache mismatch (should not happen; keep semantics anyway)
+            rows = [
+                r
+                for r in rows
+                if needle in (r.get("title") or "").lower()
+                or needle in (r.get("buyer_name") or "").lower()
+                or needle in (r.get("winner_name") or "").lower()
+                or needle in (r.get("tender_id") or "").lower()
+            ]
     if level:
         rows = [r for r in rows if r.get("risk_level") == level]
     if procedure:
@@ -159,6 +186,27 @@ def tenders(
     if buyer:
         rows = [r for r in rows if r.get("buyer_id") == buyer]
     rows = [r for r in rows if (r.get("risk_score") or 0) >= min_risk]
+    if sort == "risk":
+        rows = sorted(
+            rows,
+            key=lambda r: (r.get("risk_score") is not None, r.get("risk_score") or 0.0),
+            reverse=True,
+        )
+    elif sort == "value":
+        rows = sorted(
+            rows,
+            key=lambda r: (
+                r.get("award_total_mdl") is not None,
+                r.get("award_total_mdl") or 0.0,
+            ),
+            reverse=True,
+        )
+    elif sort == "date":
+        rows = sorted(
+            rows,
+            key=lambda r: str(r.get("tender_start") or r.get("published_at") or ""),
+            reverse=True,
+        )
     total = len(rows)
     slice_ = []
     for raw in rows[offset : offset + limit]:
