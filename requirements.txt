@@ -29,6 +29,8 @@ lime==0.2.0.1
 
 # --- tests ---
 pytest==9.1.1
+# fastapi.testclient.TestClient for the HTTP-route tests (tests/test_api_real_data.py)
+httpx==0.28.1
 
 # --- Ministry of Finance workbook loader (scripts/10, pd.ExcelFile on .xlsx) ---
 openpyxl==3.1.5
