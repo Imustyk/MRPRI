@@ -116,6 +116,64 @@ const ro: typeof en = {
     followup: "de urmărit",
     cleared: "respins",
   },
+  ext: {
+    aap_label: "Lista de interdicții AAP pentru furnizori (etichetă proxy)",
+    ansc_label: "Procedură contestată (documente de plângeri ANSC; etichetă proxy)",
+    aap_caveat:
+      "Etichetă proxy: proceduri ale furnizorilor sancționați, nu adevăr fundamental. Eticheta este condusă de mărime și concurență (baseline pe un singur caracter n_bidders ~0,80); ansamblul de 4 voturi la ~0,49 este la nivelul aleatorului — raportat ca atare.",
+    ansc_caveat:
+      "Plângerile sunt un marker de procedură contestată, nu o încălcare confirmată: deciziile ANSC nu au fost accesibile pentru acest corpus, deci nu se pot distinge apelurile confirmate de cele respinse.",
+    ansc_verdict: "IC 95% include 0,5 — pe această etichetă semnalul este indistinguibil de aleator",
+  },
+  eval: {
+    noise_note:
+      "Experiment cu zgomot de intrare (o măsurătoare, nu un ciclu de acceptare): rangurile scorurilor sunt stabile pentru intrări exacte și aproape exacte, dar pozițiile se schimbă sub zgomot contrafactual — revizuiți liste top-K, nu ranguri exacte.",
+    drift_note:
+      "Deriva distribuției scorurilor între perioada de calibrare (2018–2021) și perioada de test (2022–2024): granița voturilor necesită recalibrare periodică.",
+    disclaimer: "Indicatori de risc potențial, nu dovezi ale corupției.",
+  },
+  bias: {
+    admissible: "admis",
+    admissible_explained: "admis (diferența explicată prin factori legitimi)",
+    violation: "încălcare",
+    warning: "avertizare",
+  },
+  xai: {
+    verdict_disagree: "inconsecvente",
+    disclaimer:
+      "Indicator de risc potențial, nu dovadă de corupție. O analiză a metodelor de explicare, nu o evaluare a procedurii.",
+    note_shap_only:
+      "Valorile SHAP de aici sunt calculate doar pentru Isolation Forest; LOF, One-Class SVM și MAD nu au atribuiri per înregistrare.",
+    note_disagree:
+      "SHAP și LIME nu sunt de acord asupra acestui model (vezi xai_consistency.verdict); tratați atribuirile ca interne modelului, nu cauze.",
+  },
+  model: {
+    production_label:
+      "v0 producție: scor z MAD robust + IsolationForest + LOF + One-Class SVM (consens din 4 voturi)",
+  },
+  explain: {
+    disclaimer:
+      "Un scor de anomalie este un indicator de risc potențial, nu o dovadă de corupție sau încălcare. Este necesară verificarea de către o autoritate competentă.",
+    not_causal:
+      "Explicările sunt motive interne ale modelului pentru un scor neobișnuit; nu sunt dovadă cauzală a vreunei fapte.",
+    shap_lime_disagree:
+      "SHAP și LIME nu sunt de acord asupra acestui model (verdict măsurat: „{{verdict}}”); tratați atribuirile individuale cu prudență.",
+    per_row_only:
+      "Atribuiri per înregistrare există doar pentru Isolation Forest; LOF, One-Class SVM și MAD au verdicte, dar fără atribuiri per înregistrare.",
+    top200:
+      "Rangurile sub top-200 sunt sensibile la zgomot (audit de zgomot de intrare); revizuiți liste de cazuri, nu poziții exacte.",
+    not_imputed:
+      "Câmpurile pe care MTender nu le publică sunt afișate ca indisponibile, niciodată imputate.",
+    never_scored:
+      "Această înregistrare nu a fost niciodată evaluată de rularea de detecție — nu a fost examinată, iar „neevaluat” nu înseamnă curat.",
+    not_present: "Nu apare în această înregistrare: {{fields}}",
+    ref_global: "Explicabilitate globală (importanță prin permutare, SHAP, SHAP vs LIME)",
+    ref_perm: "Importanță prin permutare (toate cele 22 de caracteristici)",
+    ref_shap: "Importanță SHAP (doar Isolation Forest)",
+    ref_xai: "Măsurarea concordanței SHAP vs LIME",
+    ref_noise: "Sensibilitatea rangurilor la zgomotul de intrare",
+    ref_card: "Fișă de model (MTA-0004)",
+  },
   err: {
     run_pipeline: "Rulați mai întâi pipeline-ul",
     tender_not_found: "Licitația nu a fost găsită",

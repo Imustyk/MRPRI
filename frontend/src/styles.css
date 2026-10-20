@@ -1805,3 +1805,37 @@ button.link:hover {
     animation: none;
   }
 }
+
+/* --- External source links (public MTender procedure pages) --- */
+.ext-link-row {
+  margin: -4px 0 14px;
+}
+
+.ext-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.ext-link:hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+/* The per-row affordance in the procedures table: quiet until the row,
+   or the link itself, is hovered. */
+.ext-arrow {
+  margin-left: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.ext-arrow:hover {
+  color: var(--gold);
+}

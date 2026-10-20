@@ -120,6 +120,64 @@ const backend = {
     followup: "follow-up",
     cleared: "cleared",
   },
+  ext: {
+    aap_label: "AAP supplier interdiction list (proxy label)",
+    ansc_label: "Procedure contested (ANSC complaints document; proxy label)",
+    aap_caveat:
+      "Proxy label: procedures of sanctioned suppliers, not ground truth. The label is driven by size and competition (single-feature n_bidders baseline ~0.80); the 4-vote ensemble at ~0.49 is at random level — reported as measured.",
+    ansc_caveat:
+      "Complaints are a contested-procedure marker, not a confirmed violation: ANSC decisions were not accessible for this corpus, so confirmed vs rejected appeals cannot be distinguished.",
+    ansc_verdict: "The 95% CI includes 0.5 — on this label the signal is indistinguishable from random",
+  },
+  eval: {
+    noise_note:
+      "Input-noise experiment (a measurement, not an acceptance cycle): score ranks are stable for exact and near-exact inputs, but positions move under counterfactual noise — review top-K lists, not exact ranks.",
+    drift_note:
+      "Score-distribution drift between the tuning period (2018–2021) and the test period (2022–2024): the vote boundary needs periodic recalibration.",
+    disclaimer: "Indicators of potential risk, not evidence of corruption.",
+  },
+  bias: {
+    admissible: "admissible",
+    admissible_explained: "admissible (difference explained by legitimate factors)",
+    violation: "violation",
+    warning: "warning",
+  },
+  xai: {
+    verdict_disagree: "not consistent",
+    disclaimer:
+      "Indicator of potential risk, not evidence of corruption. An analysis of explanation methods, not an assessment of the procedure.",
+    note_shap_only:
+      "SHAP values here are computed for the Isolation Forest only; LOF, One-Class SVM and MAD have no per-row attributions.",
+    note_disagree:
+      "SHAP and LIME disagree on this model (see xai_consistency.verdict); treat attributions as model-internal, not causal.",
+  },
+  model: {
+    production_label:
+      "v0 production: MAD robust z-score + IsolationForest + LOF + One-Class SVM (4-vote consensus)",
+  },
+  explain: {
+    disclaimer:
+      "An anomaly score is an indicator of potential risk, not evidence of corruption or violation. Verification by a competent authority is required.",
+    not_causal:
+      "Explanations are model-internal reasons for an unusual score; they are not causal proof of any wrongdoing.",
+    shap_lime_disagree:
+      "SHAP and LIME disagree on this model (measured verdict: “{{verdict}}”); treat single attributions with caution.",
+    per_row_only:
+      "Per-row attributions exist only for the Isolation Forest; LOF, One-Class SVM and MAD have verdicts but no per-row attribution.",
+    top200:
+      "Ranks below the top-200 are noise-sensitive (input-noise audit); review lists of cases, not exact positions.",
+    not_imputed:
+      "Fields MTender does not publish are shown as unavailable, never imputed.",
+    never_scored:
+      "This record was never scored by the detection run — it was not examined, and “not scored” is not a clearance.",
+    not_present: "Not present in this record: {{fields}}",
+    ref_global: "Global explainability (permutation importance, SHAP, SHAP vs LIME)",
+    ref_perm: "Permutation importance (all 22 features)",
+    ref_shap: "SHAP feature importance (Isolation Forest only)",
+    ref_xai: "SHAP vs LIME consistency measurement",
+    ref_noise: "Input-noise sensitivity of score ranks",
+    ref_card: "Model card (MTA-0004)",
+  },
   err: {
     run_pipeline: "Run the pipeline first",
     tender_not_found: "Tender not found",

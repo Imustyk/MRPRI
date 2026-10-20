@@ -13,6 +13,8 @@ import {
 } from "recharts";
 import { Trans, useTranslation } from "react-i18next";
 import {
+  dateLabel,
+  getDataset,
   getJson,
   int,
   mdl,
@@ -21,13 +23,14 @@ import {
   num1,
   pct,
   val,
+  type DatasetReport,
   type Health,
   type Meta,
   type MongoStatus,
   type RiskLevel,
   type Stats,
 } from "../api";
-import { Empty, ErrorNote, PageHead, Skeleton, Stat, TableWrap } from "../ui";
+import { Empty, ErrorNote, PageHead, Pill, Skeleton, Stat, TableWrap } from "../ui";
 import { tr } from "../i18n/backendMap";
 
 const BAND_ORDER: RiskLevel[] = ["critical", "high", "medium", "low", "unscored"];
@@ -44,6 +47,8 @@ export default function Overview() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [mongo, setMongo] = useState<MongoStatus | null>(null);
+  const [dataset, setDataset] = useState<DatasetReport | null>(null);
+  const [datasetErr, setDatasetErr] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -64,6 +69,14 @@ export default function Overview() {
     getJson<Health>("/api/health")
       .then((h) => setMongo(h.mongodb))
       .catch(() => undefined);
+    // Provenance is advisory: a failure here degrades to an inline note, the
+    // way the MongoDB source panel does, and never blocks the overview.
+    // verify_hash recomputes SHA-256 once per server run (cached afterwards);
+    // the provenance card can then show the verified state instead of
+    // "verification not requested".
+    getDataset(true)
+      .then(setDataset)
+      .catch((e: Error) => setDatasetErr(e.message));
   };
 
   useEffect(() => {
@@ -163,6 +176,86 @@ export default function Overview() {
               : t("overview.stat_single_note", { n: int(stats.n_with_bid_data) })
           }
         />
+      </div>
+
+      {/* Provenance: where the rows came from and how the run is traceable. */}
+      <div className="card" style={{ marginTop: 16 }}>
+        <h2>{t("overview.prov_h")}</h2>
+        <p className="muted">{t("overview.prov_p")}</p>
+        {datasetErr ? (
+          <p className="muted">
+            {t("overview.prov_error")} <span className="mono">{datasetErr}</span>
+          </p>
+        ) : !dataset ? (
+          <Skeleton rows={3} />
+        ) : (
+          <>
+            <div className="flags">
+              <Pill
+                tone={
+                  dataset.origin.synthetic_in_use
+                    ? "risk"
+                    : dataset.origin.kind === "real-ocds"
+                      ? "ok"
+                      : dataset.origin.kind === "missing"
+                        ? "warn"
+                        : "muted"
+                }
+              >
+                {dataset.origin.synthetic_in_use
+                  ? t("overview.prov_synthetic")
+                  : dataset.origin.kind === "real-ocds"
+                    ? t("overview.prov_real")
+                    : dataset.origin.kind === "missing"
+                      ? t("overview.prov_missing")
+                      : t("overview.prov_unknown")}
+              </Pill>
+            </div>
+            <dl className="kv">
+              <dt>{t("overview.prov_model")}</dt>
+              <dd>
+                <strong className="mono">{dataset.model.version}</strong>{" "}
+                <span className="muted">{tr(dataset.model.label)}</span>
+              </dd>
+              <dt>{t("overview.prov_scoring")}</dt>
+              <dd className="mono">
+                {dataset.scoring.run_id ?? "—"} · {dateLabel(dataset.scoring.generated_at)}
+              </dd>
+              <dt>{t("overview.prov_corpus")}</dt>
+              <dd className="mono">
+                {t("overview.prov_corpus_line", {
+                  records: int(dataset.corpus.records),
+                  scored: int(dataset.corpus.scored),
+                  unscored: int(dataset.corpus.unscored),
+                })}
+              </dd>
+              <dt>{t("overview.prov_years")}</dt>
+              <dd className="mono">
+                {dataset.corpus.year_from ?? "—"}–{dataset.corpus.year_to ?? "—"}
+              </dd>
+              <dt>{t("overview.prov_manifest")}</dt>
+              <dd className="mono">
+                {t("overview.prov_manifest_line", {
+                  date: dateLabel(dataset.manifest.exported_at),
+                  n: int(dataset.manifest.n_documents),
+                })}
+                {dataset.verification.hash_matches_manifest === true ? (
+                  <span className="muted"> · {t("overview.prov_hash_ok")}</span>
+                ) : dataset.verification.hash_matches_manifest === false ? (
+                  <span className="muted">
+                    {" "}
+                    ·{" "}
+                    {t("overview.prov_hash_mismatch", {
+                      n: int(dataset.verification.mismatches.length),
+                    })}
+                  </span>
+                ) : (
+                  <span className="muted"> · {t("overview.prov_hash_pending")}</span>
+                )}
+              </dd>
+            </dl>
+          </>
+        )}
       </div>
 
       <div className="grid row2">

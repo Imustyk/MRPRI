@@ -57,6 +57,7 @@ const en = {
     and: "and",
     table_scrollable: "Data table, scrollable",
     empty_value: "—",
+    open_mtender: "Open on MTender",
   },
   risk: {
     unscored: "not scored",

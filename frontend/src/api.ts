@@ -215,6 +215,11 @@ export function val(n: number | null | undefined, digits = 2): string {
 
 export async function getJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
+  return readJson<T>(res, url);
+}
+
+/** Shared response handling: not-ok, empty-body and malformed-body templates. */
+async function readJson<T>(res: Response, url: string): Promise<T> {
   const raw = await res.text();
   if (!res.ok) {
     throw new Error(
@@ -846,3 +851,325 @@ export const getActivity = (limit = 25) =>
   getJson<{ items: ActivityRecord[] }>(`/api/workspace/activity${qs({ limit })}`);
 
 export const resetWorkspace = () => send<WorkspaceSummary>("POST", "/api/workspace/reset?confirm=true");
+
+/* ==========================================================================
+   Research: dataset provenance, external evaluation, explainability
+   ========================================================================== */
+
+/**
+ * Where the served corpus came from. `synthetic_in_use` is the flag the UI
+ * badges on: a synthetic demo must never read as real procurement data.
+ */
+export type DatasetOrigin = {
+  kind: "real-ocds" | "synthetic-demo" | "missing" | "unknown";
+  synthetic_in_use: boolean;
+  meta_declared_source: string | null;
+  /** How the origin was decided (schema probe), verbatim from the server. */
+  evidence: string;
+};
+
+export type DatasetCorpus = {
+  records: number;
+  scored: number;
+  unscored: number;
+  year_from: string | null;
+  year_to: string | null;
+  band_counts: Record<string, number>;
+};
+
+export type DatasetFile = { path: string; bytes: number; modified_at: string };
+
+export type DatasetManifestEntry = {
+  path: string;
+  bytes: number | null;
+  sha256: string | null;
+};
+
+export type DatasetManifest = {
+  exported_at: string | null;
+  n_documents: number | null;
+  entries: DatasetManifestEntry[];
+};
+
+export type DatasetScoring = {
+  run_id: string | null;
+  generated_at: string | null;
+  contamination: number | null;
+  random_state: number | null;
+  n_feature_columns: number | null;
+  rows_in_run: number | null;
+  scores_source: string | null;
+  scored_rows_in_csv: number | null;
+};
+
+export type DatasetModel = {
+  version: string;
+  role: string;
+  label: string;
+  detectors: Record<string, number | null>;
+  artefact: string | null;
+  artefact_present: boolean;
+};
+
+/**
+ * SHA-256 comparison against the export manifest. `hash_matches_manifest` is
+ * null until a verification has actually run; null never reads as "verified".
+ */
+export type DatasetVerification = {
+  hash_verified: boolean;
+  hash_matches_manifest: boolean | null;
+  compared_files: number;
+  mismatches: { path: string; expected?: string; actual?: string }[];
+};
+
+export type DatasetReport = {
+  origin: DatasetOrigin;
+  corpus: DatasetCorpus;
+  files: DatasetFile[];
+  manifest: DatasetManifest;
+  scoring: DatasetScoring;
+  model: DatasetModel;
+  verification: DatasetVerification;
+  disclaimer: string;
+};
+
+/**
+ * An external proxy label, not ground truth: `roc_auc` <= 0.5 or a cluster CI
+ * spanning 0.5 means the signal is indistinguishable from random, and the UI
+ * must render that as measured instead of spinning it.
+ */
+export type ExternalLabel = {
+  id: string;
+  label: string;
+  available: boolean;
+  roc_auc: number | null;
+  caveat: string;
+  /** AAP-only fields (absent on the ANSC entry, so optional). */
+  pr_auc?: number | null;
+  base_rate?: number | null;
+  precision_votes_ge3?: number | null;
+  supplier_concentration?: {
+    n_exact_suppliers?: number | null;
+    positives?: number | null;
+    largest_supplier_share?: number | null;
+  } | null;
+  /** ANSC-only fields: cluster bootstrap CI around the point estimate. */
+  cluster_ci?: [number, number] | null;
+  cluster_by?: string | null;
+  n_boot?: number | null;
+  n_clusters?: number | null;
+  baselines?: Record<string, EvalBaseline> | null;
+  verdict_code?: string | null;
+  verdict_text?: string | null;
+};
+
+export type EvalBaseline = {
+  auc?: number | null;
+  cluster_ci?: [number, number] | null;
+  repeats?: number | null;
+  mean?: number | null;
+  std?: number | null;
+  q025?: number | null;
+  q975?: number | null;
+};
+
+export type SeedStability = {
+  runs: number;
+  consensus_mean: number;
+  jaccard_mean: number;
+};
+
+/**
+ * Pre-registered noise hypotheses. Shapes differ per hypothesis (H1 has
+ * threshold/observed_min, H2 rho/top200 pairs, H4 has measured correlations
+ * with no pass threshold), so the numeric detail is carried in the index
+ * signature and rendered verbatim rather than flattened into one schema.
+ */
+export type NoiseVerdict = {
+  passed?: boolean;
+  note?: string;
+  [k: string]: number | string | boolean | undefined;
+};
+
+export type NoiseRegime = {
+  id: string;
+  n_runs: number | null;
+  spearman: number | null;
+  spearman_ci_low: number | null;
+  spearman_ci_high: number | null;
+  top200_jaccard: number | null;
+  band_change_pct: number | null;
+  directaward_spearman: number | null;
+  directaward_band_change_pct: number | null;
+};
+
+export type Evaluation = {
+  production: {
+    version: string;
+    unchanged: boolean;
+    run_id: string | null;
+    generated_at: string | null;
+    boundary: string | null;
+    tune_period: string | null;
+    test_period: string | null;
+  };
+  external_labels: ExternalLabel[];
+  seed_stability: SeedStability | null;
+  noise_sensitivity: {
+    available: boolean;
+    verdicts: Record<string, NoiseVerdict> | null;
+    regimes: NoiseRegime[];
+    note: string;
+  };
+  drift: {
+    psi_max: number | null;
+    ks_max: number | null;
+    overfitting_warning: boolean | null;
+    note: string;
+  };
+  bias: {
+    n_dimensions: number | null;
+    high_plus_share_corpus: number | null;
+    critical_share_corpus: number | null;
+    /** Server-served Russian verdict words; localised via the backend map. */
+    verdict_counts: Record<string, number> | null;
+    available: boolean;
+  };
+  disclaimer: string;
+};
+
+export type ImportanceRow = {
+  feature: string;
+  mean: number | string | null;
+  std?: number | string | null;
+};
+
+export type ShapRow = { feature: string; mean_abs: number | string | null };
+
+export type XaiAgreement = {
+  spearman?: {
+    mean?: number | null;
+    mean_ci?: [number, number] | null;
+    median?: number | null;
+    median_ci?: [number, number] | null;
+  };
+  top3_overlap?: Record<string, number | null>;
+  top5_overlap?: Record<string, number | null>;
+  sign_agreement?: Record<string, number | null>;
+  lime_r2?: Record<string, number | null>;
+  lime_stability?: Record<string, number | null>;
+  [k: string]: unknown;
+};
+
+export type Explainability = {
+  model_explained: string | null;
+  why_same_model: string | null;
+  xai_consistency: {
+    available: boolean;
+    /** Measured verdict (server serves it in Russian; localised via map). */
+    verdict: string | null;
+    agreement: XaiAgreement;
+    low_agreement_diagnosis: unknown;
+    disclaimer: string | null;
+  };
+  global_summary: {
+    available: boolean;
+    stage?: string | null;
+    generated_at?: string | null;
+    shap_status?: string | null;
+    strongest_separators?: unknown;
+    permutation_importance_top?: unknown;
+    unavailable_indicators?: unknown;
+  };
+  permutation_importance: ImportanceRow[];
+  shap_importance: ShapRow[];
+  notes: string[];
+  disclaimer: string;
+};
+
+export type ExplanationFactItem = {
+  field: string;
+  label: string;
+  value: string | number | null;
+  /** 0-100 position within the corpus; absent when no distribution exists. */
+  percentile?: number | null;
+};
+
+export type ExplanationIndicatorItem = {
+  key: string;
+  label: string;
+  triggered: boolean;
+  corpus_rate: number | null;
+  corpus_n: number | null;
+};
+
+export type ExplanationDetectorItem = {
+  key: string;
+  label: string;
+  verdict: "flagged" | "not_flagged" | "unscored";
+  score: number | null;
+  score_percentile: number | null;
+};
+
+export type ExplanationReferenceItem = {
+  label: string;
+  path: string;
+  available: boolean;
+};
+
+export type ExplanationLimitationItem = { text: string };
+
+/** The five layers stay distinct unions so each page narrows before mapping. */
+export type ExplanationLayer =
+  | { id: "facts"; items: ExplanationFactItem[] }
+  | { id: "indicators"; items: ExplanationIndicatorItem[] }
+  | { id: "detectors"; items: ExplanationDetectorItem[] }
+  | { id: "references"; items: ExplanationReferenceItem[] }
+  | { id: "limitations"; items: ExplanationLimitationItem[] };
+
+export type TenderExplanation = {
+  tender_id: string | null;
+  ocid: string | null;
+  model_version: string;
+  scoring_run_id: string | null;
+  scoring_generated_at: string | null;
+  consensus: {
+    band: RiskLevel | null;
+    risk_score: number | null;
+    n_models_flagging: number | null;
+  };
+  layers: ExplanationLayer[];
+  disclaimer: string;
+};
+
+/**
+ * `verify_hash` recomputes SHA-256 server-side; it is off by default so the
+ * overview card never pays for hashing on every page load.
+ */
+export const getDataset = (verifyHash = false) =>
+  getJson<DatasetReport>(`/api/dataset${qs({ verify_hash: verifyHash ? true : undefined })}`);
+
+export const getEvaluation = () => getJson<Evaluation>("/api/evaluation");
+
+export const getExplainability = () => getJson<Explainability>("/api/explainability");
+
+/**
+ * Layered explanation for one procedure. The endpoint 404s for identifiers it
+ * does not know; that resolves to `null` so the detail page can say "no
+ * explanation stored" instead of surfacing an HTTP error. Every other failure
+ * rejects through the shared error templates, exactly like `getJson`.
+ */
+export async function getTenderExplanation(id: string): Promise<TenderExplanation | null> {
+  const url = `/api/tenders/${encodeURIComponent(id)}/explanation`;
+  const res = await fetch(url);
+  if (res.status === 404) return null;
+  return readJson<TenderExplanation>(res, url);
+}
+
+/**
+ * Documented MTender procedure URL scheme: the OCDS identifier resolves to the
+ * published procedure page. Used for every external "open on MTender" link.
+ */
+export function mtenderUrl(ocid: string): string {
+  return `https://public.mtender.gov.md/tenders/${encodeURIComponent(ocid)}`;
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { getJson, int, mdl, num, pctile, type Tender } from "../api";
+import { getJson, int, mdl, mtenderUrl, num, pctile, type Tender } from "../api";
 import { BandBadge, Empty, ErrorNote, PageHead, Skeleton, TableWrap } from "../ui";
 
 const PAGE = 40;
@@ -203,6 +203,21 @@ export default function Tenders() {
                     <Link to={`/tenders/${row.tender_id}`}>
                       {row.title ?? t("tenders.untitled")}
                     </Link>
+                    {/* External source of record; the row click handler above
+                        skips anchors, and stopPropagation keeps it explicit. */}
+                    {row.ocid && (
+                      <a
+                        className="ext-arrow"
+                        href={mtenderUrl(row.ocid)}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        title={t("common.open_mtender")}
+                        aria-label={t("common.open_mtender")}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        ↗
+                      </a>
+                    )}
                     <div className="muted mono">{row.tender_id}</div>
                   </td>
                   <td>{row.buyer_name ?? "—"}</td>

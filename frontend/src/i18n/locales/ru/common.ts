@@ -51,6 +51,7 @@ const ru: typeof en = {
     and: "и",
     table_scrollable: "Таблица данных, прокручиваемая",
     empty_value: "—",
+    open_mtender: "Открыть на MTender",
   },
   risk: {
     unscored: "не оценено",

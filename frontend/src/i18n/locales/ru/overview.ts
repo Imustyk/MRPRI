@@ -49,6 +49,23 @@ const overview: typeof en = {
   mongo_unavail: "Статус MongoDB недоступен: {{err}}",
   mongo_not_reported: "не сообщается",
   not_pub_h: "Не публикуется MTender",
+  prov_h: "Происхождение данных и модели",
+  prov_p: "Откуда пришли эти строки, какая модель их оценивала и как запуск прослеживается до своих артефактов.",
+  prov_real: "реальные данные MTender OCDS",
+  prov_synthetic: "используются синтетические демо-данные — не реальные записи закупок",
+  prov_missing: "корпус отсутствует — выход конвейера не найден",
+  prov_unknown: "происхождение неизвестно — определить не удалось",
+  prov_model: "Модель",
+  prov_scoring: "Запуск оценки",
+  prov_corpus: "Корпус",
+  prov_corpus_line: "{{records}} записей · {{scored}} оценено · {{unscored}} не оценено",
+  prov_years: "Охваченные годы",
+  prov_manifest: "Манифест экспорта",
+  prov_manifest_line: "экспортирован {{date}} · {{n}} документов",
+  prov_hash_ok: "SHA-256 сверен с манифестом экспорта",
+  prov_hash_mismatch: "хеш не совпал с манифестом ({{n}} файлов)",
+  prov_hash_pending: "проверка хеша для этого запроса не выполнялась",
+  prov_error: "Отчёт о происхождении недоступен:",
 };
 
 export default overview;

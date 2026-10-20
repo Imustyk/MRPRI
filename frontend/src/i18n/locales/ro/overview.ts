@@ -49,6 +49,23 @@ const overview: typeof en = {
   mongo_unavail: "Starea MongoDB nu este disponibilă: {{err}}",
   mongo_not_reported: "nedeclarat",
   not_pub_h: "Nu se publică de MTender",
+  prov_h: "Proveniența setului de date și a modelului",
+  prov_p: "De unde provin aceste rânduri, ce model le-a evaluat și cum poate fi rularea trasată până la artelefactele sale.",
+  prov_real: "date reale MTender OCDS",
+  prov_synthetic: "date sintetice de demonstrație în uz — nu înregistrări reale de achiziții",
+  prov_missing: "corpus lipsă — nu s-a găsit ieșirea pipeline-ului",
+  prov_unknown: "origine necunoscută — nu a putut fi determinată",
+  prov_model: "Model",
+  prov_scoring: "Rulare de scor",
+  prov_corpus: "Corpus",
+  prov_corpus_line: "{{records}} înregistrări · {{scored}} evaluate · {{unscored}} neevaluate",
+  prov_years: "Ani acoperiți",
+  prov_manifest: "Manifest de export",
+  prov_manifest_line: "exportat la {{date}} · {{n}} documente",
+  prov_hash_ok: "SHA-256 verificat față de manifestul de export",
+  prov_hash_mismatch: "hash nepotrivit față de manifest ({{n}} fișiere)",
+  prov_hash_pending: "verificarea hash nu a fost rulată pentru această cerere",
+  prov_error: "Raportul de proveniență nu este disponibil:",
 };
 
 export default overview;

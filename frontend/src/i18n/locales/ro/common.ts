@@ -51,6 +51,7 @@ const ro: typeof en = {
     and: "și",
     table_scrollable: "Tabel de date, derulabil",
     empty_value: "—",
+    open_mtender: "Deschide pe MTender",
   },
   risk: {
     unscored: "neevaluat",

@@ -48,6 +48,23 @@ const overview = {
   mongo_unavail: "MongoDB status unavailable: {{err}}",
   mongo_not_reported: "not reported",
   not_pub_h: "Not published by MTender",
+  prov_h: "Dataset & model provenance",
+  prov_p: "Where these rows come from, which model scored them, and how the run can be traced back to its artefacts.",
+  prov_real: "real MTender OCDS data",
+  prov_synthetic: "synthetic demo data in use — not real procurement records",
+  prov_missing: "corpus missing — no pipeline output found",
+  prov_unknown: "origin unknown — could not be determined",
+  prov_model: "Model",
+  prov_scoring: "Scoring run",
+  prov_corpus: "Corpus",
+  prov_corpus_line: "{{records}} records · {{scored}} scored · {{unscored}} not scored",
+  prov_years: "Years covered",
+  prov_manifest: "Export manifest",
+  prov_manifest_line: "exported {{date}} · {{n}} documents",
+  prov_hash_ok: "SHA-256 verified against export manifest",
+  prov_hash_mismatch: "hash mismatch against manifest ({{n}} files)",
+  prov_hash_pending: "hash verification not run on this request",
+  prov_error: "Provenance report unavailable:",
 };
 
 export default overview;
