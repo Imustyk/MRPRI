@@ -8,9 +8,17 @@ retuned, votes/bands/thresholds are untouched, `data/raw/**`, `backend/`,
 The label
 ---------
 A procedure is positive when it matched a registry record with
-``evidence_level in {A, B, C}`` AND ``match_confidence in {high, medium}``
-(``name_fuzzy``/low-confidence candidates never enter). ``evidence_level = D``
-never enters the label.
+``link_basis in {procedure_id_in_source, contract_number}`` (MTA-0017 item 3:
+``buyer_period_only`` and empty ``link_basis`` rows enter the registry but
+NEVER the label) AND ``evidence_level in {A, B, C}`` AND
+``match_confidence in {high, medium}`` (``name_fuzzy``/low-confidence
+candidates never enter). ``evidence_level = D`` never enters the label.
+
+TWO VERSIONS (MTA-0017): metrics are computed for ALL A–C records (the
+MTA-0016 headline, top level of the JSON) and for ONLY
+``verified_by_human = true`` records (``summary["verified_only"]``) - the
+author marks rows manually and both versions are gated independently
+(>=30 positives, >=10 clusters each).
 
 TEMPORAL PROTECTION (pre-registered): only procedures PUBLISHED STRICTLY
 BEFORE the case's ``first_publication_date`` can be labelled, and procedures
@@ -44,7 +52,7 @@ Outputs:
 Usage:
     .venv/bin/python scripts/39_case_registry_check.py \
         [--registry ...] [--features ...] [--scores ...] [--random-repeats 1000] \
-        [--flag-repeats 200]
+        [--flag-repeats 200] [--raw-scan] [--rebuild-contract-index]
 """
 from __future__ import annotations
 
@@ -125,17 +133,20 @@ def _cluster_key(df: pd.DataFrame, primary: str, fallback_id: str,
 def build_label_population(per_case: list[dict], corpus: pd.DataFrame,
                            evidence: tuple[str, ...] = ("A", "B", "C"),
                            confidence: tuple[str, ...] = ("high", "medium"),
+                           verified_only: bool = False,
                            ) -> tuple[pd.DataFrame | None, dict]:
     """Positives + comparison frame under the pre-registered temporal guard.
 
     A registry record only contributes when it is label-grade for the requested
     cut (evidence/confidence), has a parseable ``first_publication_date`` and
-    matched procedures. Positives are its matched procedures with
-    ``published_date < first_publication_date``; a procedure matched to a case
-    but published on/after that date is dropped from the population entirely
-    (it cannot evidence a case that was already public). The population is
-    further restricted to ``published_date < max(cutoff)`` so no negative row
-    postdates every case it could have been associated with.
+    matched procedures; with ``verified_only=True`` it must ALSO carry
+    ``verified_by_human = true`` (MTA-0017 second version). Positives are its
+    matched procedures with ``published_date < first_publication_date``; a
+    procedure matched to a case but published on/after that date is dropped
+    from the population entirely (it cannot evidence a case that was already
+    public). The population is further restricted to
+    ``published_date < max(cutoff)`` so no negative row postdates every case
+    it could have been associated with.
     """
     case_cut: dict[str, pd.Timestamp] = {}
     n_candidate_pairs = 0
@@ -143,6 +154,8 @@ def build_label_population(per_case: list[dict], corpus: pd.DataFrame,
     for rec in per_case:
         if not rec["label_grade"] or rec["evidence_level"] not in evidence \
                 or rec["match_confidence"] not in confidence:
+            continue
+        if verified_only and not rec.get("verified_by_human"):
             continue
         cutoff = pd.to_datetime(rec.get("first_publication_date"), errors="coerce")
         if pd.isna(cutoff):
@@ -158,9 +171,17 @@ def build_label_population(per_case: list[dict], corpus: pd.DataFrame,
         "n_matched_pairs": n_candidate_pairs,
         "evidence_cut": list(evidence),
         "confidence_cut": list(confidence),
+        "verified_only": bool(verified_only),
+        "verified_note": ("только записи с verified_by_human=true "
+                          "(автор подтвердил вручную)"
+                          if verified_only else
+                          "все пригодные записи A–C (версия MTA-0016)"),
     }
     if not case_cut:
-        info["reason"] = "нет пригодных записей реестра (метка пуста)"
+        info["reason"] = (
+            "нет подтверждённых человеком записей (verified_by_human=true) "
+            "пригодных для метки" if verified_only
+            else "нет пригодных записей реестра (метка пуста)")
         return None, info
 
     published = (pd.to_datetime(corpus["published_date"], utc=True,
@@ -345,74 +366,41 @@ def decide_verdict(v0: dict, size_auc: float, bidders_auc: float,
 
 
 # ---------------------------------------------------------------------------
-# main
+# one label version (metrics stack)
 # ---------------------------------------------------------------------------
 
-def main() -> int:
-    warnings.filterwarnings("ignore")
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--registry", default=str(REGISTRY_CSV))
-    ap.add_argument("--features", default=str(DATA_FEATURES / "features.csv"))
-    ap.add_argument("--scores", default=str(TABLES / "tender_anomaly_scores.csv"))
-    ap.add_argument("--out-json", default=str(OUT_JSON))
-    ap.add_argument("--out-md", default=str(OUT_MD))
-    ap.add_argument("--random-repeats", type=int, default=RANDOM_REPEATS)
-    ap.add_argument("--flag-repeats", type=int, default=FLAG_REPEATS)
-    ap.add_argument("--n-boot", type=int, default=N_BOOT)
-    args = ap.parse_args()
-    t0 = time.time()
+def compute_version(per_case: list[dict], corpus: pd.DataFrame,
+                    scores: pd.DataFrame, feats: pd.DataFrame, args,
+                    verified_only: bool) -> dict:
+    """The whole metric stack for ONE label version (MTA-0017).
 
-    s38 = _load_script("38_case_registry_match.py")
-    raw = pd.read_csv(args.registry, dtype="string", keep_default_na=False)
-    registry, validation = s38.validate_registry(raw)
-    corpus = s38.load_corpus(args.features)
-    per_case, _proc, match_summary = s38.match_cases(registry, corpus)
-
-    frame, info = build_label_population(per_case, corpus)
-    summary: dict = {
-        "task": "MTA-0016",
-        "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "frame": ("measurement only - production v0 unchanged, no retraining, "
-                  "no retuning, no network"),
-        "registry": {"path": args.registry,
-                     "n_rows": validation["n_rows"],
-                     "n_valid": validation["n_valid"],
-                     "n_rejected": validation["n_rejected"]},
-        "matching": match_summary,
-        "label": info,
-    }
-
+    ``verified_only=False`` - all eligible A-C records (the MTA-0016
+    headline); ``True`` - only ``verified_by_human = true`` records. Every
+    version is gated independently (>=30 positives, >=10 clusters). The
+    descriptive ``cuts`` are computed for the all-A-C version only
+    (pre-registered cuts stay on it); the random-5%-flags control uses each
+    version's own frame/groups.
+    """
+    tag = "только verified_by_human=true" if verified_only else "все A–C"
+    frame, info = build_label_population(per_case, corpus,
+                                         verified_only=verified_only)
     if frame is None or info["n_positives"] == 0:
-        summary.update({
+        why = info.get("reason") or "нет позитивов до first_publication_date"
+        print(f"[{tag}] МЕТКА ПУСТА: {why}", flush=True)
+        return {
             "status": "no_label",
-            "warning": ("метка пуста: в реестре нет пригодных записей "
-                        "(A–C, high/medium) с сопоставленными процедурами "
-                        "до first_publication_date — расчёт метрик "
+            "label": info,
+            "warning": (f"метка пуста ({tag}): {why} — расчёт метрик "
                         "невозможен, вердикт не выдаётся"),
             "verdict": {"code": None,
                         "text": "метка пуста — вердикт не выдаётся",
-                        "text_full": "Метка пуста — вердикт не выдаётся. "
-                                     + DISCLAIMER},
-            "disclaimer": DISCLAIMER,
-            "limitations": LIMITATIONS,
-            "seconds": round(time.time() - t0, 1),
-        })
-        _write_outputs(summary, None, None, None, None, args, info=info)
-        print("МЕТКА ПУСТА: реестр не содержит пригодных записей — "
-              "описательный вывод без метрик и вердикта.", flush=True)
-        return 0
+                        "text_full": (f"Метка пуста ({tag}): {why} — "
+                                      "вердикт не выдаётся. " + DISCLAIMER)},
+        }
 
-    scores = pd.read_csv(args.scores, usecols=["ocid", "max_score"],
-                         dtype={"ocid": "string"}, low_memory=False)
     frame = frame.merge(scores, on="ocid", how="left", validate="one_to_one")
     if frame["max_score"].isna().any():
         raise SystemExit("v0-оценки потерялись при соединении по ocid")
-
-    feats = pd.read_csv(args.features,
-                        usecols=["ocid", "log_award_total", "n_bidders_log",
-                                 "procurement_method_details",
-                                 "log_award_value"],
-                        dtype={"ocid": "string"}, low_memory=False)
     frame = frame.merge(feats, on="ocid", how="left", validate="one_to_one")
 
     y = frame["y"].to_numpy().astype(int)
@@ -423,9 +411,9 @@ def main() -> int:
                                  "buyer_name")
 
     gate = small_sample_gate(y, cluster_supplier, cluster_buyer)
-    print(f"популяция {info['n_population']:,}, позитивов {info['n_positives']}, "
-          f"кластеры поставщиков среди позитивов "
-          f"{gate['clusters_supplier_positives']}, заказчиков "
+    print(f"[{tag}] популяция {info['n_population']:,}, "
+          f"позитивов {info['n_positives']}, кластеры поставщиков среди "
+          f"позитивов {gate['clusters_supplier_positives']}, заказчиков "
           f"{gate['clusters_buyer_positives']}", flush=True)
 
     v0 = ranking_block(y, score_v0, cluster_supplier, cluster_buyer,
@@ -439,7 +427,7 @@ def main() -> int:
     bidders_block = ranking_block(y, bidders_scores, cluster_supplier,
                                   cluster_buyer, n_boot=args.n_boot)
     random_block = S31.random_auc_baseline(y, repeats=args.random_repeats)
-    print(f"v0 AUC {v0['roc_auc']} supplier-CI "
+    print(f"[{tag}] v0 AUC {v0['roc_auc']} supplier-CI "
           f"{v0['cluster_ci_supplier']['ci']}; размер {size_block['roc_auc']}; "
           f"участники {bidders_block['roc_auc']}; случайность q97.5 "
           f"{random_block['q975']}", flush=True)
@@ -458,43 +446,47 @@ def main() -> int:
         gmeta = {"edges_source": f"fallback: единая группа ({exc})"}
     flag_block = random_flag_control(y, np.asarray(group_labels),
                                      repeats=args.flag_repeats)
-    print(f"случайные флаги 5%: AUC медиана "
+    print(f"[{tag}] случайные флаги 5%: AUC медиана "
           f"{flag_block['auc'].get('median')} "
           f"[{flag_block['auc'].get('p2_5')}; {flag_block['auc'].get('p97_5')}]",
           flush=True)
 
-    # --- separate cuts (descriptive, no verdict) ----------------------------
+    # --- separate cuts (descriptive, no verdict; all-A-C version only) ------
     cuts: dict[str, dict] = {}
-    for name, ev, conf in (("только A", ("A",), ("high", "medium")),
-                           ("B и C", ("B", "C"), ("high", "medium")),
-                           ("только high", ("A", "B", "C"), ("high",)),
-                           ("только medium", ("A", "B", "C"), ("medium",))):
-        sub, sub_info = build_label_population(per_case, corpus, evidence=ev,
-                                               confidence=conf)
-        if sub is None or sub_info.get("n_positives", 0) == 0:
-            cuts[name] = {"status": "no_label", **{k: sub_info.get(k) for k in
-                                                   ("n_label_cases_used",
-                                                    "reason")}}
-            continue
-        sub = sub.merge(scores, on="ocid", how="left", validate="one_to_one")
-        ys = sub["y"].to_numpy().astype(int)
-        sup = _cluster_key(sub, "winner_identifier", "winner_id", "winner_name")
-        buy = _cluster_key(sub, "buyer_identifier", "buyer_id", "buyer_name")
-        cuts[name] = {
-            "n_positives": sub_info["n_positives"],
-            "n_population": sub_info["n_population"],
-            "roc_auc": (round(S31.roc_auc(ys, sub["max_score"]
-                                          .to_numpy().astype(float)), 6)
-                        if np.unique(ys).size > 1 else None),
-            "cluster_ci_supplier": S31.cluster_bootstrap_auc(
-                ys, sub["max_score"].to_numpy().astype(float), sup,
-                n_boot=args.n_boot)["ci"],
-            "cluster_ci_buyer": S31.cluster_bootstrap_auc(
-                ys, sub["max_score"].to_numpy().astype(float), buy,
-                n_boot=args.n_boot)["ci"],
-        }
-        print(f"нарезка «{name}»: позитивов {sub_info['n_positives']}, "
-              f"AUC {cuts[name]['roc_auc']}", flush=True)
+    if not verified_only:
+        for name, ev, conf in (("только A", ("A",), ("high", "medium")),
+                               ("B и C", ("B", "C"), ("high", "medium")),
+                               ("только high", ("A", "B", "C"), ("high",)),
+                               ("только medium", ("A", "B", "C"), ("medium",))):
+            sub, sub_info = build_label_population(per_case, corpus, evidence=ev,
+                                                   confidence=conf)
+            if sub is None or sub_info.get("n_positives", 0) == 0:
+                cuts[name] = {"status": "no_label",
+                              **{k: sub_info.get(k) for k in
+                                 ("n_label_cases_used", "reason")}}
+                continue
+            sub = sub.merge(scores, on="ocid", how="left",
+                            validate="one_to_one")
+            ys = sub["y"].to_numpy().astype(int)
+            sup = _cluster_key(sub, "winner_identifier", "winner_id",
+                               "winner_name")
+            buy = _cluster_key(sub, "buyer_identifier", "buyer_id", "buyer_name")
+            cuts[name] = {
+                "n_positives": sub_info["n_positives"],
+                "n_population": sub_info["n_population"],
+                "roc_auc": (round(S31.roc_auc(ys, sub["max_score"]
+                                              .to_numpy().astype(float)), 6)
+                            if np.unique(ys).size > 1 else None),
+                "cluster_ci_supplier": S31.cluster_bootstrap_auc(
+                    ys, sub["max_score"].to_numpy().astype(float), sup,
+                    n_boot=args.n_boot)["ci"],
+                "cluster_ci_buyer": S31.cluster_bootstrap_auc(
+                    ys, sub["max_score"].to_numpy().astype(float), buy,
+                    n_boot=args.n_boot)["ci"],
+            }
+            print(f"[{tag}] нарезка «{name}»: позитивов "
+                  f"{sub_info['n_positives']}, AUC {cuts[name]['roc_auc']}",
+                  flush=True)
 
     verdict = None
     if gate["enough_power"] and np.unique(y).size > 1:
@@ -507,25 +499,14 @@ def main() -> int:
             "о перенастройке здесь не принимается — это измерение, а не цикл "
             "приёмки. " + DISCLAIMER)
     else:
-        verdict_text = ("Вердикт не выдаётся: «выборка мала» (<30 позитивов "
-                        "или <10 кластеров) — только описательная таблица. "
-                        + DISCLAIMER)
-    print(verdict_text, flush=True)
+        verdict_text = (f"Вердикт не выдаётся ({tag}): «выборка мала» "
+                        "(<30 позитивов или <10 кластеров) — только "
+                        "описательная таблица. " + DISCLAIMER)
+    print(f"[{tag}] {verdict_text}", flush=True)
 
-    summary.update({
+    return {
         "status": "ok",
-        "pre_registered": {
-            "seed": SEED, "n_boot": args.n_boot,
-            "random_repeats": args.random_repeats,
-            "flag_repeats": args.flag_repeats, "flag_rate": FLAG_RATE,
-            "top_k": list(TOP_K),
-            "min_positives": MIN_POSITIVES, "min_clusters": MIN_CLUSTERS,
-            "label_rule": "evidence A-C AND match_confidence high/medium; "
-                          "D and fuzzy/low never enter",
-            "temporal_guard": info["temporal_guard"],
-            "verdict_rule": "тот же а/б/в, что в scripts/31 (без ветки "
-                            "утечки: здесь ничего не переобучается)",
-        },
+        "label": info,
         "v0_external": v0,
         "baselines": {
             "log_award_total": size_block,
@@ -538,28 +519,121 @@ def main() -> int:
         "power_gate": gate,
         "verdict": {**verdict, "text_full": verdict_text} if verdict else
                    {"code": None, "text_full": verdict_text},
+    }
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
+def main() -> int:
+    warnings.filterwarnings("ignore")
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--registry", default=str(REGISTRY_CSV))
+    ap.add_argument("--features", default=str(DATA_FEATURES / "features.csv"))
+    ap.add_argument("--scores", default=str(TABLES / "tender_anomaly_scores.csv"))
+    ap.add_argument("--out-json", default=str(OUT_JSON))
+    ap.add_argument("--out-md", default=str(OUT_MD))
+    ap.add_argument("--random-repeats", type=int, default=RANDOM_REPEATS)
+    ap.add_argument("--flag-repeats", type=int, default=FLAG_REPEATS)
+    ap.add_argument("--n-boot", type=int, default=N_BOOT)
+    ap.add_argument("--raw-scan", action="store_true",
+                    help="как в scripts/38: индекс номеров договоров из "
+                         "локальных data/raw/ocds_packages (только чтение)")
+    ap.add_argument("--rebuild-contract-index", action="store_true",
+                    help="перестроить кэш results/methodology/"
+                         "contract_index.json (подразумевает --raw-scan)")
+    args = ap.parse_args()
+    t0 = time.time()
+
+    s38 = _load_script("38_case_registry_match.py")
+    raw = pd.read_csv(args.registry, dtype="string", keep_default_na=False)
+    registry, validation = s38.validate_registry(raw)
+    corpus = s38.load_corpus(args.features)
+    # The SAME contract-index policy as scripts/38, so both artefacts agree.
+    contract_index = None
+    index_origin = "не строился (нет записей link_basis=contract_number)"
+    needs_index = any(
+        s38._clean(r.get("link_basis")) == "contract_number"
+        for _, r in registry[registry["_valid"]].iterrows())
+    if needs_index and (args.raw_scan or args.rebuild_contract_index):
+        contract_index, index_origin = s38.load_contract_index(
+            rebuild=args.rebuild_contract_index)
+    elif needs_index:
+        index_origin = ("скан data/raw отключён — номера договоров "
+                        "разрешаются по объявленным procedure_ids")
+    per_case, _proc, match_summary = s38.match_cases(
+        registry, corpus, contract_index=contract_index)
+
+    scores = pd.read_csv(args.scores, usecols=["ocid", "max_score"],
+                         dtype={"ocid": "string"}, low_memory=False)
+    feats = pd.read_csv(args.features,
+                        usecols=["ocid", "log_award_total", "n_bidders_log",
+                                 "procurement_method_details",
+                                 "log_award_value"],
+                        dtype={"ocid": "string"}, low_memory=False)
+
+    # Two pre-registered versions (MTA-0017): all A-C, then verified only.
+    all_block = compute_version(per_case, corpus, scores, feats, args,
+                                verified_only=False)
+    verified_block = compute_version(per_case, corpus, scores, feats, args,
+                                     verified_only=True)
+
+    summary: dict = {
+        "task": "MTA-0016/MTA-0017",
+        "generated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "frame": ("measurement only - production v0 unchanged, no retraining, "
+                  "no retuning, no network"),
+        "registry": {"path": args.registry,
+                     "n_rows": validation["n_rows"],
+                     "n_valid": validation["n_valid"],
+                     "n_rejected": validation["n_rejected"]},
+        "contract_index": {"used": contract_index is not None,
+                           "origin": index_origin},
+        "matching": match_summary,
+        "pre_registered": {
+            "seed": SEED, "n_boot": args.n_boot,
+            "random_repeats": args.random_repeats,
+            "flag_repeats": args.flag_repeats, "flag_rate": FLAG_RATE,
+            "top_k": list(TOP_K),
+            "min_positives": MIN_POSITIVES, "min_clusters": MIN_CLUSTERS,
+            "label_rule": ("link_basis in {procedure_id_in_source, "
+                           "contract_number} AND evidence A-C AND "
+                           "match_confidence high/medium; buyer_period_only, "
+                           "пустой link_basis, D and fuzzy/low never enter"),
+            "versions": ["все A–C (заголовок MTA-0016)",
+                         "только verified_by_human=true (MTA-0017)"],
+            "temporal_guard": (all_block.get("label") or {}).get(
+                "temporal_guard"),
+            "verdict_rule": ("тот же а/б/в, что в scripts/31 (без ветки "
+                             "утечки: здесь ничего не переобучается); каждая "
+                             "версия гейтится отдельно"),
+        },
         "disclaimer": DISCLAIMER,
         "limitations": LIMITATIONS,
-        "seconds": round(time.time() - t0, 1),
-    })
-    _write_outputs(summary, v0, size_block, bidders_block, random_block, args,
-                   flag_block=flag_block, cuts=cuts, gate=gate,
-                   verdict=verdict, verdict_text=verdict_text, info=info)
+    }
+    summary.update(all_block)          # status/label/v0_external/baselines/...
+    summary["verified_only"] = verified_block
+    summary["seconds"] = round(time.time() - t0, 1)
+    _write_outputs(summary, args)
+    if all_block["status"] == "no_label":
+        print("МЕТКА ПУСТА: реестр не содержит пригодных записей — "
+              "описательный вывод без метрик и вердикта.", flush=True)
     print(f"json  -> {args.out_json}", flush=True)
     print(f"report -> {args.out_md}", flush=True)
     return 0
 
 
-def _write_outputs(summary: dict, v0, size_block, bidders_block, random_block,
-                   args, flag_block=None, cuts=None, gate=None, verdict=None,
-                   verdict_text=None, info=None) -> None:
+def _write_outputs(summary: dict, args) -> None:
+    """Write the JSON (already assembled) and the Markdown report."""
     out_json = Path(args.out_json)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(summary, ensure_ascii=False, indent=2),
                         encoding="utf-8")
+    info = summary.get("label") or {}
     lines = [
-        "# MTA-0016: третья внешняя проверка — реестр случаев из открытых "
-        "источников (только измерение)",
+        "# MTA-0016/MTA-0017: третья внешняя проверка — реестр случаев из "
+        "открытых источников (только измерение)",
         "",
         f"Дата: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}. "
         "**Только измерение**: production остаётся v0, ничего не "
@@ -571,43 +645,32 @@ def _write_outputs(summary: dict, v0, size_block, bidders_block, random_block,
         "## 1. Метка и временная защита (предзаписано)",
         "",
         "- позитив = процедура, сопоставленная с записью реестра "
-        "`evidence_level` A–C и `match_confidence` high/medium "
-        "(`name_fuzzy`/low — только кандидаты, в метку не входят; D — никогда);",
-        f"- временная защита: {info.get('temporal_guard', '—') if info else '—'};",
+        "`link_basis` ∈ {`procedure_id_in_source`, `contract_number`} "
+        "(MTA-0017, п. 3: `buyer_period_only` и пустой `link_basis` в метку "
+        "не входят) AND `evidence_level` A–C AND `match_confidence` "
+        "high/medium (`name_fuzzy`/low — только кандидаты, в метку не "
+        "входят; D — никогда);",
+        f"- временная защита: {info.get('temporal_guard', '—')};",
         f"- всего записей реестра: {summary['registry']['n_rows']} "
         f"(принято {summary['registry']['n_valid']}); "
         f"записей в метке: {summary['matching']['n_matched_label_grade']};",
+        "- версии расчёта (MTA-0017): **все A–C** (заголовок) и **только "
+        "`verified_by_human = true`** (автор подтверждает записи вручную); "
+        "каждая версия гейтится отдельно;",
         f"- популяция сравнения: {info['n_population']:,} процедур "
         f"(позитивов {info['n_positives']}, базовая доля "
         f"{info['base_rate']}); исключено после даты публикации случая: "
         f"{info.get('n_dropped_post_publication', 0)}."
-        if info and info.get("n_population") else
+        if info.get("n_population") else
         "- популяция сравнения: не определена (метка пуста).",
         "",
     ]
-    if summary.get("status") == "no_label":
-        lines += [
-            "## 2. Результат",
-            "",
-            "**Метка пуста** — в реестре нет пригодных записей (сейчас "
-            "реестр — шаблон без записей). Метрики и вердикт не "
-            "выдаются, чтобы не измерять пустоту. Как только записи "
-            "появятся, `scripts/39` посчитает метрики автоматически.",
-            "",
-            "## 3. Артефакты",
-            "",
-            "`results/methodology/case_registry_check.json`, этот отчёт. "
-            "Схема реестра: `docs/case_registry_schema.md`.",
-            "",
-            DISCLAIMER, "",
-        ]
-    else:
-        sup_ci = v0["cluster_ci_supplier"]
-        sup_lo, sup_hi = sup_ci["ci"] or ("—", "—")
+
+    def metrics_table(block: dict) -> list[str]:
+        v0 = block["v0_external"]
+        sup_lo, sup_hi = v0["cluster_ci_supplier"]["ci"] or ("—", "—")
         buy_lo, buy_hi = v0["cluster_ci_buyer"]["ci"] or ("—", "—")
-        lines += [
-            "## 2. Метрики v0 против метки реестра",
-            "",
+        return [
             "| метрика | значение |",
             "|---|---|",
             f"| ROC-AUC (v0, max_score) | {v0['roc_auc']} |",
@@ -617,21 +680,69 @@ def _write_outputs(summary: dict, v0, size_block, bidders_block, random_block,
               for k in TOP_K],
             *[f"| lift@{k} (над базовой долей) | {v0['lift'][f'lift_at_{k}']} |"
               for k in TOP_K],
+        ]
+
+    def gate_lines(block: dict) -> list[str]:
+        gate = block["power_gate"]
+        verdict = block.get("verdict") or {}
+        return [
+            f"Позитивов: {gate['positives']}; кластеров среди позитивов — "
+            f"поставщиков {gate['clusters_supplier_positives']}, заказчиков "
+            f"{gate['clusters_buyer_positives']} (порог: ≥ "
+            f"{gate['min_positives']} и ≥ {gate['min_clusters']}).",
+            "",
+            f"**{verdict.get('text_full', '—')}**",
+            "",
+        ]
+
+    if summary.get("status") == "no_label":
+        verified = summary.get("verified_only") or {}
+        lines += [
+            "## 2. Результат",
+            "",
+            f"**Метка пуста** — {summary.get('warning', '')} "
+            "(сейчас реестр — шаблон без записей). Метрики и вердикт не "
+            "выдаются, чтобы не измерять пустоту. Как только записи "
+            "появятся, `scripts/39` посчитает метрики автоматически.",
+            "",
+            "Вторая версия (только `verified_by_human=true`): "
+            + (verified.get("warning") or "—") + ".",
+            "",
+            "## 3. Артефакты",
+            "",
+            "`results/methodology/case_registry_check.json`, этот отчёт. "
+            "Схема реестра: `docs/case_registry_schema.md`. "
+            "Наполнение: `scripts/41_case_registry_ingest.py`.",
+            "",
+            DISCLAIMER, "",
+        ]
+    else:
+        baselines = summary["baselines"]
+        cuts = summary.get("cuts") or {}
+        verified = summary.get("verified_only") or {}
+        lines += [
+            "## 2. Метрики v0 против метки реестра (версия: все A–C)",
+            "",
+            *metrics_table(summary),
             "",
             "## 3. Обязательные сравнения",
             "",
             "| базовое ранжирование | ROC-AUC |",
             "|---|---|",
-            f"| только размер (log_award_total) | {size_block['roc_auc']} |",
-            f"| только участники (n_bidders_log) | {bidders_block['roc_auc']} |",
-            f"| случайный ранжирование ({random_block['repeats']} повторов, "
-            f"q97.5) | {random_block['q975']} (медиана "
-            f"{random_block['mean']}) |",
-            f"| случайные флаги 5% внутри группы ({flag_block['repeats']} "
+            f"| только размер (log_award_total) | "
+            f"{baselines['log_award_total']['roc_auc']} |",
+            f"| только участники (n_bidders_log) | "
+            f"{baselines['n_bidders_log']['roc_auc']} |",
+            f"| случайный ранжирование "
+            f"({baselines['random_ranking']['repeats']} повторов, q97.5) | "
+            f"{baselines['random_ranking']['q975']} (медиана "
+            f"{baselines['random_ranking']['mean']}) |",
+            f"| случайные флаги 5% внутри группы "
+            f"({baselines['random_flags_5pct_within_group']['repeats']} "
             f"повторов, AUC медиана [p2.5; p97.5]) | "
-            f"{flag_block['auc'].get('median')} "
-            f"[{flag_block['auc'].get('p2_5')}; "
-            f"{flag_block['auc'].get('p97_5')}] |",
+            f"{baselines['random_flags_5pct_within_group']['auc'].get('median')} "
+            f"[{baselines['random_flags_5pct_within_group']['auc'].get('p2_5')}; "
+            f"{baselines['random_flags_5pct_within_group']['auc'].get('p97_5')}] |",
             "",
             "## 4. Нарезки (описательно, без вердикта)",
             "",
@@ -639,18 +750,35 @@ def _write_outputs(summary: dict, v0, size_block, bidders_block, random_block,
             "|---|---|---|---|",
             *[f"| {name} | {c.get('n_positives', 0)} | {c.get('roc_auc')} | "
               f"{_ci_str(c.get('cluster_ci_supplier'))} |"
-              for name, c in (cuts or {}).items()],
+              for name, c in cuts.items()],
             "",
-            "## 5. Мощность и вердикт",
+            "## 5. Мощность и вердикт (версия: все A–C)",
             "",
-            f"Позитивов: {gate['positives']}; кластеров среди позитивов — "
-            f"поставщиков {gate['clusters_supplier_positives']}, заказчиков "
-            f"{gate['clusters_buyer_positives']} (порог: ≥ {gate['min_positives']} "
-            f"и ≥ {gate['min_clusters']}).",
+            *gate_lines(summary),
+            "## 6. Версия только verified_by_human=true (MTA-0017)",
             "",
-            f"**{verdict_text}**" if verdict_text else "",
-            "",
-            "## 6. Артефакты",
+        ]
+        if verified.get("status") == "no_label":
+            lines += [
+                f"Версия пуста: {verified.get('warning', '—')} — автор ещё "
+                "не подтвердил ни одной пригодной записи. Метрики и вердикт "
+                "для этой версии не выдаются.",
+                "",
+            ]
+        else:
+            v_label = verified["label"]
+            lines += [
+                f"Записей в метке (подтверждено человеком): "
+                f"{v_label.get('n_label_cases_used')}; "
+                f"популяция {v_label['n_population']:,} "
+                f"(позитивов {v_label['n_positives']}).",
+                "",
+                *metrics_table(verified),
+                "",
+                *gate_lines(verified),
+            ]
+        lines += [
+            "## 7. Артефакты",
             "",
             "`results/methodology/case_registry_check.json`, этот отчёт. "
             "Разборы случаев: `reports/case_studies.md` "

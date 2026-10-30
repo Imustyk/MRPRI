@@ -15,10 +15,15 @@ data/workspace/
 # re-included; a trailing-slash pattern excludes the directory itself and
 # git then never descends into it to honour negations.
 data/*
-# ...except the case-registry TEMPLATE (empty CSV, schema-only, MTA-0016):
+# ...except the case-registry files (schema + the human-curated source,
+# episode and unmatched tables of MTA-0016/0017 - small text CSVs whose
+# content IS the audit trail of the third external label):
 !data/external/
 data/external/*
 !data/external/case_registry.csv
+!data/external/case_sources.csv
+!data/external/case_episodes_raw.csv
+!data/external/case_unmatched.csv
 # the previous blanket `data/` also caught nested data/ dirs (e.g. the
 # frontend source folder) - keep them ignored explicitly:
 frontend/src/data/

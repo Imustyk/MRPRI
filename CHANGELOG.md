@@ -4,6 +4,77 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0017] — 2026-10-30
+
+Third external label, episode-level linking — **measurement only**
+(production stays v0, nothing retrained, `data/raw/**`, `backend/`,
+`frontend/` and `scripts/00..11` untouched, no network use). The source
+list comes from the author; nothing is invented or fetched.
+
+* `data/external/case_sources.csv`, `data/external/case_episodes_raw.csv`
+  (new committed templates): the author's source list (URL + type +
+  publication date) and the extracted episodes (source, page/point, buyer,
+  supplier, procedure/contract number if named, procedure date, essence,
+  quote **≤25 words**); `data/external/case_unmatched.csv` (new) holds the
+  episodes that could not be linked, each with a reason (`вне корпуса` /
+  `нет идентификатора` / `неоднозначно`). All four CSVs are excepted from
+  the `data/` ignore — they ARE the audit trail of the label.
+* `scripts/41_case_registry_ingest.py` (new): validates sources + episodes
+  (long quotes, both identifiers at once, unknown enums and missing
+  sources are rejected to the REPORT, not to the unmatched table), derives
+  `link_basis` (`procedure_ref` → `procedure_id_in_source`,
+  `contract_number` → `contract_number`, else `buyer_period_only`), runs
+  the `scripts/38` matcher, UPSERTS matched episodes into the registry
+  (never deletes; hand-written rows never overwritten; `verified_by_human`
+  and other human columns preserved; every new row starts `false`) and
+  unmatched ones into `case_unmatched.csv`. Report
+  `reports/case_registry_ingest.md`; artefact
+  `results/methodology/case_registry_ingest.json`.
+* `scripts/38_case_registry_match.py` extended: registry schema now 26
+  columns (`procedure_date`, `source_publication_date`, `link_basis`,
+  `procedure_ref_in_source`); resolution order = human `manual` →
+  identifier links (`ocid_exact` via exact ocid/tender_id/numeric tender
+  suffix, `contract_number` via a read-only `data/raw/ocds_packages` scan
+  cached in `results/methodology/contract_index.json` when `--raw-scan`,
+  else the declared `procedure_ids`) → entity ladder (IDNO → name → fuzzy
+  candidate, `buyer_period_only` additionally windowed by the episode's
+  period ±30 days); unmatched rows carry a reason from the three-value
+  enum, declared-IDNO contradictions downgrade high→medium with a note.
+  **Label rule:** `link_basis ∈ {procedure_id_in_source, contract_number}`
+  AND evidence A–C AND confidence high/medium — `buyer_period_only` and
+  empty `link_basis` rows enter the registry but NEVER the label.
+* `scripts/39_case_registry_check.py`: metrics in TWO versions — all A–C
+  (the MTA-0016 headline, top level) and only `verified_by_human=true`
+  (`summary["verified_only"]`); each version is gated independently (≥30
+  positives, ≥10 clusters → else descriptive table, no verdict); report
+  section «Версия только verified_by_human=true»; `--raw-scan` accepted so
+  both artefacts resolve contract numbers identically.
+* `scripts/19_final_verification.py` section 8 (MTA-0017): re-derives the
+  ingest counts (episodes accepted/rejected, `link_basis` split) from the
+  CSVs against the `scripts/41` artefact, cross-checks `by_link_basis`,
+  unmatched-by-reason and `verified_by_human` against the `scripts/38`
+  artefact, the `verified_only` block against `scripts/39`, and enforces
+  the `case_unmatched.csv` invariants (reason inside the enum, no empty or
+  duplicate `episode_id`, no episode in BOTH registry and unmatched).
+* `docs/case_registry_schema.md`: 26-column registry, the three new input
+  tables, `link_basis`/label rule, the three unmatched reasons, dates
+  stored separately (`procedure_date` / `source_publication_date` /
+  `first_publication_date`), two-version metrics, workflow **41 → 38 → 39
+  → 40** (19 as the control).
+* `tests/test_case_registry.py`: 54 tests — everything from MTA-0016
+  reworked for the new label rule (entity-ladder rows are matched but
+  never label-grade; temporal tests now use `procedure_ref` links) plus
+  `link_basis` enum/derivation, procedure-ref resolve/ambiguous/not-found,
+  contract-number via declared ids and via the index (build + cache),
+  `buyer_period_only` window/no-anchor/empty-window reasons, the
+  three-value unmatched enum, verified-only population exclusion,
+  ingest validation (quote >25 words, both identifiers, unknown source),
+  41 end-to-end idempotency + human-mark preservation + hand-row collision
+  protection, no network imports and `python -I` standalone for 38/39/40/41.
+* Verified: all 341 tests pass; `scripts/41 → 38 → 39 → 40` run clean on
+  the empty templates; `scripts/19` prints «all headline numbers
+  reproduce» with the extended section 8.
+
 ## [MTA-0016] — 2026-10-30
 
 Third external label: a case registry from open sources — **measurement
