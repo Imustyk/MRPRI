@@ -4,6 +4,64 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0016] — 2026-10-30
+
+Third external label: a case registry from open sources — **measurement
+only** (production stays v0, nothing is retrained or retuned,
+`data/raw/**`, `backend/`, `frontend/` and `scripts/00..11` untouched, no
+network use). The two weak labels (AAP, ANSC) showed no superiority over
+size; the registry is an independent check used **only for validation**.
+
+* `data/external/case_registry.csv` (new, committed as an EMPTY template —
+  the only path excepted from the `data/` ignore; cases are added by a
+  human from open sources, never fabricated) + `docs/case_registry_schema.md`
+  (columns, evidence A–D, risk types, acceptance rules: no source →
+  rejected; D never enters the label; low-confidence matches counted
+  separately).
+* `scripts/38_case_registry_match.py`: matching ladder IDNO → exact
+  normalised name → `name_fuzzy` candidate that is ALWAYS `low` and never
+  label-grade; human `manual` matches require `verified_by_human=true`;
+  declared `match_*` cells are cross-checked, discrepancies reported;
+  report `reports/case_registry_match.md` (no network: `--allow-network`
+  is reserved and opens nothing).
+* `scripts/39_case_registry_check.py`: label = evidence A–C AND confidence
+  high/medium, with the TEMPORAL GUARD (procedures published strictly
+  before the case's `first_publication_date`; post-date rows leave the
+  population; features/scores never recomputed from post-date data). v0
+  metrics ROC-AUC / precision@100/200/500 / lift; supplier- and
+  buyer-cluster bootstrap (1000 reps, seed 42); required comparisons
+  «size only», «bidders only», random ranking (1000 reps, q97.5), random
+  5%-within-group flags (scripts/28 control (a), 200 reps); descriptive
+  cuts A vs B/C and high vs medium; power gate (<30 positives or <10
+  clusters → descriptive table + «выборка мала», NO verdict); verdict by
+  the SAME а/б/в rule as the ANSC check (`scripts/31`, minus the leakage
+  branch — nothing is refitted here). With the registry empty the script
+  reports `status=no_label` and issues no verdict.
+* `scripts/40_case_registry_studies.py`: case studies for A/B records with
+  ≥5 matched procedures → `reports/case_studies.md` (detector percentile
+  ranks + votes, SHAP/LIME top-3 around the same explained function, RAG
+  quotes from the frozen local legal corpus; wording «упоминается в
+  источнике», never «нарушитель»; per-case truncation stated).
+* `scripts/19_final_verification.py` section 8 re-validates, re-matches
+  and re-labels the registry from source data and compares every count
+  with the stored `scripts/38/39` artefacts — any drift fails the script.
+* `tests/test_case_registry.py`: 28 tests — schema/template, no-source and
+  enum rejection, evidence D excluded, IDNO→name→fuzzy ladder (fuzzy never
+  auto-promoted), buyer-side matching, manual verification, TEMPORAL GUARD
+  (pre-publication positives, same-day excluded, post-date rows dropped),
+  power gate, а/б/в verdict rule, deterministic random-5% control,
+  empty-registry end-to-end runs (no fabrication, no verdict), no network
+  imports + `python -I` standalone for 38/39/40.
+* Verified: all 28 new tests pass; `scripts/19` prints «all headline
+  numbers reproduce» including the new section 8; every report carries the
+  five limitations (label biased to loud cases ⇒ size comparison
+  mandatory; journalism ≠ evidence; prioritisation ≠ corruption;
+  population-level temporal protection; indicator of potential risk, not
+  evidence of corruption — competent-authority check required).
+
+**Registry status at the commit: 0 records (empty template) → nothing is
+matched, no metric and no verdict is produced — by design.**
+
 ## [IMPROVEMENT-2026-10-20] — Iterative improvement protocol, branch `feature/risk-specific-detection` (8 phases, measurement)
 
 Framed per the author's brief as **measurement, not a cycle**: budget stays

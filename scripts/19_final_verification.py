@@ -21,6 +21,12 @@ exits non-zero on any mismatch:
   5. bias audit anchors     - high+ and critical shares, smallest/largest buyer
                               quintile disparity ratios
   6. threshold economics    - votes>=3 cost at c_miss=10/50/200 vs flag-nothing
+  7. iterative-cycle numbers- scripts/20 artefacts vs the quoted cycle
+                              constants (consensus, AUC, deltas, jaccard)
+  8. case registry (MTA-0016) - the registry is re-validated, re-matched and
+                              re-labelled from source data and compared with
+                              the stored scripts/38 and scripts/39 artefacts;
+                              any drift fails here
 
 Usage:
     .venv/bin/python scripts/19_final_verification.py
@@ -28,6 +34,7 @@ Usage:
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
 import time
@@ -50,6 +57,17 @@ from src.mtender.features import FEATURE_COLUMNS  # noqa: E402
 
 TOL = 1e-6
 MISMATCHES: list[str] = []
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_script(name: str):
+    path = ROOT / "scripts" / name
+    spec = importlib.util.spec_from_file_location(name.replace(".py", ""), path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(module)
+    return module
 
 
 def check(name: str, got: float, expected: float, tol: float = TOL) -> None:
@@ -226,6 +244,53 @@ def main() -> int:
           variants["v0_baseline"]["stop_criteria_passed"], 3)
     check("v2 stop criteria passed", variants["v2_mean_rank"]["stop_criteria_passed"], 4)
 
+    print("== 8. case registry re-derived (MTA-0016) ==")
+    # The registry is re-validated, re-matched and re-labelled from the CSV
+    # and the corpus, and every headline count is compared with the stored
+    # scripts/38 and scripts/39 artefacts: a report that drifts from its
+    # source data fails here.
+    s38 = _load_script("38_case_registry_match.py")
+    s39 = _load_script("39_case_registry_check.py")
+    registry_csv = ROOT / "data" / "external" / "case_registry.csv"
+    raw = pd.read_csv(registry_csv, dtype="string", keep_default_na=False)
+    reg, reg_val = s38.validate_registry(raw)
+    reg_corpus = s38.load_corpus(DATA_FEATURES / "features.csv")
+    reg_cases, _reg_proc, reg_summary = s38.match_cases(reg, reg_corpus)
+
+    match_artefact = json.loads(
+        (RESULTS / "methodology" / "case_registry_match.json")
+        .read_text(encoding="utf-8"))
+    check("case registry rows", reg_val["n_rows"],
+          match_artefact["validation"]["n_rows"])
+    check("case registry n_valid", reg_val["n_valid"],
+          match_artefact["validation"]["n_valid"])
+    check("case registry n_rejected", reg_val["n_rejected"],
+          match_artefact["validation"]["n_rejected"])
+    check("case registry n_matched", reg_summary["n_matched"],
+          match_artefact["matching"]["n_matched"])
+    check("case registry label-grade cases",
+          reg_summary["n_matched_label_grade"],
+          match_artefact["matching"]["n_matched_label_grade"])
+    check("case registry fuzzy candidates", reg_summary["n_fuzzy_candidates"],
+          match_artefact["matching"]["n_fuzzy_candidates"])
+
+    check_artefact = json.loads(
+        (RESULTS / "methodology" / "case_registry_check.json")
+        .read_text(encoding="utf-8"))
+    reg_frame, reg_info = s39.build_label_population(reg_cases, reg_corpus)
+    check("case check label cases used", reg_info.get("n_label_cases_used"),
+          check_artefact["label"].get("n_label_cases_used"))
+    if reg_frame is None:
+        if check_artefact.get("status") != "no_label":
+            MISMATCHES.append("case check: re-derived empty label but the "
+                              "artefact is not status=no_label")
+        print("  label is empty on both sides (registry template) - ok")
+    else:
+        check("case check positives", reg_info["n_positives"],
+              check_artefact["label"]["n_positives"])
+        check("case check population", reg_info["n_population"],
+              check_artefact["label"]["n_population"])
+
     summary = {
         "baseline": {"vote_distribution": dist, "bands": bands},
         "external_headline": {
@@ -247,6 +312,13 @@ def main() -> int:
             "consensus_mean": round(float(runs["n_consensus_ge3"].mean()), 1),
             "jaccard_mean": round(float(
                 runs["jaccard_consensus_vs_seed42"].mean()), 4),
+        },
+        "case_registry": {
+            "rows": reg_val["n_rows"],
+            "n_valid": reg_val["n_valid"],
+            "n_matched": reg_summary["n_matched"],
+            "label_grade_cases": reg_summary["n_matched_label_grade"],
+            "check_status": check_artefact.get("status"),
         },
         "mismatches": MISMATCHES,
         "seconds": round(time.time() - t0, 1),
