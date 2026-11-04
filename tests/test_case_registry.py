@@ -271,7 +271,7 @@ def test_manual_requires_verified_human(tmp_path):
     assert "manual без verified_by_human" in per_case[1]["note"]
 
 
-def test_evidence_d_never_enters_the_label(tmp_path):
+def test_evidence_d_never_in_label(tmp_path):
     _, _, _, per_case, _ = _load(tmp_path, [
         {"evidence_level": "D", "link_basis": "procedure_id_in_source",
          "procedure_ref_in_source": "ocd-P1"}])
@@ -424,6 +424,29 @@ def test_buyer_period_only_empty_window_is_unmatched(tmp_path):
     assert rec["match_method"] == "none"
     assert rec["unmatched_reason"] == "вне корпуса"
     assert "2030" in rec["unmatched_detail"]
+
+
+def test_buyer_period_only_never_in_label(tmp_path):
+    """MTA-0017 п. 3: buyer_period_only попадает в реестр, в метку — НИКОГДА.
+
+    Even with evidence A, high confidence and a human verification mark the
+    record stays out of the label population (only ``procedure_id_in_source``
+    and ``contract_number`` may form positives).
+    """
+    _, _, corpus, per_case, summary = _load(tmp_path, [
+        {"case_id": "C-bpo", "link_basis": "buyer_period_only",
+         "entity_id_mtender": "1000000000001",
+         "period_from": "2020-01-15", "period_to": "2020-01-15",
+         "evidence_level": "A", "match_confidence": "high",
+         "verified_by_human": "true"}])
+    rec = per_case[0]
+    assert rec["n_procedures_matched"] > 0         # в реестр попадает
+    assert rec["label_grade"] is False             # ...а в метку — нет
+    assert summary["n_matched"] == 1
+    assert summary["n_matched_label_grade"] == 0
+    assert summary["by_link_basis"]["buyer_period_only"]["label_grade"] == 0
+    frame, info = S39.build_label_population(per_case, corpus)
+    assert frame is None or info.get("n_positives", 0) == 0
 
 
 def test_contract_number_resolves_via_declared_ids(tmp_path):
