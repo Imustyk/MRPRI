@@ -4,6 +4,58 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0019] — 2026-11-08
+
+Independent-validation preparation for the ANSC outcome extraction —
+**measurement only** (production v0, frontend, ETL 00-11 and existing
+models untouched; no training, no scientific model comparison; no PDF
+re-download; the MTA-0018 automatic outcomes and the 50-doc sample are
+unchanged). **The manual review has NOT started: 0 of 50 documents
+verified by a human, so no quality metric was computed and no label was
+created.**
+
+* `scripts/46_ansc_review_package.py` (new): BLIND review package -
+  `data/external/ansc_manual_review_50.csv` (50 rows) and
+  `data/external/ansc_manual_review_pilot10.csv` (deterministic pilot:
+  5 classified outcomes, text-layer+scan, all confidence levels,
+  2018-2022) with reference columns (decision number, OCID, source URL,
+  local PDF path, expected resolutory page, evidence quote) and EMPTY
+  `reviewer_*` columns; the machine prediction is absent from the files
+  (blindness); `validate` exits 0/5/6/4 and `build` refuses to overwrite
+  filled reviewer data.
+* `scripts/45_ansc_review_metrics.py` (extended): merges the blind review
+  file with the machine sample by URL; required enums key on the columns
+  present (legacy sample contract preserved - its 7 tests pass unchanged);
+  outcome metrics run on rows confirmed as ANSC decisions only, with
+  document-type detection metrics (all rows), link-verification counts,
+  mislink frequency via `reviewer_link_verified` or `mislink:` notes, a
+  link-confirmed subset, a multi-complaint counter and an explicit
+  "stratified sample is NOT necessarily representative" note. Still
+  refuses until every label exists (exit 5, `metrics: null`).
+* `scripts/47_ansc_upheld_labels.py` (new): external label with a hard
+  gate - incomplete review -> exit 5 progress JSON and NO label file;
+  invalid values -> exit 6; 1 = admitted/partially, 0 = rejected on the
+  merits, NULL = unknown outcomes, non-decision documents, unconfirmed
+  links and `multiple:` rows; several complaints/documents of one
+  procedure keep their own labels (conflicts reported, never collapsed);
+  decision dates summarised with future-date leakage flags; feature-pipeline
+  leakage scan (scripts 00-15 + backend) runs first - a leak blocks
+  labeling (exit 7).
+* `docs/ANSC_REVIEW_GUIDE.md` (new): reviewer instructions with ready
+  links for the pilot, enums, workflow and note markers;
+  `docs/ANSC_MANUAL_REVIEW_PROTOCOL.md` updated to the blind package.
+* Tests: `tests/test_ansc_review_package.py` (13, new),
+  `tests/test_ansc_upheld_labels.py` (17, new), +11 in
+  `tests/test_ansc_metrics.py` - full suite **451 passed**.
+* `reports/MTA-0019_REVIEW.md`: prepared 50 (pilot 10), human-verified 0,
+  metrics NOT computed, limitations, NOT ready for MTA-0020 until the
+  human review is done.
+
+Deliberately NOT done: filling any `reviewer_*` cell (algorithms, OCR, LLMs
+and classifiers are forbidden there), any quality metric, the
+`ansc_upheld` label itself, and any conclusion about extraction quality -
+MTA-0019 stays INCOMPLETE until a human reviews all 50 documents.
+
 ## [MTA-0018] — 2026-11-08
 
 ANSC document inventory, outcome extraction and the manual-review sample —

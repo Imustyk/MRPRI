@@ -28,6 +28,13 @@ data/external/*
 # are empty until the author's independent review - the CSV IS the audit
 # trail of that review):
 !data/external/ansc_review_sample_50.csv
+# MTA-0019: the BLIND review package (machine predictions are absent by
+# design; reviewer columns empty until the human review):
+!data/external/ansc_manual_review_50.csv
+!data/external/ansc_manual_review_pilot10.csv
+# MTA-0019 §6: external label - exists ONLY after the complete human review
+# (scripts/47 refuses to write it earlier):
+!data/external/ansc_upheld_labels.csv
 # the previous blanket `data/` also caught nested data/ dirs (e.g. the
 # frontend source folder) - keep them ignored explicitly:
 frontend/src/data/

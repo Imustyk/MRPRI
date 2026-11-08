@@ -198,3 +198,204 @@ class TestFullRun:
         assert "ansc_upheld" not in json.dumps(payload)
         out = capsys.readouterr().out
         assert "metrics_computed" in out
+
+
+# --- MTA-0019: the blind review file, document types, links ----------------
+REVIEW_FIELDS = ["ocid", "decision_id", "document_url", "reviewer_outcome",
+                 "reviewer_document_type", "reviewer_link_verified",
+                 "reviewer_evidence_page", "reviewer_evidence_quote",
+                 "reviewer_notes"]
+
+
+def mrow(i: int, extracted: str, outcome: str, doc_type: str = "",
+         link: str = "", notes: str = "", layer: str = "1") -> dict:
+    """Row as it arrives from the blind review file overlaid on the sample."""
+    return {"ocid": f"ocds-m{i}", "decision_id": f"03D-{i}-22",
+            "document_url": f"http://storage.mtender.gov.md/get/m{i}",
+            "extracted_outcome": extracted, "evidence_quote": "q",
+            "page_number": "1", "extraction_method": "resolutory_strong_anchor",
+            "confidence": "high", "reviewer_outcome": outcome,
+            "reviewer_document_type": doc_type, "reviewer_link_verified": link,
+            "reviewer_evidence_page": "", "reviewer_evidence_quote": "",
+            "reviewer_notes": notes, "_layer": layer}
+
+
+def write_review(rows: list[dict], path: Path) -> Path:
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=REVIEW_FIELDS,
+                                extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+
+
+class TestReviewFileOverlay:
+    """The human labels live in the blind file (scripts/46); 45 merges them
+    with the machine sample by URL."""
+
+    @staticmethod
+    def _sample(tmp_path: Path) -> Path:
+        # same URLs as the review rows (m1, m2) so the overlay can match
+        rows = [mrow(1, "admitted", ""), mrow(2, "rejected", "")]
+        fields = ["ocid", "decision_id", "document_url", "extracted_outcome",
+                  "evidence_quote", "page_number", "extraction_method",
+                  "confidence", "reviewer_outcome", "reviewer_notes"]
+        with open(tmp_path / "sample.csv", "w", newline="",
+                  encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=fields,
+                                    extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(rows)
+        return tmp_path / "sample.csv"
+
+    def test_unfilled_review_blocks_metrics(self, tmp_path, monkeypatch):
+        sample = self._sample(tmp_path)
+        review = write_review(
+            [mrow(1, "admitted", ""), mrow(2, "rejected", "")],
+            tmp_path / "review.csv")
+        monkeypatch.setattr(s45, "OUT_JSON", tmp_path / "m.json")
+        rc = s45.main(["--sample", str(sample), "--review", str(review),
+                       "--outcomes", str(tmp_path / "absent.csv")])
+        assert rc == 5                       # progress ONLY, no metrics
+        payload = json.loads((tmp_path / "m.json").read_text("utf-8"))
+        assert payload["metrics"] is None
+        assert payload["n_labeled"] == 0 and payload["n_total"] == 2
+        assert payload["review_required_fields"] == [
+            "reviewer_outcome", "reviewer_document_type",
+            "reviewer_link_verified"]
+        assert payload["review_rows_matched"] == 2
+        # every unfilled field is listed (2 rows x 3 fields)
+        assert len(payload["missing_rows"]) == 6
+
+    def test_invalid_document_type_is_exit_6(self, tmp_path, monkeypatch):
+        sample = self._sample(tmp_path)
+        review = write_review(
+            [mrow(1, "admitted", "admitted", "ansc_decision", "confirmed"),
+             mrow(2, "rejected", "rejected", "decision", "confirmed")],
+            tmp_path / "review.csv")
+        monkeypatch.setattr(s45, "OUT_JSON", tmp_path / "m.json")
+        rc = s45.main(["--sample", str(sample), "--review", str(review),
+                       "--outcomes", str(tmp_path / "absent.csv")])
+        assert rc == 6
+        payload = json.loads((tmp_path / "m.json").read_text("utf-8"))
+        assert payload["status"] == "invalid_labels"
+        assert payload["metrics"] is None
+        assert payload["invalid_rows"][0]["field"] == "reviewer_document_type"
+        assert payload["invalid_rows"][0]["value"] == "decision"
+
+    def test_labels_from_review_file_compute_metrics(self, tmp_path,
+                                                     monkeypatch):
+        sample = self._sample(tmp_path)
+        review = write_review(
+            [mrow(1, "admitted", "admitted", "ansc_decision", "confirmed"),
+             mrow(2, "rejected", "rejected", "ansc_decision", "confirmed")],
+            tmp_path / "review.csv")
+        monkeypatch.setattr(s45, "OUT_JSON", tmp_path / "m.json")
+        monkeypatch.setattr(s45, "OUT_MD", tmp_path / "m.md")
+        rc = s45.main(["--sample", str(sample), "--review", str(review),
+                       "--outcomes", str(tmp_path / "absent.csv")])
+        assert rc == 0                       # the sample itself was EMPTY
+        payload = json.loads((tmp_path / "m.json").read_text("utf-8"))
+        assert payload["status"] == "metrics_computed"
+        assert payload["review_file"] == str(review)
+        assert payload["metrics"]["n_labeled"] == 2
+        assert payload["metrics"]["accuracy"] == 1.0
+        report = (tmp_path / "m.md").read_text("utf-8")
+        assert "не обязательно репрезентативна" in report
+
+    def test_sample_labels_still_work_without_review_file(self, tmp_path,
+                                                          monkeypatch):
+        """Legacy contract: no review file -> the sample's own columns."""
+        rows = [srow(1, "admitted", "admitted"),
+                srow(2, "rejected", "rejected")]
+        sample = write_sample(rows, tmp_path / "sample.csv")
+        monkeypatch.setattr(s45, "OUT_JSON", tmp_path / "m.json")
+        monkeypatch.setattr(s45, "OUT_MD", tmp_path / "m.md")
+        rc = s45.main(["--sample", str(sample), "--review", "",
+                       "--outcomes", str(tmp_path / "absent.csv")])
+        assert rc == 0
+
+
+class TestDocumentTypeAndLinkMetrics:
+    def test_other_document_excluded_from_outcome_metrics(self):
+        rows = [
+            mrow(1, "admitted", "admitted", "ansc_decision", "confirmed"),
+            # machine says decision, reviewer says it is NOT one:
+            mrow(2, "admitted", "rejected", "other_document", "confirmed"),
+        ]
+        m = s45.compute_metrics(rows, {})
+        assert m["n_labeled"] == 2
+        assert m["n_evaluated"] == 1            # outcome metrics exclude it
+        assert m["accuracy"] == 1.0             # only the confirmed decision
+        ex = m["excluded_non_decision"]
+        assert ex == {"n": 1, "other_document": 1, "uncertain": 0}
+        # ... but document-type detection counts it (binary: is a decision)
+        dt = m["document_type_detection"]
+        assert dt["reviewer_counts"] == {"ansc_decision": 1,
+                                         "other_document": 1,
+                                         "uncertain": 0, "unfilled": 0}
+        assert dt["confusion"]["other_document"]["decision"] == 1
+        assert dt["binary_n"] == 2
+        assert dt["precision"] == 0.5 and dt["recall"] == 1.0
+
+    def test_uncertain_type_is_excluded_from_outcome_metrics(self):
+        rows = [mrow(1, "admitted", "admitted", "ansc_decision", "confirmed"),
+                mrow(2, "rejected", "unknown", "uncertain", "confirmed")]
+        m = s45.compute_metrics(rows, {})
+        assert m["n_evaluated"] == 1
+        assert m["excluded_non_decision"]["uncertain"] == 1
+
+    def test_wrong_link_is_counted_and_excluded_from_confirmed(self):
+        rows = [
+            mrow(1, "admitted", "admitted", "ansc_decision", "confirmed"),
+            mrow(2, "rejected", "rejected", "ansc_decision", "rejected",
+                 notes="mislink: award decision, not a complaint"),
+            mrow(3, "unknown", "unknown", "ansc_decision", "uncertain"),
+            mrow(4, "admitted", "admitted", "ansc_decision", "confirmed"),
+        ]
+        m = s45.compute_metrics(rows, {})
+        assert m["link_verification"] == {"confirmed": 2, "rejected": 1,
+                                          "uncertain": 1, "unfilled": 0}
+        # frequency of wrong links: the `rejected` row (notes marker too)
+        assert m["mislink_rows"] == 1
+        assert m["mislink_share"] == pytest.approx(0.25)
+        # metrics on documents CONFIRMED as decisions (link == confirmed)
+        conf = m["metrics_confirmed_decisions"]
+        assert conf["n"] == 2                    # rows 2 and 3 excluded
+        assert conf["accuracy"] == 1.0
+
+    def test_confirmed_subset_can_be_empty(self):
+        rows = [mrow(1, "admitted", "admitted", "ansc_decision", "rejected")]
+        m = s45.compute_metrics(rows, {})
+        assert m["metrics_confirmed_decisions"]["n"] == 0
+        assert m["metrics_confirmed_decisions"]["accuracy"] is None
+
+    def test_multi_complaint_rows_are_counted(self):
+        rows = [mrow(1, "unknown", "unknown", "ansc_decision", "confirmed",
+                     notes="multiple: 02/100/24 admitted; 03/103/24 "
+                           "rejected"),
+                mrow(2, "admitted", "admitted", "ansc_decision",
+                     "confirmed")]
+        m = s45.compute_metrics(rows, {})
+        assert m["multi_complaint_rows"] == 1
+
+    def test_sample_not_representative_note_is_carried(self):
+        m = s45.compute_metrics(
+            [mrow(1, "admitted", "admitted", "ansc_decision", "confirmed")],
+            {})
+        note = m["sample_is_stratified_not_representative"]
+        assert "NOT necessarily representative" in note
+
+    def test_report_has_type_link_and_representativeness_sections(
+            self, tmp_path, monkeypatch):
+        rows = [mrow(1, "admitted", "admitted", "ansc_decision", "confirmed"),
+                mrow(2, "rejected", "rejected", "other_document",
+                     "rejected", notes="mislink: notice"),
+                mrow(3, "unknown", "unknown", "uncertain", "uncertain")]
+        m = s45.compute_metrics(rows, {})
+        report = s45.build_report(m, tmp_path / "sample.csv")
+        assert "не обязательно репрезентативна" in report
+        assert "Тип документа" in report
+        assert "подтверждённых как решения ANSC" in report
+        assert "Несколько жалоб" in report
+        assert "ansc_upheld" not in report

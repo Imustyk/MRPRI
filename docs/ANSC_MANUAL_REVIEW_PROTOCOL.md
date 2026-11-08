@@ -24,12 +24,23 @@
 
 ## 2. Материалы
 
+> **MTA-0019:** основной файл для ручной разметки — слепой пакет
+> `data/external/ansc_manual_review_50.csv` (пилот —
+> `data/external/ansc_manual_review_pilot10.csv`), инструкция и готовые
+> ссылки — `docs/ANSC_REVIEW_GUIDE.md`. В слепых файлах колонки
+> `extracted_outcome`/`extraction_method`/`confidence` отсутствуют
+> (предсказание скрыто), а кроме `reviewer_outcome`/`reviewer_notes`
+> заполняются ещё `reviewer_document_type`, `reviewer_link_verified`,
+> `reviewer_evidence_page`, `reviewer_evidence_quote`.
+
 | Артефакт | Содержание |
 |---|---|
-| `data/external/ansc_review_sample_50.csv` | выборка: `ocid, decision_id, document_url, extracted_outcome, evidence_quote, page_number, extraction_method, confidence, reviewer_outcome, reviewer_notes` |
+| `data/external/ansc_manual_review_50.csv` | **слепая разметка (основной рабочий файл)**: `ocid, decision_id, document_url, local_pdf_path, page_number, evidence_quote` + пустые `reviewer_outcome, reviewer_document_type, reviewer_link_verified, reviewer_evidence_page, reviewer_evidence_quote, reviewer_notes`; машинных колонок нет |
+| `data/external/ansc_manual_review_pilot10.csv` | пилотная группа из 10 документов (другие исходы, типы PDF, уровни уверенности) |
+| `data/external/ansc_review_sample_50.csv` | машинная сторона: `extracted_outcome`, `extraction_method`, `confidence` — **join-ключ для метрик, НЕ открывать до завершения разметки** |
 | `results/tables/ansc_outcomes.csv` | полный протокол извлечения (для ссылок/контекста) |
-| PDF документы | открыть `document_url` (хранилище `storage.mtender.gov.md`) **или** локальную копию из песочницы: путь указан в `results/methodology/ansc_decision_inventory.json` → поле `sandbox_dir`, имя файла = `sha1(document_url)[:16] + ".pdf"` |
-| `page_number` | страница, где по извлечению находится резолютивная часть; `evidence_quote` — точная цитата оттуда |
+| PDF документы | открыть `document_url` (хранилище `storage.mtender.gov.md`) **или** локальную копию: колонка `local_pdf_path` слепого файла; песочница также указана в `results/methodology/ansc_decision_inventory.json` → `sandbox_dir`, имя = `sha1(document_url)[:16] + ".pdf"` |
+| `page_number` | страница, где по извлечению находится резолютивная часть; `evidence_quote` — точная цитата оттуда (для строк без цитаты резолютивную ищите самостоятельно) |
 
 ## 3. Порядок работы (правило слепой проверки)
 
@@ -40,7 +51,12 @@
 3. Если цитата/страница не сходятся — не меняйте своё решение, а зафиксируйте
    расхождение в `reviewer_notes` (см. §7).
 4. Заполните `reviewer_outcome` (строго одно из семи значений, латиницей,
-   как в §4) и при необходимости `reviewer_notes`.
+   как в §4), а в слепом файле MTA-0019 также `reviewer_document_type`
+   (`ansc_decision`/`other_document`/`uncertain`) и
+   `reviewer_link_verified` (`confirmed`/`rejected`/`uncertain`) + при
+   необходимости `reviewer_notes`. Не решено однозначно — `unknown`;
+   документ не ANSC-решение — `other_document`, а не `unknown`
+   (§4.3: тип документа и исход не смешиваются).
 5. Не изменяйте и не удаляйте колонки извлечения — они являются предметом
    проверки.
 
