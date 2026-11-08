@@ -200,6 +200,10 @@ def fetch(session, url: str, sandbox: Path, log_writer) -> dict:
                 return result
             time.sleep(5 * (attempt + 1))
             continue
+        # a later attempt succeeded: drop the stale error of a failed try so
+        # a fully fetched document never carries a transient failure in the
+        # ``error`` field (regression-tested in tests/test_ansc_inventory.py)
+        result["error"] = ""
         if response.status_code in RETRY_STATUS:
             wait = 0.0
             try:
@@ -359,6 +363,11 @@ def build_summary(rows: list[dict], universe_n: int, procs: dict,
                      if len(v) > 1}
     ambiguous = [r for r in rows if r["link_ambiguous"] == "1"]
     confirmed = [r for r in ok if r["id_confirmed"] == "1"]
+    # headers arrived (200) but the body never downloaded: 0 bytes, no file
+    body_failed = [r for r in ok
+                   if r["error"] in ("ConnectionError", "ChunkedEncodingError",
+                                     "ConnectTimeout", "ReadTimeout")
+                   and str(r.get("bytes") or "0") == "0"]
 
     def share(part: int, whole: int) -> str:
         return f"{part} ({part / whole:.1%})" if whole else f"{part} (n/a)"
@@ -388,6 +397,7 @@ def build_summary(rows: list[dict], universe_n: int, procs: dict,
             "available_200": len(ok),
             "unavailable_non200": len(unavailable),
             "not_probed": len(unfetched),
+            "body_download_failed_0_bytes": len(body_failed),
             "available_share_of_probed": round(
                 len(ok) / max(1, len(ok) + len(unavailable)), 4),
         },
@@ -412,6 +422,12 @@ def build_summary(rows: list[dict], universe_n: int, procs: dict,
         "linkage": {
             "ambiguous_rows_url_on_several_ocids": len(ambiguous),
             "ambiguous_urls": sorted({r["url"] for r in ambiguous}),
+            # procedure-level view (a procedure = ocid): unambiguous when NONE
+            # of its documents' URLs is shared with another procedure
+            "procedures_unambiguous_link": len(
+                ocids - {r["ocid"] for r in ambiguous}),
+            "procedures_ambiguous_link": len(
+                {r["ocid"] for r in ambiguous}),
             "documents_naming_own_tender_id": len(confirmed),
             "confirmed_share_of_probed": round(
                 len(confirmed) / max(1, len(ok)), 4),
@@ -490,17 +506,27 @@ def write_report(summary: dict) -> None:
         f"{pct(a['available_200'], probed)} от опрошенных |",
         f"| Недоступных (не-200) | {a['unavailable_non200']} | "
         f"{pct(a['unavailable_non200'], probed)} от опрошенных |",
+        f"| в т.ч. тело не скачалось (HTTP 200, 0 байт, содержимого нет) | "
+        f"{a['body_download_failed_0_bytes']} | "
+        f"{pct(a['body_download_failed_0_bytes'], probed)} от опрошенных |",
         f"| Не опрошено (прогон остановлен) | {a['not_probed']} | "
         f"{pct(a['not_probed'], summary['universe']['rows_written'])} |",
         f"| PDF с текстовым слоем | {t['with_text_layer']} | "
         f"{pct(t['with_text_layer'], t['pdf_documents'])} от PDF |",
         f"| Сканов (нужен OCR) | {t['scanned_need_ocr']} | "
         f"{pct(t['scanned_need_ocr'], t['pdf_documents'])} от PDF |",
-        f"| Не-PDF форматов | {t['non_pdf_documents']} | "
+        f"| Не сохранено как PDF в песочницу (не-PDF форматы + сбой "
+        f"скачивания) | {t['non_pdf_documents']} | "
         f"{pct(t['non_pdf_documents'], a['available_200'])} от доступных |",
         f"| Строк с неоднозначной привязкой (URL на нескольких ocid) | "
         f"{l['ambiguous_rows_url_on_several_ocids']} | "
         f"{pct(l['ambiguous_rows_url_on_several_ocids'], summary['universe']['rows_written'])} |",
+        f"| Процедур, однозначно связанных со своими документами | "
+        f"{l['procedures_unambiguous_link']} | "
+        f"{pct(l['procedures_unambiguous_link'], summary['universe']['distinct_ocids_in_rows'])} от процедур в инвентаризации |",
+        f"| Процедур, неоднозначно связанных (URL общий с другой процедурой) | "
+        f"{l['procedures_ambiguous_link']} | "
+        f"{pct(l['procedures_ambiguous_link'], summary['universe']['distinct_ocids_in_rows'])} от процедур в инвентаризации |",
         f"| Документов с номером решения ANSC в тексте | "
         f"{d['documents_with_decision_number']} | "
         f"{pct(d['documents_with_decision_number'], a['available_200'])} от доступных |",

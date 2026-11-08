@@ -21,6 +21,7 @@ Two kinds of tests:
 """
 from __future__ import annotations
 
+import csv
 import importlib.util
 import re
 from pathlib import Path
@@ -342,3 +343,51 @@ def test_quote_is_sliced_from_original_text():
     assert res["quote"] != flat_quote
     assert " ".join(strip_truncation(res["quote"]).split()) in \
         " ".join(original.split())
+
+
+def test_csv_roundtrip_exposes_evidence_quote(tmp_path):
+    """The quote must survive the write/read cycle.
+
+    The FIRST full run (2026-11-08) failed here: ``extract_outcome`` returns
+    ``quote`` while the CSV column is ``evidence_quote`` and
+    ``extrasaction="ignore"`` dropped it - all 138 classified rows shipped
+    with an EMPTY evidence column, which would have made the step-7
+    verification of every sampled quote impossible.
+    """
+    row = {"ocid": "ocds-x", "url": "http://storage.mtender.gov.md/get/x",
+           "title": "decizie.pdf", "year": "2023",
+           "decision_numbers": "03D-1-23", "decision_date": "",
+           "outcome": "admitted",
+           "quote": "1. Se admite contestația nr. 01/100/23.",
+           "page_number": "3", "extraction_method": "resolutory_strong_anchor",
+           "confidence": "high", "document_present": "1", "text_layer": "1",
+           "needs_ocr": "0", "resolution_anchor": "d e c i d e",
+           "unknown_reason": "", "error": ""}
+    path = tmp_path / "outcomes.csv"
+    s43.write_outcomes_csv([row], path)
+    with open(path, newline="", encoding="utf-8") as fh:
+        reader = csv.DictReader(fh)
+        got = list(reader)
+    assert reader.fieldnames == s43.CSV_FIELDS
+    assert len(got) == 1
+    assert got[0]["evidence_quote"] == row["quote"]
+    assert got[0]["page_number"] == "3"
+    # no model-label leakage into the table
+    assert "ansc_upheld" not in reader.fieldnames
+
+
+def test_csv_roundtrip_unknown_row_has_empty_quote(tmp_path):
+    row = {"ocid": "ocds-y", "url": "http://storage.mtender.gov.md/get/y",
+           "title": "t", "year": "2024", "decision_numbers": "",
+           "decision_date": "", "outcome": "unknown", "quote": "",
+           "page_number": "", "extraction_method": "no_resolutory_part",
+           "confidence": "none", "document_present": "1", "text_layer": "1",
+           "needs_ocr": "0", "resolution_anchor": "",
+           "unknown_reason": "no structural anchor in the document",
+           "error": ""}
+    path = tmp_path / "unknown.csv"
+    s43.write_outcomes_csv([row], path)
+    with open(path, newline="", encoding="utf-8") as fh:
+        got = list(csv.DictReader(fh))
+    assert got[0]["evidence_quote"] == ""
+    assert got[0]["unknown_reason"].startswith("no structural anchor")

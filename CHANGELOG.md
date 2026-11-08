@@ -4,6 +4,60 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0018] — 2026-11-08
+
+ANSC document inventory, outcome extraction and the manual-review sample —
+**measurement only** (production stays v0, model features untouched,
+`data/raw/**` read-only, no model evaluation, no scientific claims). One
+networked run of `scripts/42` (`--allow-network --resume`, 7 750/7 750 URLs,
+no re-download); everything else is offline on the local sandbox.
+
+* `scripts/42_ansc_decision_inventory.py`: full probe of the 7 750 strong
+  candidate URLs — 7 722 HTTP 200 (7 295 PDFs saved to the sandbox, 249
+  non-PDF bodies, 178 bodies not downloaded, 0 not probed), 28 HTTP 400;
+  6 208 text-layer PDFs, 1 087 scans; 290 documents with an extracted ANSC
+  decision number (105 procedures, 123 distinct numbers). Two fixes with
+  regression tests: a transient exception of a retried attempt no longer
+  leaks into the `error` field of a fully fetched document, and the report
+  now separates procedure-level linkage (2 183 unambiguous / 0 ambiguous)
+  and body-download failures from non-PDF formats.
+* `scripts/43_ansc_outcome_extract.py`: two-stage extraction over all
+  documents — 138 classified (admitted 100, partially_admitted 21,
+  rejected 10, withdrawn 7, inadmissible 0, terminated 0) and 7 157
+  `unknown` of 7 295 present documents (98.1%, an abstention, never a
+  negative label) with per-reason counts. Fix: the evidence is now written
+  to the documented `evidence_quote` column (the first full run silently
+  dropped every quote through `extrasaction="ignore"`); two round-trip
+  regression tests.
+* `scripts/44_ansc_review_sample.py` (new): deterministic stratified sample
+  of 50 documents (min 3 per available outcome + proportional allocation,
+  presence sweeps over year / PDF type / confidence, deduplicated by URL)
+  with `reviewer_outcome`/`reviewer_notes` EMPTY — the manual review is
+  never imitated — plus step-7 verification that every sampled quote/page
+  opens in the source PDF: 50/50 pass (11 text-layer, 2 fresh-OCR, 37
+  no-quote-expected), exit 0; a re-run is byte-identical.
+* `scripts/45_ansc_review_metrics.py` (new): REFUSES to compute Accuracy /
+  Precision / Recall / F1 / the confusion matrix while any reviewer label
+  is missing (exit 5, `metrics: null`, progress only; invalid labels →
+  exit 6); full agreement metrics only after a complete manual review.
+* `docs/ANSC_MANUAL_REVIEW_PROTOCOL.md` (new): independent-review protocol —
+  blind decision before looking at `extracted_outcome`, the seven outcome
+  rules with Romanian formulations, multiple-complaint handling (different
+  outcomes → `unknown` + enumeration), `mislink:`/`quote page N`/`quote not
+  found` note markers, page/quote verification.
+* Tests: `tests/test_ansc_inventory.py` (9, new), `tests/test_ansc_sample.py`
+  (21, new), `tests/test_ansc_metrics.py` (7, new), `tests/test_ansc_outcomes.py`
+  (+2 CSV round-trip) — full suite **410 passed**.
+* Reports: `reports/ansc_decision_inventory.md`,
+  `reports/ansc_outcome_extraction.md`,
+  `reports/MTA-0018_FINAL.md` (counts, distributions, limitations,
+  reproduction commands); sample committed as
+  `data/external/ansc_review_sample_50.csv` (gitignore exception).
+
+Deliberately NOT done: the manual review itself, any quality metrics
+(`scripts/45` exits 5 until the 50 labels exist), the external
+`ansc_upheld` label, and any conclusion about model superiority.
+
 ## [MTA-0017] — 2026-10-30
 
 Third external label, episode-level linking — **measurement only**

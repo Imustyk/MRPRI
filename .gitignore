@@ -24,6 +24,10 @@ data/external/*
 !data/external/case_sources.csv
 !data/external/case_episodes_raw.csv
 !data/external/case_unmatched.csv
+# MTA-0018 step 4: the 50-document manual-review sample (reviewer fields
+# are empty until the author's independent review - the CSV IS the audit
+# trail of that review):
+!data/external/ansc_review_sample_50.csv
 # the previous blanket `data/` also caught nested data/ dirs (e.g. the
 # frontend source folder) - keep them ignored explicitly:
 frontend/src/data/

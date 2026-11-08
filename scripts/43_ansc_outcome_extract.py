@@ -738,6 +738,24 @@ def write_report(summary: dict) -> None:
     OUT_MD.write_text("\n".join(lines), encoding="utf-8")
 
 
+def write_outcomes_csv(results: list[dict], path: Path) -> None:
+    """Write the extraction table; ``quote`` lands in ``evidence_quote``.
+
+    ``extract_outcome`` returns the evidence under the key ``quote`` while
+    the documented CSV column is ``evidence_quote`` - without this mapping
+    ``extrasaction="ignore"`` silently dropped it and the FIRST full run
+    (2026-11-08) shipped an EMPTY quote column for all 138 classified rows
+    (regression-tested in tests/test_ansc_outcomes.py).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=CSV_FIELDS,
+                                extrasaction="ignore")
+        writer.writeheader()
+        for row in results:
+            writer.writerow({**row, "evidence_quote": row.get("quote", "")})
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=0)
@@ -764,11 +782,7 @@ def main() -> int:
             print(f"  processed {i + 1}/{len(rows_in)}", flush=True)
 
     OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUT_CSV, "w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=CSV_FIELDS,
-                                extrasaction="ignore")
-        writer.writeheader()
-        writer.writerows(results)
+    write_outcomes_csv(results, OUT_CSV)
 
     summary = build_summary(results, time.time() - t0)
     OUT_JSON.write_text(json.dumps(summary, ensure_ascii=False, indent=2),
