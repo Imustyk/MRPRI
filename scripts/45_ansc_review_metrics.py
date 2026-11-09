@@ -88,7 +88,7 @@ REVIEWER_FIELDS = ("reviewer_outcome", "reviewer_document_type",
                    "reviewer_link_verified", "reviewer_evidence_page",
                    "reviewer_evidence_quote", "reviewer_notes")
 
-RE_MISLINK = re.compile(r"\bmislink\b", re.IGNORECASE)
+RE_MISLINK = re.compile(r"^\s*mislink:", re.IGNORECASE)
 RE_MULTI = re.compile(r"\bmultiple:", re.IGNORECASE)
 
 
@@ -318,6 +318,26 @@ def compute_metrics(labeled: list[dict], layer_by_url: dict[str, str],
     reviewed rows. ``independence`` (``sample_independence``) carries the
     counts of INDEPENDENT documents/procedures the denominators must use.
     """
+    # Identity is supplied by sample_independence (SHA-256), never inferred
+    # from outcome or model scores. Refuse ambiguous duplicate groups.
+    n_reviewed_urls = len(labeled)
+    if independence:
+        excluded_indexes: set[int] = set()
+        for group in independence.get("byte_duplicate_groups", []):
+            if not group or any(i < 1 or i > len(labeled) for i in group):
+                raise ValueError("invalid byte-duplicate row indexes")
+            first = labeled[group[0] - 1]
+            for i in group[1:]:
+                row = labeled[i - 1]
+                for field in ("ocid", "reviewer_outcome",
+                              "reviewer_document_type", "reviewer_link_verified",
+                              "extracted_outcome"):
+                    if row.get(field, "") != first.get(field, ""):
+                        raise ValueError(f"conflicting duplicate {field}: {group}")
+                excluded_indexes.add(i)
+        labeled = [r for i, r in enumerate(labeled, 1)
+                   if i not in excluded_indexes]
+
     evaluated = [r for r in labeled if _doc_type(r) in ("", "ansc_decision")]
     excluded = [r for r in labeled if _doc_type(r) not in ("", "ansc_decision")]
     core = _core(evaluated)
@@ -346,6 +366,8 @@ def compute_metrics(labeled: list[dict], layer_by_url: dict[str, str],
     confirmed_core = _core(confirmed) if confirmed else None
 
     return {
+        "n_reviewed_urls": n_reviewed_urls,
+        "analysis_unit": "unique PDF (SHA-256); first URL per verified group",
         "n_labeled": len(labeled),
         "n_evaluated": len(evaluated),
         "excluded_non_decision": {
@@ -696,8 +718,12 @@ def main(argv: list[str] | None = None) -> int:
         for r in load_rows(outcomes_path):
             layer_by_url.setdefault(r.get("url", ""),
                                     r.get("text_layer", ""))
-    metrics = compute_metrics(labelrep["valid"], layer_by_url,
-                              independence=independence)
+    try:
+        metrics = compute_metrics(labelrep["valid"], layer_by_url,
+                                  independence=independence)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 6
 
     payload = {
         "task": "MTA-0018",

@@ -1,0 +1,347 @@
+{
+  "task": "MTA-0018",
+  "part": "5 - quality metrics vs manual review",
+  "generated": "2026-11-09T10:54:08Z",
+  "status": "metrics_computed",
+  "sample_csv": "/Users/imustyk/Diplom/data/external/ansc_review_sample_50.csv",
+  "review_file": "/Users/imustyk/Diplom/data/external/ansc_manual_review_50.csv",
+  "review_rows_matched": 50,
+  "metrics": {
+    "n_reviewed_urls": 50,
+    "analysis_unit": "unique PDF (SHA-256); first URL per verified group",
+    "n_labeled": 44,
+    "n_evaluated": 13,
+    "excluded_non_decision": {
+      "n": 31,
+      "other_document": 31,
+      "uncertain": 0
+    },
+    "accuracy": 0.6154,
+    "macro_f1": 0.3639,
+    "per_class": {
+      "admitted": {
+        "precision": 0.75,
+        "recall": 1.0,
+        "f1": 0.8571,
+        "support": 3,
+        "predicted": 4
+      },
+      "partially_admitted": {
+        "precision": 1.0,
+        "recall": 0.75,
+        "f1": 0.8571,
+        "support": 4,
+        "predicted": 3
+      },
+      "rejected": {
+        "precision": 1.0,
+        "recall": 0.3333,
+        "f1": 0.5,
+        "support": 3,
+        "predicted": 1
+      },
+      "inadmissible": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0,
+        "predicted": 0
+      },
+      "withdrawn": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0,
+        "predicted": 2
+      },
+      "terminated": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "support": 0,
+        "predicted": 0
+      },
+      "unknown": {
+        "precision": 0.3333,
+        "recall": 0.3333,
+        "f1": 0.3333,
+        "support": 3,
+        "predicted": 3
+      }
+    },
+    "confusion_matrix": {
+      "admitted": {
+        "admitted": 3,
+        "partially_admitted": 0,
+        "rejected": 0,
+        "inadmissible": 0,
+        "withdrawn": 0,
+        "terminated": 0,
+        "unknown": 0
+      },
+      "partially_admitted": {
+        "admitted": 0,
+        "partially_admitted": 3,
+        "rejected": 0,
+        "inadmissible": 0,
+        "withdrawn": 0,
+        "terminated": 0,
+        "unknown": 1
+      },
+      "rejected": {
+        "admitted": 0,
+        "partially_admitted": 0,
+        "rejected": 1,
+        "inadmissible": 0,
+        "withdrawn": 1,
+        "terminated": 0,
+        "unknown": 1
+      },
+      "inadmissible": {
+        "admitted": 0,
+        "partially_admitted": 0,
+        "rejected": 0,
+        "inadmissible": 0,
+        "withdrawn": 0,
+        "terminated": 0,
+        "unknown": 0
+      },
+      "withdrawn": {
+        "admitted": 0,
+        "partially_admitted": 0,
+        "rejected": 0,
+        "inadmissible": 0,
+        "withdrawn": 0,
+        "terminated": 0,
+        "unknown": 0
+      },
+      "terminated": {
+        "admitted": 0,
+        "partially_admitted": 0,
+        "rejected": 0,
+        "inadmissible": 0,
+        "withdrawn": 0,
+        "terminated": 0,
+        "unknown": 0
+      },
+      "unknown": {
+        "admitted": 1,
+        "partially_admitted": 0,
+        "rejected": 0,
+        "inadmissible": 0,
+        "withdrawn": 1,
+        "terminated": 0,
+        "unknown": 1
+      }
+    },
+    "unknown_share_extracted": 0.2308,
+    "unknown_share_reviewer": 0.2308,
+    "mislink_share": 0.0,
+    "mislink_rows": 0,
+    "split_by_source_type": {
+      "text_layer": {
+        "n": 12,
+        "accuracy": 0.5833
+      },
+      "scan": {
+        "n": 1,
+        "accuracy": 1.0
+      }
+    },
+    "rows_without_source_type_join": 0,
+    "document_type_detection": {
+      "n_labeled": 44,
+      "reviewer_counts": {
+        "ansc_decision": 13,
+        "other_document": 31,
+        "uncertain": 0,
+        "unfilled": 0
+      },
+      "confusion": {
+        "ansc_decision": {
+          "decision": 12,
+          "not_decision": 1
+        },
+        "other_document": {
+          "decision": 1,
+          "not_decision": 30
+        },
+        "uncertain": {
+          "decision": 0,
+          "not_decision": 0
+        },
+        "unfilled": {
+          "decision": 0,
+          "not_decision": 0
+        }
+      },
+      "binary_n": 44,
+      "accuracy": 0.9545,
+      "precision": 0.9231,
+      "recall": 0.9231,
+      "f1": 0.9231,
+      "note": "non-ANSC-decision documents are excluded from the outcome metrics and counted here instead (MTA-0019 §4/§5)"
+    },
+    "link_verification": {
+      "confirmed": 37,
+      "rejected": 0,
+      "uncertain": 7,
+      "unfilled": 0
+    },
+    "metrics_confirmed_decisions": {
+      "n": 12,
+      "accuracy": 0.5833,
+      "macro_f1": 0.3558,
+      "per_class": {
+        "admitted": {
+          "precision": 0.6667,
+          "recall": 1.0,
+          "f1": 0.8,
+          "support": 2,
+          "predicted": 3
+        },
+        "partially_admitted": {
+          "precision": 1.0,
+          "recall": 0.75,
+          "f1": 0.8571,
+          "support": 4,
+          "predicted": 3
+        },
+        "rejected": {
+          "precision": 1.0,
+          "recall": 0.3333,
+          "f1": 0.5,
+          "support": 3,
+          "predicted": 1
+        },
+        "inadmissible": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0,
+          "predicted": 0
+        },
+        "withdrawn": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0,
+          "predicted": 2
+        },
+        "terminated": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0,
+          "predicted": 0
+        },
+        "unknown": {
+          "precision": 0.3333,
+          "recall": 0.3333,
+          "f1": 0.3333,
+          "support": 3,
+          "predicted": 3
+        }
+      },
+      "confusion_matrix": {
+        "admitted": {
+          "admitted": 2,
+          "partially_admitted": 0,
+          "rejected": 0,
+          "inadmissible": 0,
+          "withdrawn": 0,
+          "terminated": 0,
+          "unknown": 0
+        },
+        "partially_admitted": {
+          "admitted": 0,
+          "partially_admitted": 3,
+          "rejected": 0,
+          "inadmissible": 0,
+          "withdrawn": 0,
+          "terminated": 0,
+          "unknown": 1
+        },
+        "rejected": {
+          "admitted": 0,
+          "partially_admitted": 0,
+          "rejected": 1,
+          "inadmissible": 0,
+          "withdrawn": 1,
+          "terminated": 0,
+          "unknown": 1
+        },
+        "inadmissible": {
+          "admitted": 0,
+          "partially_admitted": 0,
+          "rejected": 0,
+          "inadmissible": 0,
+          "withdrawn": 0,
+          "terminated": 0,
+          "unknown": 0
+        },
+        "withdrawn": {
+          "admitted": 0,
+          "partially_admitted": 0,
+          "rejected": 0,
+          "inadmissible": 0,
+          "withdrawn": 0,
+          "terminated": 0,
+          "unknown": 0
+        },
+        "terminated": {
+          "admitted": 0,
+          "partially_admitted": 0,
+          "rejected": 0,
+          "inadmissible": 0,
+          "withdrawn": 0,
+          "terminated": 0,
+          "unknown": 0
+        },
+        "unknown": {
+          "admitted": 1,
+          "partially_admitted": 0,
+          "rejected": 0,
+          "inadmissible": 0,
+          "withdrawn": 1,
+          "terminated": 0,
+          "unknown": 1
+        }
+      }
+    },
+    "multi_complaint_rows": 2,
+    "sample_independence": {
+      "n_rows": 50,
+      "n_unique_urls": 50,
+      "n_independent_documents": 44,
+      "n_independent_procedures": 44,
+      "byte_duplicate_groups": [
+        [
+          8,
+          9,
+          10
+        ],
+        [
+          16,
+          17
+        ],
+        [
+          22,
+          26
+        ],
+        [
+          40,
+          43,
+          48
+        ]
+      ],
+      "rows_without_local_pdf": [],
+      "note": "denominators must use independent documents/procedures, not repeated URLs: a file listed under several URLs counts once; duplicates are reported, human labels are never copied between rows (MTA-0019 §9)"
+    },
+    "sample_is_stratified_not_representative": "the 50-document stratified sample (min 3 per rare outcome) is NOT necessarily representative of the whole corpus; shares must be re-weighted before extrapolation"
+  },
+  "manual_review_status": "complete",
+  "note": "Agreement of the rule-based extractor with independent human labels; not a model evaluation, no scientific claim of model superiority. Outcome metrics cover only rows confirmed as ANSC decisions; document-type and link quality cover every reviewed row (MTA-0019 §4/§5).",
+  "disclaimer_ru": "Индикатор потенциального риска, а не доказательство коррупции/нарушения. Требуется проверка компетентным органом.",
+  "disclaimer_en": "An upheld ANSC complaint indicates an administrative procurement dispute outcome and does not constitute proof of corruption."
+}

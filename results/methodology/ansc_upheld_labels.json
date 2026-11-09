@@ -1,0 +1,47 @@
+{
+  "task": "MTA-0019",
+  "part": "6 - external label ansc_upheld from the manual review",
+  "generated": "2026-11-09T10:54:08Z",
+  "disclaimer_ru": "Индикатор потенциального риска, а не доказательство коррупции/нарушения. Требуется проверка компетентным органом. Удовлетворённая жалоба ANSC не является доказательством коррупции.",
+  "disclaimer_en": "An upheld ANSC complaint indicates an administrative procurement dispute outcome and does not constitute proof of corruption.",
+  "status": "labels_written",
+  "review_file": "/Users/imustyk/Diplom/data/external/ansc_manual_review_50.csv",
+  "label_file": "/Users/imustyk/Diplom/data/external/ansc_upheld_labels.csv",
+  "n_documents": 50,
+  "n_upheld_1": 6,
+  "n_rejected_0": 5,
+  "n_null": 39,
+  "n_multi_complaint_rows": 2,
+  "outcome_distribution_manual": {
+    "admitted": 3,
+    "unknown": 38,
+    "partially_admitted": 4,
+    "rejected": 5
+  },
+  "document_type_distribution_manual": {
+    "ansc_decision": 15,
+    "other_document": 35
+  },
+  "procedure_level": {
+    "procedures_reviewed": 44,
+    "procedures_with_several_reviewed_documents": 4,
+    "procedures_with_conflicting_binary_labels": 0,
+    "conflicting_ocids": [],
+    "rule": "labels stay at document/complaint level; no procedure collapses them into one binary value"
+  },
+  "decision_dates": {
+    "source": "/Users/imustyk/Diplom/results/tables/ansc_outcomes.csv",
+    "with_date": 11,
+    "without_date": 39,
+    "unparsed_date": 0,
+    "min_date": "2020-06-13",
+    "max_date": "2022-12-06",
+    "dates_after_generation": [],
+    "rule": "a label may only enter a model as of a date AFTER the decision date of its document; features dated before the decision would be future leakage"
+  },
+  "feature_leakage_scan": {
+    "targets": 34,
+    "occurrences": 0
+  },
+  "note": "labels derive from the human review only; upheld != proof of corruption; ansc_upheld is an EXTERNAL label and must never become a model feature"
+}

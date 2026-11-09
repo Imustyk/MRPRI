@@ -1,0 +1,10 @@
+row_index,ocid,label,complaint_confirmed,feature_join,buyer_id,published_date,procurement_method,procurement_method_details,n_bidders,decision_date_extractor_unverified,temporal_certified
+1,ocds-b3wdp1-MD-1563452870963,1,1,1,MD-IDNO-1007601010448,2019-07-18T12:27:50Z,open,smallvalue,6,,0
+4,ocds-b3wdp1-MD-1665058207960,1,1,1,MD-IDNO-1007601009705,2022-10-06T12:10:07Z,open,microvalue,9,06.12.2022,0
+5,ocds-b3wdp1-MD-1601638627306,1,0,1,MD-IDNO-1003602150710,2020-10-02T11:37:06Z,open,smallvalue,3,27.11.2020,0
+6,ocds-b3wdp1-MD-1613458828224,1,1,1,MD-IDNO-1007601010747,2021-02-16T07:00:28Z,open,smallvalue,6,08.04.2021,0
+7,ocds-b3wdp1-MD-1656940842812,1,1,1,MD-IDNO-1007601009369,2022-07-04T13:20:42Z,open,smallvalue,2,15.09.2022,0
+8,ocds-b3wdp1-MD-1586171621901-PN-1586171621936,0,1,0,,,,,,05.08.2020,0
+11,ocds-b3wdp1-MD-1621581646618,0,1,1,MD-IDNO-1015601000259,2021-05-21T07:20:46Z,open,opentender,15,27.07.2021,0
+14,ocds-b3wdp1-MD-1544104748471,0,0,1,MD-IDNO-1007601010600,2018-12-06T13:59:08Z,open,licitație_deschisă,6,,0
+29,ocds-b3wdp1-MD-1627472408649,1,1,1,MD-IDNO-1007601009565,2021-07-28T11:40:08Z,open,opentender,9,04.10.2021,0

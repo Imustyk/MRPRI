@@ -477,7 +477,8 @@ class TestSampleIndependence:
     def test_metrics_and_report_carry_the_independence_block(self,
                                                              tmp_path):
         rows = [mrow(1, "admitted", "admitted", "ansc_decision", "confirmed"),
-                mrow(2, "rejected", "rejected", "ansc_decision", "confirmed")]
+                mrow(1, "admitted", "admitted", "ansc_decision", "confirmed")]
+        rows[1]["document_url"] = "http://storage.mtender.gov.md/get/duplicate"
         indep = {"n_rows": 2, "n_unique_urls": 2,
                  "n_independent_documents": 1, "n_independent_procedures": 1,
                  "byte_duplicate_groups": [[1, 2]],
@@ -493,3 +494,31 @@ class TestSampleIndependence:
     def test_compute_metrics_defaults_to_no_independence_block(self):
         m = s45.compute_metrics([mrow(1, "admitted", "admitted")], {})
         assert m["sample_independence"] is None
+
+
+class TestIndependentMetricDenominators:
+    def test_repeated_pdf_does_not_weight_accuracy(self):
+        rows = [srow(1, "admitted", "admitted"),
+                srow(1, "admitted", "admitted"),
+                srow(2, "admitted", "rejected")]
+        metrics = s45.compute_metrics(rows, {},
+            {"byte_duplicate_groups": [[1, 2]]})
+        assert metrics["n_reviewed_urls"] == 3
+        assert metrics["n_labeled"] == 2
+        assert metrics["accuracy"] == 0.5
+        assert sum(sum(x.values()) for x in
+                   metrics["confusion_matrix"].values()) == 2
+
+    def test_conflicting_duplicate_is_refused(self):
+        rows = [srow(1, "admitted", "admitted"),
+                srow(1, "admitted", "rejected")]
+        with pytest.raises(ValueError, match="conflicting duplicate"):
+            s45.compute_metrics(rows, {}, {"byte_duplicate_groups": [[1, 2]]})
+
+    def test_negative_mentions_are_not_proven_mislinks(self):
+        rows = [srow(1, "unknown", "unknown",
+                     notes="other_document does not imply mislink"),
+                srow(2, "unknown", "unknown", notes="mislink: foreign OCID")]
+        metrics = s45.compute_metrics(rows, {})
+        assert metrics["mislink_rows"] == 1
+        assert metrics["mislink_share"] == 0.5
