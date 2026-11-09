@@ -354,3 +354,187 @@ class TestBlindness:
         monkeypatch.setattr(s49, "ASSIST_CSV", tmp_path / "absent.csv")
         assert s49.main(["duplicates"]) == 0
         assert guard
+
+
+# --- technical mislink candidate (reviewer instruction item 3) --------------
+class TestLinkFacts:
+    """``mislink_candidate`` is a TECHNICAL hint from the text layer only;
+    it never becomes ``reviewer_link_verified`` (that cell stays empty
+    until a human checks the document)."""
+
+    LONG = ("Agentia Nationala pentru Solutionarea Contestatiilor a "
+            "examinat contestatia nr. 02/29/22 pe marginea procedurii de "
+            "achizitie publica nr. MD-{num} din 10.01.2022 privind "
+            "achizitia de combustibil, decizie obligatorie pentru "
+            "autoritatea contractanta mentionata in documentul prezenta.")
+
+    def test_foreign_procurement_is_a_candidate(self):
+        facts = s49.link_facts(self.LONG.format(num="1640265829513"),
+                               "ocds-b3wdp1-MD-1645528743044")
+        assert facts["ocid_digits_in_text"] == "no"
+        assert facts["md_numbers_in_text"] == "1640265829513"
+        assert facts["mislink_candidate"] == "yes"
+
+    def test_own_procurement_is_never_a_candidate(self):
+        facts = s49.link_facts(self.LONG.format(num="1645528743044"),
+                               "ocds-b3wdp1-MD-1645528743044")
+        assert facts["ocid_digits_in_text"] == "yes"
+        assert facts["mislink_candidate"] == ""
+
+    def test_truncated_own_digits_in_a_garbled_layer_are_not_foreign(self):
+        # garbled layer lost the last digits of the OWN number
+        facts = s49.link_facts(self.LONG.format(num="17049637545"),
+                               "ocds-b3wdp1-MD-1704963754533")
+        assert facts["ocid_digits_in_text"] == "no"
+        assert facts["mislink_candidate"] == "no"
+
+    def test_idno_and_contract_numbers_do_not_fake_a_candidate(self):
+        # bare 13-digit runs (IDNO / EV contract ids) need MD context
+        text = (self.LONG.format(num="1704963754533")
+                + " IDNO: 1003600009799 contract EV-8009060452916") * 3
+        facts = s49.link_facts(text, "ocds-b3wdp1-MD-1704963754533")
+        assert facts["ocid_digits_in_text"] == "yes"
+
+    def test_no_text_layer_is_undecidable(self):
+        facts = s49.link_facts("too short", "ocds-b3wdp1-MD-1234567890123")
+        assert facts["ocid_digits_in_text"] == "no_text_layer"
+        assert facts["mislink_candidate"] == ""
+
+    def test_row_without_digits_in_the_ocid_field(self):
+        facts = s49.link_facts(self.LONG.format(num="1640265829513"), "")
+        assert facts["ocid_digits_in_text"] == "no_ocid_digits"
+        assert facts["mislink_candidate"] == ""
+
+    def test_duplicates_output_has_the_technical_columns(self):
+        header = None
+        # the real artefact (when present) must expose the columns
+        if s49.DUP_CSV.is_file():
+            with s49.DUP_CSV.open(encoding="utf-8") as fh:
+                header = fh.readline()
+        if header:
+            assert "md_numbers_in_text" in header
+            assert "mislink_candidate" in header
+
+
+# --- manifest consistency ----------------------------------------------------
+class TestManifestErrors:
+    @staticmethod
+    def _pilot():
+        return [{"ocid": "ocds-b3wdp1-MD-unused"},
+                {"ocid": "ocds-b3wdp1-MD-1586765700891-PN-1586765700928"}]
+
+    @staticmethod
+    def _spec():
+        return {2: {"pages": ((15, "resolutory page"),),
+                    "decision": "03D-355-20", "what": ""}}
+
+    @staticmethod
+    def _manifest():
+        return [{"seq": "1", "pilot_no": "2", "source_page": "15",
+                 "pdf_pages": "15", "page_kind": "resolutory page",
+                 "ocid": "ocds-b3wdp1-MD-1586765700891-PN-1586765700928",
+                 "decision_id": "03D-355-20",
+                 "label_line1": "MTA-0019 pilot No 2 | OCID x",
+                 "label_line2": "source page 15/15 | resolutory page"}]
+
+    def test_consistent_manifest_has_no_errors(self):
+        assert s49.manifest_errors(self._manifest(), self._pilot(),
+                                   self._spec()) == []
+
+    def test_stated_ocid_must_equal_the_pilot_row_ocid(self):
+        rows = self._manifest()
+        rows[0]["ocid"] = "ocds-b3wdp1-MD-0000000000000"
+        errs = s49.manifest_errors(rows, self._pilot(), self._spec())
+        assert any("stated OCID" in e for e in errs)
+
+    def test_outcome_word_in_a_label_is_reported(self):
+        rows = self._manifest()
+        rows[0]["label_line2"] = "resolutory page - complaint rejected"
+        errs = s49.manifest_errors(rows, self._pilot(), self._spec())
+        assert any("outcome/prediction" in e for e in errs)
+
+    def test_page_beyond_the_pdf_is_reported(self):
+        rows = self._manifest()
+        rows[0]["source_page"] = "99"
+        errs = s49.manifest_errors(rows, self._pilot(), self._spec())
+        assert any("99" in e for e in errs)
+
+    def test_wrong_spec_page_is_reported(self):
+        rows = self._manifest()
+        rows[0]["source_page"] = "14"
+        errs = s49.manifest_errors(rows, self._pilot(), self._spec())
+        assert any("!= spec" in e for e in errs)
+
+    def test_extra_manifest_rows_are_reported(self):
+        errs = s49.manifest_errors(self._manifest() * 2, self._pilot(),
+                                   self._spec())
+        assert any("expects 1" in e for e in errs)
+
+
+# --- verify mode (reviewer instruction item 5) -------------------------------
+class TestVerifyPack:
+    @pytest.fixture
+    def fixture(self, tmp_path, monkeypatch):
+        pdf = _blank_pdf(tmp_path / "doc2.pdf", pages=15)
+        pilot = _pilot_csv(tmp_path / "pilot.csv", [
+            {"ocid": "x"},
+            {"ocid": "ocds-b3wdp1-MD-1586765700891-PN-1586765700928",
+             "local_pdf_path": str(pdf)},
+        ])
+        spec = {2: {"pages": ((15, "resolutory page"),),
+                    "decision": "03D-355-20", "what": ""}}
+        monkeypatch.setattr(s49, "PILOT_10", pilot)
+        monkeypatch.setattr(s49, "PACK_SPEC", spec)
+        out = tmp_path / "pack.pdf"
+        manifest = tmp_path / "manifest.csv"
+        assert s49.main(["pack", "--out", str(out),
+                         "--manifest", str(manifest)]) == 0
+        before = pilot.read_bytes()
+        yield pilot, out, manifest
+        assert pilot.read_bytes() == before          # read-only
+
+    def test_freshly_built_pack_verifies_ok(self, fixture):
+        _, out, manifest = fixture
+        assert s49.main(["verify", "--out", str(out),
+                         "--manifest", str(manifest), "--skip-ocr"]) == 0
+
+    def test_tampered_manifest_ocid_fails_verification(self, fixture):
+        _, out, manifest = fixture
+        rows = list(csv.DictReader(manifest.open(encoding="utf-8")))
+        rows[0]["ocid"] = "ocds-b3wdp1-MD-1111111111111"
+        with manifest.open("w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(rows)
+        assert s49.main(["verify", "--out", str(out),
+                         "--manifest", str(manifest), "--skip-ocr"]) == 5
+
+    def test_missing_pack_pdf_is_4(self, fixture, tmp_path):
+        _, _, manifest = fixture
+        assert s49.main(["verify", "--out", str(tmp_path / "gone.pdf"),
+                         "--manifest", str(manifest), "--skip-ocr"]) == 4
+
+    def test_missing_manifest_is_4(self, fixture, tmp_path):
+        _, out, _ = fixture
+        assert s49.main(["verify", "--out", str(out),
+                         "--manifest", str(tmp_path / "gone.csv"),
+                         "--skip-ocr"]) == 4
+
+    def test_verify_never_opens_the_machine_sample(self, fixture, monkeypatch):
+        import builtins
+        import io as _io
+        real_open = builtins.open
+
+        def guarded(file, *args, **kwargs):          # noqa: ANN001
+            assert "ansc_review_sample_50" not in str(file), \
+                "the machine sample must never be opened"
+            return real_open(file, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "open", guarded)
+        monkeypatch.setattr(_io, "open", guarded)
+        _, out, manifest = fixture
+        assert s49.main(["verify", "--out", str(out),
+                         "--manifest", str(manifest), "--skip-ocr"]) == 0
+
+    def test_digits_helper(self):
+        assert s49._digits("MD-158617 1621901 | p 15") == "158617162190115"

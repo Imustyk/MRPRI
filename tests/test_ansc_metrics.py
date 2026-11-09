@@ -399,3 +399,97 @@ class TestDocumentTypeAndLinkMetrics:
         assert "подтверждённых как решения ANSC" in report
         assert "Несколько жалоб" in report
         assert "ansc_upheld" not in report
+
+
+# --- sample independence: independent documents/procedures (MTA-0019 §9) -----
+class TestSampleIndependence:
+    """Review instruction of 2026-11-09, item 4: the four byte-duplicate
+    groups must be preserved and the denominators of future metrics must
+    count INDEPENDENT documents/procedures - repeated URLs must never
+    inflate the sample size."""
+
+    @staticmethod
+    def _write_review(path: Path, entries: list[tuple[str, str]]) -> Path:
+        with open(path, "w", newline="", encoding="utf-8") as fh:
+            writer = csv.DictWriter(fh, fieldnames=["document_url",
+                                                    "local_pdf_path"])
+            writer.writeheader()
+            for url, pdf in entries:
+                writer.writerow({"document_url": url, "local_pdf_path": pdf})
+        return path
+
+    def test_byte_duplicates_count_once(self, tmp_path):
+        same = tmp_path / "same.pdf"
+        same.write_bytes(b"%PDF-1.4 byte-identical content")
+        other = tmp_path / "other.pdf"
+        other.write_bytes(b"%PDF-1.4 a completely different file")
+        review = self._write_review(tmp_path / "review.csv", [
+            ("http://x/u1", str(same)),
+            ("http://x/u2", str(same)),        # same file, another URL
+            ("http://x/u3", str(other)),
+        ])
+        rows = [{"document_url": "http://x/u1", "ocid": "ocds-a"},
+                {"document_url": "http://x/u2", "ocid": "ocds-a"},
+                {"document_url": "http://x/u3", "ocid": "ocds-b"}]
+        indep = s45.sample_independence(rows, review)
+        assert indep["n_rows"] == 3
+        assert indep["n_unique_urls"] == 3          # 3 URLs, but:
+        assert indep["n_independent_documents"] == 2   # only 2 files
+        assert indep["byte_duplicate_groups"] == [[1, 2]]
+        assert indep["n_independent_procedures"] == 2  # 2 unique OCIDs
+        assert indep["rows_without_local_pdf"] == []
+        assert "never copied between rows" in indep["note"]
+
+    def test_without_local_pdfs_the_document_count_is_unknown(self,
+                                                              tmp_path):
+        rows = [{"document_url": "http://x/u1", "ocid": "ocds-1"}]
+        indep = s45.sample_independence(rows, tmp_path / "absent.csv")
+        assert indep["n_independent_documents"] is None   # never guessed
+        assert indep["rows_without_local_pdf"] == [1]
+        assert indep["n_independent_procedures"] == 1
+        assert indep["byte_duplicate_groups"] == []
+
+    def test_missing_pdf_file_is_reported_not_guessed(self, tmp_path):
+        review = self._write_review(
+            tmp_path / "review.csv",
+            [("http://x/u1", str(tmp_path / "gone.pdf"))])
+        rows = [{"document_url": "http://x/u1", "ocid": "ocds-1"}]
+        indep = s45.sample_independence(rows, review)
+        assert indep["n_independent_documents"] is None
+        assert indep["rows_without_local_pdf"] == [1]
+
+    def test_refusal_payload_carries_independence_but_no_metrics(
+            self, tmp_path, monkeypatch):
+        rows = [srow(1, "admitted", ""),                # not reviewed
+                srow(2, "rejected", "rejected")]
+        sample = write_sample(rows, tmp_path / "sample.csv")
+        monkeypatch.setattr(s45, "OUT_JSON", tmp_path / "m.json")
+        assert s45.main(["--sample", str(sample),
+                         "--outcomes", str(tmp_path / "absent.csv")]) == 5
+        payload = json.loads((tmp_path / "m.json").read_text("utf-8"))
+        assert payload["metrics"] is None               # still refused
+        indep = payload["sample_independence"]
+        assert indep["n_rows"] == 2
+        assert indep["note"].startswith("denominators must use independent")
+        assert not [k for k in payload
+                    if "accuracy" in k or "macro" in k or "f1" in k]
+
+    def test_metrics_and_report_carry_the_independence_block(self,
+                                                             tmp_path):
+        rows = [mrow(1, "admitted", "admitted", "ansc_decision", "confirmed"),
+                mrow(2, "rejected", "rejected", "ansc_decision", "confirmed")]
+        indep = {"n_rows": 2, "n_unique_urls": 2,
+                 "n_independent_documents": 1, "n_independent_procedures": 1,
+                 "byte_duplicate_groups": [[1, 2]],
+                 "rows_without_local_pdf": [],
+                 "note": "denominators must use independent documents"}
+        m = s45.compute_metrics(rows, {}, independence=indep)
+        assert m["sample_independence"] == indep
+        report = s45.build_report(m, tmp_path / "sample.csv")
+        assert "Независимость выборки" in report
+        assert "Независимых документов" in report
+        assert "| 1 |" in report            # duplicates counted ONCE
+
+    def test_compute_metrics_defaults_to_no_independence_block(self):
+        m = s45.compute_metrics([mrow(1, "admitted", "admitted")], {})
+        assert m["sample_independence"] is None

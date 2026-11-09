@@ -31,8 +31,14 @@ When every row carries a valid label the script computes:
   * the 7x7 confusion matrix (rows = reviewer truth, columns = extracted);
   * extracted ``unknown`` share (an abstention - NEVER a negative label);
   * doc -> procedure mislink share (rows whose notes begin with
-    ``mislink:`` per the review protocol);
-  * the split by source type: text-PDF vs scan (OCR).
+    ``mislink:`` per the review protocol - a GENUINE link error only:
+    ``other_document`` alone is not a mislink);
+  * the split by source type: text-PDF vs scan (OCR);
+  * a SAMPLE-INDEPENDENCE block (unique URLs, independent documents by
+    byte hash, independent procedures by OCID, byte-duplicate groups) -
+    the denominators of every metric must count independent
+    documents/procedures so repeated URLs never inflate the sample size
+    (MTA-0019 §9). It is reported even while the metrics are refused.
 
 Outputs:
   results/methodology/ansc_review_metrics.json
@@ -48,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import re
 import sys
@@ -83,6 +90,57 @@ REVIEWER_FIELDS = ("reviewer_outcome", "reviewer_document_type",
 
 RE_MISLINK = re.compile(r"\bmislink\b", re.IGNORECASE)
 RE_MULTI = re.compile(r"\bmultiple:", re.IGNORECASE)
+
+
+def sample_independence(rows: list[dict], review_path: Path | None = None
+                        ) -> dict:
+    """How many INDEPENDENT documents/procedures the sample really contains.
+
+    MTA-0019 §9 preparation (reviewer instruction of 2026-11-09, item 4):
+    the 50-row sample contains byte-identical PDFs listed under several
+    URLs.  Every denominator of the final metrics must be based on
+    independent documents/procedures - repeated URLs must NOT inflate the
+    sample size.  Local PDF paths are taken from the blind review file
+    (read-only); identity = SHA-256 of the file bytes.
+    """
+    path_by_url: dict[str, str] = {}
+    if review_path is not None and review_path.exists():
+        for r in load_rows(review_path):
+            p = (r.get("local_pdf_path") or "").strip()
+            if p:
+                path_by_url.setdefault(r.get("document_url", ""), p)
+
+    hashes: dict[str, list[int]] = {}
+    rows_without_pdf: list[int] = []
+    for i, row in enumerate(rows, start=1):
+        path = (row.get("local_pdf_path") or "").strip() or path_by_url.get(
+            row.get("document_url", ""), "")
+        digest = ""
+        if path:
+            try:
+                digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+            except OSError:
+                digest = ""
+        if digest:
+            hashes.setdefault(digest, []).append(i)
+        else:
+            rows_without_pdf.append(i)
+
+    groups = sorted(sorted(idx) for idx in hashes.values() if len(idx) > 1)
+    ocids = {(r.get("ocid") or "").strip() for r in rows} - {""}
+    urls = {(r.get("document_url") or "").strip() for r in rows} - {""}
+    return {
+        "n_rows": len(rows),
+        "n_unique_urls": len(urls) if urls else None,
+        "n_independent_documents": len(hashes) if hashes else None,
+        "n_independent_procedures": len(ocids) if ocids else None,
+        "byte_duplicate_groups": groups,
+        "rows_without_local_pdf": rows_without_pdf,
+        "note": ("denominators must use independent documents/procedures, "
+                 "not repeated URLs: a file listed under several URLs "
+                 "counts once; duplicates are reported, human labels are "
+                 "never copied between rows (MTA-0019 §9)"),
+    }
 
 DISCLAIMER_RU = ("Индикатор потенциального риска, а не доказательство "
                  "коррупции/нарушения. Требуется проверка компетентным "
@@ -249,15 +307,16 @@ def link_block(labeled: list[dict]) -> dict:
     return counts
 
 
-def compute_metrics(labeled: list[dict], layer_by_url: dict[str, str]
-                    ) -> dict:
+def compute_metrics(labeled: list[dict], layer_by_url: dict[str, str],
+                    independence: dict | None = None) -> dict:
     """All quality metrics over fully labelled rows (pure function).
 
     MTA-0019 §4/§5: outcome metrics are computed on the EVALUATED set -
     rows the reviewer confirmed as ANSC decisions (legacy rows without a
     ``reviewer_document_type`` column are all evaluated). Document-type
     detection, link quality and the multi-complaint count cover ALL
-    reviewed rows.
+    reviewed rows. ``independence`` (``sample_independence``) carries the
+    counts of INDEPENDENT documents/procedures the denominators must use.
     """
     evaluated = [r for r in labeled if _doc_type(r) in ("", "ansc_decision")]
     excluded = [r for r in labeled if _doc_type(r) not in ("", "ansc_decision")]
@@ -320,6 +379,7 @@ def compute_metrics(labeled: list[dict], layer_by_url: dict[str, str]
         "multi_complaint_rows": sum(
             1 for r in labeled if RE_MULTI.search(r.get("reviewer_notes")
                                                   or "")),
+        "sample_independence": independence,
         "sample_is_stratified_not_representative":
             "the 50-document stratified sample (min 3 per rare outcome) is "
             "NOT necessarily representative of the whole corpus; shares "
@@ -485,6 +545,34 @@ def build_report(metrics: dict, sample_path: Path) -> str:
         f"{metrics.get('multi_complaint_rows', 0)} строк(и) с маркером "
         f"`multiple:` — разбираются отдельно, не сводятся к одной "
         f"бинарной метке.",
+    ]
+
+    indep = metrics.get("sample_independence")
+    if indep:
+        lines += [
+            "",
+            "### Независимость выборки (деноминаторы метрик)",
+            "",
+            "| Параметр | Значение |",
+            "|---|---:|",
+            f"| Строк в выборке | {indep.get('n_rows')} |",
+            f"| Уникальных URL | {indep.get('n_unique_urls')} |",
+            f"| Независимых документов (уникальные PDF-файлы) | "
+            f"{indep.get('n_independent_documents')} |",
+            f"| Независимых процедур (уникальные OCID) | "
+            f"{indep.get('n_independent_procedures')} |",
+            f"| Групп побайтовых дубликатов | "
+            f"{len(indep.get('byte_duplicate_groups') or [])} |",
+        ]
+        for group in indep.get("byte_duplicate_groups") or []:
+            lines.append(f"| — повтор строк | {', '.join(map(str, group))} |")
+        if indep.get("rows_without_local_pdf"):
+            lines += ["", f"Строк без локального PDF (идентичность не "
+                          f"проверена): "
+                          f"{', '.join(map(str, indep['rows_without_local_pdf']))}."]
+        lines += ["", f"> {indep.get('note', '')}"]
+
+    lines += [
         "",
         "## Ограничения",
         "",
@@ -564,6 +652,10 @@ def main(argv: list[str] | None = None) -> int:
     review_path = Path(args.review) if args.review else None
     rows, matched, review_only = merge_review(rows, review_path)
 
+    # sample independence (read-only): independent documents/procedures for
+    # the denominators - repeated URLs must not inflate the sample size
+    independence = sample_independence(rows, review_path)
+
     labelrep = label_status(rows)
     if labelrep["invalid"]:
         print("invalid reviewer values (enums: "
@@ -584,6 +676,7 @@ def main(argv: list[str] | None = None) -> int:
         payload["review_file"] = str(review_path) if review_path else None
         payload["review_rows_matched"] = matched
         payload["review_rows_unmatched"] = review_only
+        payload["sample_independence"] = independence
         OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
         OUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2),
                             encoding="utf-8")
@@ -603,7 +696,8 @@ def main(argv: list[str] | None = None) -> int:
         for r in load_rows(outcomes_path):
             layer_by_url.setdefault(r.get("url", ""),
                                     r.get("text_layer", ""))
-    metrics = compute_metrics(labelrep["valid"], layer_by_url)
+    metrics = compute_metrics(labelrep["valid"], layer_by_url,
+                              independence=independence)
 
     payload = {
         "task": "MTA-0018",
