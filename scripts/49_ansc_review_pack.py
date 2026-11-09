@@ -27,12 +27,22 @@ see any automatic prediction):
               requires the reviewer to verify the identity of each file
               AND its link to the procedure.
 
+  packs       evidence packs for the 40 NON-pilot documents, grouped in
+              packs of 10 rows (row_index order).  Page selection is
+              MECHANICAL: page 1 (issuer/type) + the located operative
+              page (final page when none was located).  Labels carry
+              identity only - sample row, OCID, decision number as an
+              identity hint to verify on the page, source page, and a
+              byte-duplicate note where applicable.  No outcome, no type
+              hint, no link hint enters the pack.
+
   verify      independent check of a built pack: no outcome/prediction
               word in the machine-generated text (labels + OCR of the
               cover/headers), every page states the OCID and source page
               of its pilot row (manifest vs pilot CSV vs spec), and the
               page bodies match FRESH renders of exactly those source
-              pages (pixel tolerance for JPEG re-encoding).
+              pages (pixel tolerance for JPEG re-encoding).  ``--pack N``
+              verifies sample pack N instead of the pilot pack.
 
 Contracts: the review CSVs are read-only (byte-identical after a run), no
 ``reviewer_*`` cell is written, production v0 / ETL 00-11 / backend /
@@ -43,7 +53,8 @@ inconsistent local PDF or verification failure.
 
 Usage:
     .venv/bin/python scripts/49_ansc_review_pack.py pack [--out PDF]
-    .venv/bin/python scripts/49_ansc_review_pack.py verify [--skip-ocr]
+    .venv/bin/python scripts/49_ansc_review_pack.py packs [--pack N]
+    .venv/bin/python scripts/49_ansc_review_pack.py verify [--pack N] [--skip-ocr]
     .venv/bin/python scripts/49_ansc_review_pack.py duplicates
 """
 from __future__ import annotations
@@ -139,11 +150,17 @@ def _font(size: int):
     return ImageFont.load_default()
 
 
+def row_label_of(entry: dict) -> str:
+    """How a row is addressed on labels: ``pilot No`` (pilot pack) or
+    ``sample row`` (packs of the remaining 40 documents)."""
+    return entry.get("row_label", "pilot No")
+
+
 def label_lines(pilot_no: int, row: dict, page_no: int,
                 entry: dict) -> tuple[str, str]:
     """The two header lines of one pack page - identity only, no outcome."""
     total = row.get("_pdf_pages", "")
-    line1 = f"MTA-0019 pilot No {pilot_no} | OCID {row.get('ocid', '')}"
+    line1 = f"MTA-0019 {row_label_of(entry)} {pilot_no} | OCID {row.get('ocid', '')}"
     if entry["decision"]:
         line1 += f" | decision {entry['decision']}"
     line2 = f"source page {page_no}/{total} | {entry['pages_kind']}"
@@ -240,9 +257,15 @@ def cover_lines(entries: list[dict], generated: str | None = None) -> list[str]:
 
     ``generated`` overrides the cover date (verification of a pack built on
     an earlier day); defaults to today."""
+    nos = sorted({e["pilot_no"] for e in entries})
+    sample = any(row_label_of(e) == "sample row" for e in entries)
+    span = (f"{nos[0]}-{nos[-1]}"
+            if nos == list(range(nos[0], nos[-1] + 1)) else
+            ", ".join(str(n) for n in nos))
+    subject = ("Sample rows" if sample else "Pilot documents") + " " + span
     lines = [
         "**MTA-0019 - evidence pack for the independent review",
-        f"Pilot documents 2-10, original pages of the local PDF copies, "
+        f"{subject}, original pages of the local PDF copies, "
         f"generated {generated or date.today().isoformat()} "
         f"(read-only, no network).",
         "No automatic outcome or extraction result is included in this pack.",
@@ -250,13 +273,16 @@ def cover_lines(entries: list[dict], generated: str | None = None) -> list[str]:
     ]
     for entry in entries:
         row = entry["row"]
-        head = (f"No {entry['pilot_no']} | "
+        no_prefix = "row" if sample else "No"
+        head = (f"{no_prefix} {entry['pilot_no']} | "
                 f"source page {entry['source_page']}/{row['_pdf_pages']} | "
                 f"{entry['pages_kind']} | OCID {row['ocid']}")
         if entry["decision"]:
             head += f" | decision {entry['decision']}"
         else:
             head += " | no ANSC decision number"
+        if entry["what"]:
+            head += f" | {entry['what']}"
         lines.append(head)
     lines += [
         "",
@@ -264,6 +290,13 @@ def cover_lines(entries: list[dict], generated: str | None = None) -> list[str]:
         "reviewer_* values only after your own decision "
         "(docs/ANSC_REVIEW_GUIDE.md). Document type and procedure link are "
         "judged separately.",
+    ]
+    if sample:
+        lines += [
+            "Decision numbers and page locators are identity hints from a "
+            "technical pass - verify them on the page itself.",
+        ]
+    lines += [
         "",
         DISCLAIMER_EN,
         DISCLAIMER_RU,
@@ -351,8 +384,11 @@ def _compose_all(entries: list[dict],
     return rendered, images
 
 
-def build_pack(pilot_path: Path, out_pdf: Path,
-               manifest_path: Path) -> int:
+def build_pack(pilot_path: Path, out_pdf: Path, manifest_path: Path,
+               spec: dict | None = None) -> int:
+    """Build the evidence pack. ``spec=None`` -> the pilot ``PACK_SPEC``;
+    sample packs pass their own mechanical spec (keys = review positions)."""
+    spec = PACK_SPEC if spec is None else spec
     try:
         import pypdfium2  # noqa: F401                      # rendering aid
     except ImportError:
@@ -360,7 +396,7 @@ def build_pack(pilot_path: Path, out_pdf: Path,
         return 4
 
     try:
-        entries = _collect_entries(pilot_path, PACK_SPEC)
+        entries = _collect_entries(pilot_path, spec)
     except PackError as exc:
         print(str(exc), file=sys.stderr)
         return exc.code
@@ -480,7 +516,7 @@ def _ocr_text(img, tmp: Path, name: str) -> str:
 
 
 def verify_pack(pilot_path: Path, pack_pdf: Path, manifest_path: Path,
-                use_ocr: bool = True) -> int:
+                use_ocr: bool = True, spec: dict | None = None) -> int:
     """Independent verification of the built pack (read-only).
 
     Checks (reviewer instruction of 2026-11-09, item 5):
@@ -501,12 +537,13 @@ def verify_pack(pilot_path: Path, pack_pdf: Path, manifest_path: Path,
         print("pypdfium2 is required for verify (rendering aid)",
               file=sys.stderr)
         return 4
+    spec = PACK_SPEC if spec is None else spec
     for path in (pack_pdf, manifest_path):
         if not path.is_file():
             print(f"missing {path}", file=sys.stderr)
             return 4
     try:
-        entries = _collect_entries(pilot_path, PACK_SPEC)
+        entries = _collect_entries(pilot_path, spec)
     except PackError as exc:
         print(str(exc), file=sys.stderr)
         return exc.code
@@ -515,7 +552,7 @@ def verify_pack(pilot_path: Path, pack_pdf: Path, manifest_path: Path,
         manifest_rows = list(csv.DictReader(fh))
     with pilot_path.open(newline="", encoding="utf-8") as fh:
         pilot_rows = list(csv.DictReader(fh))
-    errors = manifest_errors(manifest_rows, pilot_rows, PACK_SPEC)
+    errors = manifest_errors(manifest_rows, pilot_rows, spec)
 
     from pypdf import PdfReader
     n_pages = len(PdfReader(str(pack_pdf)).pages)
@@ -578,13 +615,14 @@ def verify_pack(pilot_path: Path, pack_pdf: Path, manifest_path: Path,
                     errors.append(f"pack page {i + 2}: outcome/prediction "
                                   f"word(s) {hits} in the machine header")
                 header = next((ln for ln in lines[:4]
-                               if "MTA-0019" in ln and "pilot No" in ln),
+                               if "MTA-0019" in ln
+                               and ("pilot No" in ln or "sample row" in ln)),
                               None)
                 if header is None:
                     errors.append(f"pack page {i + 2}: pilot header not "
                                   f"recognized by OCR")
                     continue
-                mn = re.search(r"pilot No\s+(\d+)", header)
+                mn = re.search(r"(?:pilot No|sample row)\s+(\d+)", header)
                 if not mn or int(mn.group(1)) != int(m.get("pilot_no", -1)):
                     errors.append(f"pack page {i + 2}: OCR pilot number "
                                   f"{mn.group(1) if mn else '?'} != manifest "
@@ -611,6 +649,142 @@ def verify_pack(pilot_path: Path, pack_pdf: Path, manifest_path: Path,
               f"max {max(diffs):.2f} (threshold {PIXEL_DIFF_MAX})")
     print(f"  OCR header checks: {'ran' if ocr_used else 'skipped'} - "
           f"no outcome/prediction word in machine-generated text")
+    return 0
+
+
+# --- packs of the remaining 40 documents (MTA-0019 stage 3) -----------------
+# The pilot rows are reviewed separately; everything else is grouped into
+# packs of PACKS_OF rows (in row_index order) for the reviewer.
+PILOT_ROW_INDEXES = (1, 2, 5, 8, 12, 14, 15, 21, 28, 37)
+PACKS_OF = 10
+
+
+def sample_pack_paths(pack_no: int) -> tuple[Path, Path]:
+    pdf = ROOT / "results" / "ansc_review_pages" / f"ansc_sample_pack{pack_no}.pdf"
+    man = ROOT / "results" / "tables" / f"ansc_sample_pack{pack_no}_manifest.csv"
+    return pdf, man
+
+
+def remaining_row_indexes(n_rows: int) -> list[int]:
+    """Row indexes NOT in the pilot - the documents still to review."""
+    return [i for i in range(1, n_rows + 1)
+            if i not in PILOT_ROW_INDEXES]
+
+
+def pack_row_groups(row_indexes: list[int]) -> list[list[int]]:
+    return [row_indexes[i:i + PACKS_OF]
+            for i in range(0, len(row_indexes), PACKS_OF)]
+
+
+def duplicate_notes(review_rows: list[dict]) -> dict[int, str]:
+    """row_index -> identity note for byte-identical PDFs (group members
+    only). Technical fact, never a human label."""
+    by_hash: dict[str, list[int]] = {}
+    for i, r in enumerate(review_rows, start=1):
+        pdf = Path(r.get("local_pdf_path") or "")
+        if pdf.is_file():
+            digest = hashlib.sha256(pdf.read_bytes()).hexdigest()
+            by_hash.setdefault(digest, []).append(i)
+    notes: dict[int, str] = {}
+    for idxs in by_hash.values():
+        if len(idxs) > 1:
+            for i in idxs:
+                others = ", ".join(str(j) for j in idxs if j != i)
+                plural = "row" if len(idxs) == 2 else "rows"
+                if len(idxs) == 2:
+                    notes[i] = f"byte-identical PDF (also row {others})"
+                else:
+                    notes[i] = f"byte-identical PDF (also {plural} {others})"
+    return notes
+
+
+def sample_spec(assist_by_idx: dict[int, dict], review_rows: list[dict],
+                row_indexes: list[int]) -> dict[int, dict]:
+    """Pack spec for the remaining rows - MECHANICAL page selection only.
+
+    Every row contributes page 1 (issuer/type) plus the located operative
+    page (``resolutory_page`` from the technical pass; the final page when
+    no operative page was located). Keys are positions in the review CSV
+    (= ``row_index``). Identity only: OCID comes from the review row, the
+    decision number is an identity hint from the technical pass (stated on
+    the cover as something to verify on the page), byte-duplicate groups are
+    noted. No outcome, no type hint, no link hint enters the spec."""
+    dup = duplicate_notes(review_rows)
+    spec: dict[int, dict] = {}
+    for idx in row_indexes:
+        if idx in PILOT_ROW_INDEXES:
+            raise PackError(4, f"row {idx} belongs to the pilot - exclude it")
+        if not 1 <= idx <= len(review_rows):
+            raise PackError(4, f"row {idx} out of range 1..{len(review_rows)}")
+        a = assist_by_idx.get(idx, {})
+        try:
+            total = int(a.get("pdf_pages") or 0)
+            resolutory = int(a.get("resolutory_page") or 0)
+        except ValueError as exc:
+            raise PackError(4, f"row {idx}: bad pdf_pages/resolutory_page "
+                               f"in the assistance CSV") from exc
+        if total < 1:
+            raise PackError(4, f"row {idx}: no pdf_pages in the assistance CSV")
+        if 1 <= resolutory <= total:
+            pages = ([] if resolutory == 1
+                     else [(1, "document-type page")])
+            pages.append((resolutory, "resolutory page"))
+        else:
+            pages = ([] if total == 1 else [(1, "document-type page")])
+            pages.append((total, "final page"))
+        spec[idx] = {"pages": tuple(pages),
+                     "decision": (a.get("decision_number") or "").strip(),
+                     "what": dup.get(idx, ""),
+                     "row_label": "sample row"}
+    return spec
+
+
+def _load_sample_spec(review_path: Path, assist_path: Path,
+                      row_indexes: list[int]) -> dict[int, dict]:
+    if not assist_path.is_file():
+        raise PackError(4, f"missing {assist_path}")
+    if not review_path.is_file():
+        raise PackError(4, f"missing {review_path}")
+    with assist_path.open(newline="", encoding="utf-8") as fh:
+        assist_by_idx = {int(r["row_index"]): r
+                         for r in csv.DictReader(fh)}
+    with review_path.open(newline="", encoding="utf-8") as fh:
+        review_rows = list(csv.DictReader(fh))
+    return sample_spec(assist_by_idx, review_rows, row_indexes)
+
+
+def build_sample_packs(review_path: Path, assist_path: Path,
+                       pack_no: int | None = None) -> int:
+    """Build the evidence packs for the 40 non-pilot documents (stage 3)."""
+    try:
+        import pypdfium2  # noqa: F401                      # rendering aid
+    except ImportError:
+        print("pypdfium2 is required for pack (rendering aid)", file=sys.stderr)
+        return 4
+    if not review_path.is_file():
+        print(f"missing {review_path}", file=sys.stderr)
+        return 4
+    with review_path.open(newline="", encoding="utf-8") as fh:
+        n_rows = len(list(csv.DictReader(fh)))
+    groups = pack_row_groups(remaining_row_indexes(n_rows))
+    if pack_no is not None and not 1 <= pack_no <= len(groups):
+        print(f"--pack must be 1..{len(groups)}", file=sys.stderr)
+        return 4
+    targets = ([(pack_no, groups[pack_no - 1])] if pack_no
+               else list(enumerate(groups, start=1)))
+    for no, idxs in targets:
+        try:
+            spec = _load_sample_spec(review_path, assist_path, idxs)
+        except PackError as exc:
+            print(str(exc), file=sys.stderr)
+            return exc.code
+        out, man = sample_pack_paths(no)
+        rc = build_pack(review_path, out, man, spec=spec)
+        if rc:
+            return rc
+        n_pages = sum(len(e["pages"]) for e in spec.values())
+        print(f"pack {no}: rows {idxs[0]}..{idxs[-1]} - {len(idxs)} "
+              f"documents, {n_pages} original pages -> {_rel(out)}")
     return 0
 
 
@@ -759,11 +933,15 @@ def duplicates_check(review_path: Path, out_csv: Path,
 # --- main -------------------------------------------------------------------
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("mode", choices=["pack", "verify", "duplicates"])
+    ap.add_argument("mode", choices=["pack", "packs", "verify",
+                                     "duplicates"])
     ap.add_argument("--out", default=None,
                     help="pack PDF path (output for pack, input for verify)")
     ap.add_argument("--manifest", default=None,
                     help="manifest path (output for pack, input for verify)")
+    ap.add_argument("--pack", type=int, default=None,
+                    help="packs: build only pack N (default: all); "
+                         "verify: verify sample pack N instead of the pilot")
     ap.add_argument("--skip-ocr", action="store_true",
                     help="verify: skip the tesseract header/cover checks")
     args = ap.parse_args(argv)
@@ -771,11 +949,39 @@ def main(argv: list[str] | None = None) -> int:
         out = Path(args.out) if args.out else PACK_PDF
         man = Path(args.manifest) if args.manifest else PACK_MANIFEST
         return build_pack(PILOT_10, out, man)
+    if args.mode == "packs":
+        if args.out or args.manifest:
+            print("--out/--manifest are not used by 'packs' (fixed "
+                  "per-pack paths)", file=sys.stderr)
+            return 4
+        return build_sample_packs(REVIEW_50, ASSIST_CSV, pack_no=args.pack)
     if args.mode == "verify":
+        if args.pack is not None:
+            try:
+                rows = load_csv_rows(REVIEW_50)
+                groups = pack_row_groups(remaining_row_indexes(len(rows)))
+                if not 1 <= args.pack <= len(groups):
+                    print(f"--pack must be 1..{len(groups)}", file=sys.stderr)
+                    return 4
+                spec = _load_sample_spec(REVIEW_50, ASSIST_CSV,
+                                          groups[args.pack - 1])
+            except PackError as exc:
+                print(str(exc), file=sys.stderr)
+                return exc.code
+            out, man = sample_pack_paths(args.pack)
+            return verify_pack(REVIEW_50, out, man,
+                               use_ocr=not args.skip_ocr, spec=spec)
         out = Path(args.out) if args.out else PACK_PDF
         man = Path(args.manifest) if args.manifest else PACK_MANIFEST
         return verify_pack(PILOT_10, out, man, use_ocr=not args.skip_ocr)
     return duplicates_check(REVIEW_50, DUP_CSV, ASSIST_CSV)
+
+
+def load_csv_rows(path: Path) -> list[dict]:
+    if not path.is_file():
+        raise PackError(4, f"missing {path}")
+    with path.open(newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
 
 
 if __name__ == "__main__":
