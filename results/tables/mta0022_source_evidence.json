@@ -1,0 +1,1405 @@
+{
+  "ocds-b3wdp1-MD-1644854422949": {
+    "package_sha256": "05f88c2c393d5e96275cb37b01a7bf92f424a7c2b0a4ca3d33f532546e2fbdff",
+    "compiled_records": [
+      {
+        "pointer": "/records/0/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1644854422949-PN-1644854422949",
+        "id": "ocds-b3wdp1-MD-1644854422949-PN-1644854422949-1644905408528",
+        "tag": [
+          "planningUpdate"
+        ],
+        "date": "2022-02-15T06:10:07Z",
+        "tenderPeriod": {
+          "startDate": "2022-03-01T00:00:00Z",
+          "endDate": "2022-03-09T07:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      },
+      {
+        "pointer": "/records/1/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1644854422949",
+        "id": "ocds-b3wdp1-MD-1644854422949-1645110970366",
+        "tag": [
+          "compiled"
+        ],
+        "date": "2022-02-17T15:16:10Z",
+        "tenderPeriod": {
+          "startDate": "2022-03-01T00:00:00Z",
+          "endDate": "2022-03-09T07:00:00Z"
+        },
+        "procurementMethod": "open",
+        "procurementMethodDetails": "openTender"
+      },
+      {
+        "pointer": "/records/2/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1644854422949-EV-1644905408365",
+        "id": "ocds-b3wdp1-MD-1644854422949-EV-1644905408365-1650011495958",
+        "tag": [
+          "awardUpdate"
+        ],
+        "date": "2022-04-15T08:31:35Z",
+        "tenderPeriod": {
+          "startDate": "2022-02-24T09:00:00Z",
+          "endDate": "2022-03-09T07:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      }
+    ],
+    "notice_refs": [
+      {
+        "ocid": "ocds-b3wdp1-MD-1644854422949",
+        "pointer": "/records/2/compiledRelease/tender/documents/0",
+        "url": "http://storage.mtender.gov.md/get/9fefd971-fd33-4fa5-a189-8996adb49ae8-1644857370559",
+        "title": "CHIŞINĂU",
+        "datePublished": "2022-02-15T06:10:07Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      }
+    ],
+    "amendment_refs": [],
+    "dump_projections": {
+      "pre_rebuild/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1644854422949",
+          "fetched_at": "2026-09-26T03:58:03Z",
+          "list_date": "2022-04-15T08:31:35Z",
+          "run_id": "scan-20260926T035803Z-e865d3"
+        }
+      ],
+      "pre_rebuild/raw_tenders": [],
+      "pre_rebuild/norm_tenders": [],
+      "pre_rebuild/features_tenders": [],
+      "pre_rebuild/raw_lookups": [],
+      "pre_rebuild/ingest_runs": [],
+      "pre_audit/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1644854422949",
+          "fetched_at": "2026-09-26T03:58:03Z",
+          "list_date": "2022-04-15T08:31:35Z",
+          "record_fetched": true,
+          "n_records": 3,
+          "run_id": "scan-20260926T035803Z-e865d3"
+        }
+      ],
+      "pre_audit/raw_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1644854422949",
+          "fetched_at": "2026-09-26T05:47:18Z",
+          "list_date": "2022-04-15T08:31:35Z",
+          "n_records": 3,
+          "published_date": "2022-02-14T16:00:22Z",
+          "tender_start": "2022-03-01T00:00:00Z",
+          "tender_end": "2022-03-09T07:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "openTender",
+          "release_dates": [
+            "2022-02-15T06:10:07Z",
+            "2022-02-17T15:16:10Z",
+            "2022-04-15T08:31:35Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ],
+          "run_id": "fetch-20260926T054718Z-942876"
+        }
+      ],
+      "pre_audit/norm_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1644854422949",
+          "list_date": "2022-04-15T08:31:35Z",
+          "n_records": 3,
+          "published_date": "2022-02-14T16:00:22Z",
+          "tender_start": "2022-03-01T00:00:00Z",
+          "tender_end": "2022-03-09T07:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "opentender",
+          "release_dates": [
+            "2022-02-15T06:10:07Z",
+            "2022-02-17T15:16:10Z",
+            "2022-04-15T08:31:35Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ]
+        }
+      ],
+      "pre_audit/features_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1644854422949",
+          "list_date": "2022-04-15T08:31:35Z",
+          "n_records": 3,
+          "published_date": "2022-02-14T16:00:22Z",
+          "tender_start": "2022-03-01T00:00:00Z",
+          "tender_end": "2022-03-09T07:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "opentender",
+          "release_dates": [
+            "2022-02-15T06:10:07Z",
+            "2022-02-17T15:16:10Z",
+            "2022-04-15T08:31:35Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ],
+          "run_id": "feat-20260926T063359Z-5708b0"
+        }
+      ],
+      "pre_audit/ingest_runs": [],
+      "pre_audit/raw_mof_procedures": []
+    },
+    "derived_JSON_projection": {
+      "ocid": "ocds-b3wdp1-MD-1644854422949",
+      "list_date": null,
+      "published_date": "2022-02-14T16:00:22Z",
+      "tender_start": "2022-03-01T00:00:00Z",
+      "tender_end": "2022-03-09T07:00:00Z",
+      "procurement_method": "open",
+      "procurement_method_details": "opentender"
+    },
+    "record_package_is_not_release_history": true
+  },
+  "ocds-b3wdp1-MD-1644995653154": {
+    "package_sha256": "d666e9cc17346bee273289f6f72c3d467532078cbdd6f50ee1503037d3dc1f30",
+    "compiled_records": [
+      {
+        "pointer": "/records/0/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1644995653154",
+        "id": "ocds-b3wdp1-MD-1644995653154-1645022970174",
+        "tag": [
+          "compiled"
+        ],
+        "date": "2022-02-16T14:49:29Z",
+        "tenderPeriod": {
+          "startDate": "2022-02-01T00:00:00Z",
+          "endDate": "2022-03-07T13:00:00Z"
+        },
+        "procurementMethod": "open",
+        "procurementMethodDetails": "openTender"
+      },
+      {
+        "pointer": "/records/1/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1644995653154-PN-1644995653154",
+        "id": "ocds-b3wdp1-MD-1644995653154-PN-1644995653154-1645022970175",
+        "tag": [
+          "planningUpdate"
+        ],
+        "date": "2022-02-16T14:49:29Z",
+        "tenderPeriod": {
+          "startDate": "2022-02-01T00:00:00Z",
+          "endDate": "2022-03-07T13:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      },
+      {
+        "pointer": "/records/2/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1644995653154-EV-1645022970010",
+        "id": "ocds-b3wdp1-MD-1644995653154-EV-1645022970010-1650450291315",
+        "tag": [
+          "awardUpdate"
+        ],
+        "date": "2022-04-20T10:24:51Z",
+        "tenderPeriod": {
+          "startDate": "2022-02-26T13:00:00Z",
+          "endDate": "2022-03-07T13:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      }
+    ],
+    "notice_refs": [
+      {
+        "ocid": "ocds-b3wdp1-MD-1644995653154",
+        "pointer": "/records/2/compiledRelease/tender/documents/0",
+        "url": "http://storage.mtender.gov.md/get/008d6d69-2a60-4f68-ae18-682851257a92-1645022816113",
+        "title": "anunti de participare estetica.pdf",
+        "datePublished": "2022-02-16T14:49:29Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      }
+    ],
+    "amendment_refs": [],
+    "dump_projections": {
+      "pre_rebuild/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1644995653154",
+          "fetched_at": "2026-09-26T03:58:03Z",
+          "list_date": "2022-04-20T10:24:51Z",
+          "run_id": "scan-20260926T035803Z-e865d3"
+        }
+      ],
+      "pre_rebuild/raw_tenders": [],
+      "pre_rebuild/norm_tenders": [],
+      "pre_rebuild/features_tenders": [],
+      "pre_rebuild/raw_lookups": [],
+      "pre_rebuild/ingest_runs": [],
+      "pre_audit/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1644995653154",
+          "fetched_at": "2026-09-26T03:58:03Z",
+          "list_date": "2022-04-20T10:24:51Z",
+          "record_fetched": true,
+          "n_records": 3,
+          "run_id": "scan-20260926T035803Z-e865d3"
+        }
+      ],
+      "pre_audit/raw_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1644995653154",
+          "fetched_at": "2026-09-26T05:47:18Z",
+          "list_date": "2022-04-20T10:24:51Z",
+          "n_records": 3,
+          "published_date": "2022-02-16T07:14:12Z",
+          "tender_start": "2022-02-01T00:00:00Z",
+          "tender_end": "2022-03-07T13:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "openTender",
+          "release_dates": [
+            "2022-02-16T14:49:29Z",
+            "2022-02-16T14:49:29Z",
+            "2022-04-20T10:24:51Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ],
+          "run_id": "fetch-20260926T054718Z-942876"
+        }
+      ],
+      "pre_audit/norm_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1644995653154",
+          "list_date": "2022-04-20T10:24:51Z",
+          "n_records": 3,
+          "published_date": "2022-02-16T07:14:12Z",
+          "tender_start": "2022-02-01T00:00:00Z",
+          "tender_end": "2022-03-07T13:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "opentender",
+          "release_dates": [
+            "2022-02-16T14:49:29Z",
+            "2022-02-16T14:49:29Z",
+            "2022-04-20T10:24:51Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ]
+        }
+      ],
+      "pre_audit/features_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1644995653154",
+          "list_date": "2022-04-20T10:24:51Z",
+          "n_records": 3,
+          "published_date": "2022-02-16T07:14:12Z",
+          "tender_start": "2022-02-01T00:00:00Z",
+          "tender_end": "2022-03-07T13:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "opentender",
+          "release_dates": [
+            "2022-02-16T14:49:29Z",
+            "2022-02-16T14:49:29Z",
+            "2022-04-20T10:24:51Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ],
+          "run_id": "feat-20260926T063359Z-5708b0"
+        }
+      ],
+      "pre_audit/ingest_runs": [],
+      "pre_audit/raw_mof_procedures": []
+    },
+    "derived_JSON_projection": {
+      "ocid": "ocds-b3wdp1-MD-1644995653154",
+      "list_date": null,
+      "published_date": "2022-02-16T07:14:12Z",
+      "tender_start": "2022-02-01T00:00:00Z",
+      "tender_end": "2022-03-07T13:00:00Z",
+      "procurement_method": "open",
+      "procurement_method_details": "opentender"
+    },
+    "record_package_is_not_release_history": true
+  },
+  "ocds-b3wdp1-MD-1649084017389": {
+    "package_sha256": "e327ad1e0dabfcc3e260a2808262082ed30863dd34fb18e5d7815776b82e2cae",
+    "compiled_records": [
+      {
+        "pointer": "/records/0/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1649084017389",
+        "id": "ocds-b3wdp1-MD-1649084017389-1649255331802",
+        "tag": [
+          "compiled"
+        ],
+        "date": "2022-04-06T14:28:51Z",
+        "tenderPeriod": {
+          "startDate": "2022-04-01T00:00:00Z",
+          "endDate": "2022-04-29T05:00:00Z"
+        },
+        "procurementMethod": "open",
+        "procurementMethodDetails": "openTender"
+      },
+      {
+        "pointer": "/records/1/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1649084017389-PN-1649084017389",
+        "id": "ocds-b3wdp1-MD-1649084017389-PN-1649084017389-1649255331803",
+        "tag": [
+          "planningUpdate"
+        ],
+        "date": "2022-04-06T14:28:51Z",
+        "tenderPeriod": {
+          "startDate": "2022-04-01T00:00:00Z",
+          "endDate": "2022-04-29T05:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      },
+      {
+        "pointer": "/records/2/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1649084017389-EV-1649255331651",
+        "id": "ocds-b3wdp1-MD-1649084017389-EV-1649255331651-1656249233561",
+        "tag": [
+          "awardUpdate"
+        ],
+        "date": "2022-06-26T13:13:53Z",
+        "tenderPeriod": {
+          "startDate": "2022-04-16T05:00:00Z",
+          "endDate": "2022-04-29T05:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      }
+    ],
+    "notice_refs": [
+      {
+        "ocid": "ocds-b3wdp1-MD-1649084017389",
+        "pointer": "/records/2/compiledRelease/tender/documents/3",
+        "url": "http://storage.mtender.gov.md/get/b23d2909-b72b-4b76-a6e6-7bce0e64834d-1649254411604",
+        "title": "Anunt de participare semnat",
+        "datePublished": "2022-04-06T14:28:51Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      }
+    ],
+    "amendment_refs": [],
+    "dump_projections": {
+      "pre_rebuild/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1649084017389",
+          "fetched_at": "2026-09-26T03:58:03Z",
+          "list_date": "2022-06-26T13:13:53Z",
+          "run_id": "scan-20260926T035803Z-e865d3"
+        }
+      ],
+      "pre_rebuild/raw_tenders": [],
+      "pre_rebuild/norm_tenders": [],
+      "pre_rebuild/features_tenders": [],
+      "pre_rebuild/raw_lookups": [],
+      "pre_rebuild/ingest_runs": [],
+      "pre_audit/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1649084017389",
+          "fetched_at": "2026-09-26T03:58:03Z",
+          "list_date": "2022-06-26T13:13:53Z",
+          "record_fetched": true,
+          "n_records": 3,
+          "run_id": "scan-20260926T035803Z-e865d3"
+        }
+      ],
+      "pre_audit/raw_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1649084017389",
+          "fetched_at": "2026-09-26T05:47:18Z",
+          "list_date": "2022-06-26T13:13:53Z",
+          "n_records": 3,
+          "published_date": "2022-04-04T14:53:37Z",
+          "tender_start": "2022-04-01T00:00:00Z",
+          "tender_end": "2022-04-29T05:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "openTender",
+          "release_dates": [
+            "2022-04-06T14:28:51Z",
+            "2022-04-06T14:28:51Z",
+            "2022-06-26T13:13:53Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ],
+          "run_id": "fetch-20260926T054718Z-942876"
+        }
+      ],
+      "pre_audit/norm_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1649084017389",
+          "list_date": "2022-06-26T13:13:53Z",
+          "n_records": 3,
+          "published_date": "2022-04-04T14:53:37Z",
+          "tender_start": "2022-04-01T00:00:00Z",
+          "tender_end": "2022-04-29T05:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "opentender",
+          "release_dates": [
+            "2022-04-06T14:28:51Z",
+            "2022-04-06T14:28:51Z",
+            "2022-06-26T13:13:53Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ]
+        }
+      ],
+      "pre_audit/features_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1649084017389",
+          "list_date": "2022-06-26T13:13:53Z",
+          "n_records": 3,
+          "published_date": "2022-04-04T14:53:37Z",
+          "tender_start": "2022-04-01T00:00:00Z",
+          "tender_end": "2022-04-29T05:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "opentender",
+          "release_dates": [
+            "2022-04-06T14:28:51Z",
+            "2022-04-06T14:28:51Z",
+            "2022-06-26T13:13:53Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ],
+          "run_id": "feat-20260926T063359Z-5708b0"
+        }
+      ],
+      "pre_audit/ingest_runs": [],
+      "pre_audit/raw_mof_procedures": []
+    },
+    "derived_JSON_projection": {
+      "ocid": "ocds-b3wdp1-MD-1649084017389",
+      "list_date": null,
+      "published_date": "2022-04-04T14:53:37Z",
+      "tender_start": "2022-04-01T00:00:00Z",
+      "tender_end": "2022-04-29T05:00:00Z",
+      "procurement_method": "open",
+      "procurement_method_details": "opentender"
+    },
+    "record_package_is_not_release_history": true
+  },
+  "ocds-b3wdp1-MD-1656940842812": {
+    "package_sha256": "0f1f25b9acbb1303fedb4180f3652bc42b46d523a1cccad2c7ef9d99aabe9da7",
+    "compiled_records": [
+      {
+        "pointer": "/records/0/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1656940842812",
+        "id": "ocds-b3wdp1-MD-1656940842812-1656940982704",
+        "tag": [
+          "compiled"
+        ],
+        "date": "2022-07-04T13:23:01Z",
+        "tenderPeriod": {
+          "startDate": "2022-07-01T00:00:00Z",
+          "endDate": "2022-07-14T13:30:10Z"
+        },
+        "procurementMethod": "open",
+        "procurementMethodDetails": "smallValue"
+      },
+      {
+        "pointer": "/records/1/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1656940842812-PN-1656940842812",
+        "id": "ocds-b3wdp1-MD-1656940842812-PN-1656940842812-1656940982706",
+        "tag": [
+          "planningUpdate"
+        ],
+        "date": "2022-07-04T13:23:01Z",
+        "tenderPeriod": {
+          "startDate": "2022-07-01T00:00:00Z",
+          "endDate": "2022-07-14T13:30:10Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      },
+      {
+        "pointer": "/records/2/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1656940842812-EV-1656940982474",
+        "id": "ocds-b3wdp1-MD-1656940842812-EV-1656940982474-1664268697698",
+        "tag": [
+          "awardUpdate"
+        ],
+        "date": "2022-09-27T08:51:37Z",
+        "tenderPeriod": {
+          "startDate": "2022-07-11T13:30:00Z",
+          "endDate": "2022-07-14T13:30:10Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      }
+    ],
+    "notice_refs": [
+      {
+        "ocid": "ocds-b3wdp1-MD-1656940842812",
+        "pointer": "/records/2/compiledRelease/tender/documents/0",
+        "url": "http://storage.mtender.gov.md/get/e26f9964-a550-4b77-a6fd-7f5786e07dfc-1656940886741",
+        "title": "anunț de participare automobil.semnat.pdf",
+        "datePublished": "2022-07-04T13:23:01Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      }
+    ],
+    "amendment_refs": [],
+    "dump_projections": {
+      "pre_rebuild/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1656940842812",
+          "fetched_at": "2026-09-26T03:58:03Z",
+          "list_date": "2022-09-27T08:51:37Z",
+          "run_id": "scan-20260926T035803Z-e865d3"
+        }
+      ],
+      "pre_rebuild/raw_tenders": [],
+      "pre_rebuild/norm_tenders": [],
+      "pre_rebuild/features_tenders": [],
+      "pre_rebuild/raw_lookups": [],
+      "pre_rebuild/ingest_runs": [],
+      "pre_audit/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1656940842812",
+          "fetched_at": "2026-09-26T03:58:03Z",
+          "list_date": "2022-09-27T08:51:37Z",
+          "record_fetched": true,
+          "n_records": 3,
+          "run_id": "scan-20260926T035803Z-e865d3"
+        }
+      ],
+      "pre_audit/raw_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1656940842812",
+          "fetched_at": "2026-09-26T05:47:18Z",
+          "list_date": "2022-09-27T08:51:37Z",
+          "n_records": 3,
+          "published_date": "2022-07-04T13:20:42Z",
+          "tender_start": "2022-07-01T00:00:00Z",
+          "tender_end": "2022-07-14T13:30:10Z",
+          "procurement_method": "open",
+          "procurement_method_details": "smallValue",
+          "release_dates": [
+            "2022-07-04T13:23:01Z",
+            "2022-07-04T13:23:01Z",
+            "2022-09-27T08:51:37Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ],
+          "run_id": "fetch-20260926T054718Z-942876"
+        }
+      ],
+      "pre_audit/norm_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1656940842812",
+          "list_date": "2022-09-27T08:51:37Z",
+          "n_records": 3,
+          "published_date": "2022-07-04T13:20:42Z",
+          "tender_start": "2022-07-01T00:00:00Z",
+          "tender_end": "2022-07-14T13:30:10Z",
+          "procurement_method": "open",
+          "procurement_method_details": "smallvalue",
+          "release_dates": [
+            "2022-07-04T13:23:01Z",
+            "2022-07-04T13:23:01Z",
+            "2022-09-27T08:51:37Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ]
+        }
+      ],
+      "pre_audit/features_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1656940842812",
+          "list_date": "2022-09-27T08:51:37Z",
+          "n_records": 3,
+          "published_date": "2022-07-04T13:20:42Z",
+          "tender_start": "2022-07-01T00:00:00Z",
+          "tender_end": "2022-07-14T13:30:10Z",
+          "procurement_method": "open",
+          "procurement_method_details": "smallvalue",
+          "release_dates": [
+            "2022-07-04T13:23:01Z",
+            "2022-07-04T13:23:01Z",
+            "2022-09-27T08:51:37Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ],
+          "run_id": "feat-20260926T063359Z-5708b0"
+        }
+      ],
+      "pre_audit/ingest_runs": [],
+      "pre_audit/raw_mof_procedures": []
+    },
+    "derived_JSON_projection": {
+      "ocid": "ocds-b3wdp1-MD-1656940842812",
+      "list_date": null,
+      "published_date": "2022-07-04T13:20:42Z",
+      "tender_start": "2022-07-01T00:00:00Z",
+      "tender_end": "2022-07-14T13:30:10Z",
+      "procurement_method": "open",
+      "procurement_method_details": "smallvalue"
+    },
+    "record_package_is_not_release_history": true
+  },
+  "ocds-b3wdp1-MD-1659961877383": {
+    "package_sha256": "054e5f1a128faba394ffea8629c0d2ccba07f9c37a1bc867fa4fcb570b08841d",
+    "compiled_records": [
+      {
+        "pointer": "/records/0/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1659961877383-PN-1659961877383",
+        "id": "ocds-b3wdp1-MD-1659961877383-PN-1659961877383-1659962391552",
+        "tag": [
+          "planningUpdate"
+        ],
+        "date": "2022-08-08T12:39:50Z",
+        "tenderPeriod": {
+          "startDate": "2022-08-01T00:00:00Z",
+          "endDate": "2022-08-29T08:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      },
+      {
+        "pointer": "/records/1/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1659961877383",
+        "id": "ocds-b3wdp1-MD-1659961877383-1660227337705",
+        "tag": [
+          "compiled"
+        ],
+        "date": "2022-08-11T14:15:37Z",
+        "tenderPeriod": {
+          "startDate": "2022-08-01T00:00:00Z",
+          "endDate": "2022-08-29T08:00:00Z"
+        },
+        "procurementMethod": "open",
+        "procurementMethodDetails": "openTender"
+      },
+      {
+        "pointer": "/records/2/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1659961877383-EV-1659962391382",
+        "id": "ocds-b3wdp1-MD-1659961877383-EV-1659962391382-1669106739437",
+        "tag": [
+          "awardUpdate"
+        ],
+        "date": "2022-11-22T08:45:38Z",
+        "tenderPeriod": {
+          "startDate": "2022-08-19T07:00:00Z",
+          "endDate": "2022-08-29T08:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      }
+    ],
+    "notice_refs": [
+      {
+        "ocid": "ocds-b3wdp1-MD-1659961877383",
+        "pointer": "/records/2/compiledRelease/tender/documents/0",
+        "url": "http://storage.mtender.gov.md/get/8058dec4-4986-4c4a-989f-3f2b9ce6eae2-1659961911249",
+        "title": "anunt_de_participare_construcție_glodeni.signed.signed.signed.pdf",
+        "datePublished": "2022-08-08T12:39:50Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      },
+      {
+        "ocid": "ocds-b3wdp1-MD-1659961877383",
+        "pointer": "/records/2/compiledRelease/tender/documents/5",
+        "url": "http://storage.mtender.gov.md/get/8058dec4-4986-4c4a-989f-3f2b9ce6eae2-1660158659349",
+        "title": "anunt_de_participare_construcție_glodeni.signed.semnat.signed.signed.semnat.pdf",
+        "datePublished": "2022-08-10T19:11:13Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      }
+    ],
+    "amendment_refs": [
+      {
+        "id": "7f2e96c5-a108-4207-8ad9-8d7440fd15de",
+        "date": "2022-08-10T19:11:13Z",
+        "releaseID": "ocds-b3wdp1-MD-1659961877383-EV-1659962391382-1660158674116",
+        "amendsReleaseID": "ocds-b3wdp1-MD-1659961877383-EV-1659962391382-1659962391552",
+        "rationale": "General change of Contract Notice"
+      },
+      {
+        "id": "0421cf25-8032-441f-aad4-a2f94d5f70f6",
+        "date": "2022-08-11T14:15:37Z",
+        "releaseID": "ocds-b3wdp1-MD-1659961877383-EV-1659962391382-1660227337708",
+        "amendsReleaseID": "ocds-b3wdp1-MD-1659961877383-EV-1659962391382-1660158674116",
+        "rationale": "General change of Contract Notice"
+      }
+    ],
+    "dump_projections": {
+      "pre_rebuild/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1659961877383",
+          "fetched_at": "2026-09-26T04:37:56Z",
+          "list_date": "2022-11-22T08:45:38Z",
+          "run_id": "scan-20260926T043756Z-eb13ee"
+        }
+      ],
+      "pre_rebuild/raw_tenders": [],
+      "pre_rebuild/norm_tenders": [],
+      "pre_rebuild/features_tenders": [],
+      "pre_rebuild/raw_lookups": [],
+      "pre_rebuild/ingest_runs": [],
+      "pre_audit/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1659961877383",
+          "fetched_at": "2026-09-26T04:37:56Z",
+          "list_date": "2022-11-22T08:45:38Z",
+          "record_fetched": true,
+          "n_records": 3,
+          "run_id": "scan-20260926T043756Z-eb13ee"
+        }
+      ],
+      "pre_audit/raw_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1659961877383",
+          "fetched_at": "2026-09-26T05:47:18Z",
+          "list_date": "2022-11-22T08:45:38Z",
+          "n_records": 3,
+          "published_date": "2022-08-08T12:31:17Z",
+          "tender_start": "2022-08-01T00:00:00Z",
+          "tender_end": "2022-08-29T08:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "openTender",
+          "release_dates": [
+            "2022-08-08T12:39:50Z",
+            "2022-08-11T14:15:37Z",
+            "2022-11-22T08:45:38Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ],
+          "run_id": "fetch-20260926T054718Z-942876"
+        }
+      ],
+      "pre_audit/norm_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1659961877383",
+          "list_date": "2022-11-22T08:45:38Z",
+          "n_records": 3,
+          "published_date": "2022-08-08T12:31:17Z",
+          "tender_start": "2022-08-01T00:00:00Z",
+          "tender_end": "2022-08-29T08:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "opentender",
+          "release_dates": [
+            "2022-08-08T12:39:50Z",
+            "2022-08-11T14:15:37Z",
+            "2022-11-22T08:45:38Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ]
+        }
+      ],
+      "pre_audit/features_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1659961877383",
+          "list_date": "2022-11-22T08:45:38Z",
+          "n_records": 3,
+          "published_date": "2022-08-08T12:31:17Z",
+          "tender_start": "2022-08-01T00:00:00Z",
+          "tender_end": "2022-08-29T08:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "opentender",
+          "release_dates": [
+            "2022-08-08T12:39:50Z",
+            "2022-08-11T14:15:37Z",
+            "2022-11-22T08:45:38Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ],
+          "run_id": "feat-20260926T063359Z-5708b0"
+        }
+      ],
+      "pre_audit/ingest_runs": [],
+      "pre_audit/raw_mof_procedures": []
+    },
+    "derived_JSON_projection": {
+      "ocid": "ocds-b3wdp1-MD-1659961877383",
+      "list_date": null,
+      "published_date": "2022-08-08T12:31:17Z",
+      "tender_start": "2022-08-01T00:00:00Z",
+      "tender_end": "2022-08-29T08:00:00Z",
+      "procurement_method": "open",
+      "procurement_method_details": "opentender"
+    },
+    "record_package_is_not_release_history": true
+  },
+  "ocds-b3wdp1-MD-1663056980047": {
+    "package_sha256": "b07c369d95d70a62574e04d07bea8e7d0bf3ba46e6eb30a7bc47636a27a50f9d",
+    "compiled_records": [
+      {
+        "pointer": "/records/0/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1663056980047-PN-1663056980047",
+        "id": "ocds-b3wdp1-MD-1663056980047-PN-1663056980047-1663057524154",
+        "tag": [
+          "planningUpdate"
+        ],
+        "date": "2022-09-13T08:25:23Z",
+        "tenderPeriod": {
+          "startDate": "2022-09-01T00:00:00Z",
+          "endDate": "2022-10-03T06:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      },
+      {
+        "pointer": "/records/1/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1663056980047",
+        "id": "ocds-b3wdp1-MD-1663056980047-1664123379207",
+        "tag": [
+          "compiled"
+        ],
+        "date": "2022-09-25T16:29:38Z",
+        "tenderPeriod": {
+          "startDate": "2022-09-01T00:00:00Z",
+          "endDate": "2022-10-03T06:00:00Z"
+        },
+        "procurementMethod": "open",
+        "procurementMethodDetails": "openTender"
+      },
+      {
+        "pointer": "/records/2/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1663056980047-EV-1663057523991",
+        "id": "ocds-b3wdp1-MD-1663056980047-EV-1663057523991-1669041840740",
+        "tag": [
+          "awardUpdate"
+        ],
+        "date": "2022-11-21T14:44:00Z",
+        "tenderPeriod": {
+          "startDate": "2022-09-26T06:00:00Z",
+          "endDate": "2022-10-03T06:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      }
+    ],
+    "notice_refs": [
+      {
+        "ocid": "ocds-b3wdp1-MD-1663056980047",
+        "pointer": "/records/2/compiledRelease/tender/documents/0",
+        "url": "http://storage.mtender.gov.md/get/b747db5c-d37c-4a4a-914f-4eecfb4976e7-1663057160998",
+        "title": "anunt_de_participare.docx",
+        "datePublished": "2022-09-13T08:25:23Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      },
+      {
+        "ocid": "ocds-b3wdp1-MD-1663056980047",
+        "pointer": "/records/2/compiledRelease/tender/documents/4",
+        "url": "http://storage.mtender.gov.md/get/253a805c-8cd9-4187-a0e5-f0a0b36a031a-1663057482050",
+        "title": "anunt_de_participare.docx",
+        "datePublished": "2022-09-13T08:25:23Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      }
+    ],
+    "amendment_refs": [],
+    "dump_projections": {
+      "pre_rebuild/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1663056980047",
+          "fetched_at": "2026-09-26T04:37:56Z",
+          "list_date": "2022-11-21T14:44:00Z",
+          "run_id": "scan-20260926T043756Z-eb13ee"
+        }
+      ],
+      "pre_rebuild/raw_tenders": [],
+      "pre_rebuild/norm_tenders": [],
+      "pre_rebuild/features_tenders": [],
+      "pre_rebuild/raw_lookups": [],
+      "pre_rebuild/ingest_runs": [],
+      "pre_audit/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1663056980047",
+          "fetched_at": "2026-09-26T04:37:56Z",
+          "list_date": "2022-11-21T14:44:00Z",
+          "record_fetched": true,
+          "n_records": 3,
+          "run_id": "scan-20260926T043756Z-eb13ee"
+        }
+      ],
+      "pre_audit/raw_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1663056980047",
+          "fetched_at": "2026-09-26T05:47:18Z",
+          "list_date": "2022-11-21T14:44:00Z",
+          "n_records": 3,
+          "published_date": "2022-09-13T08:16:19Z",
+          "tender_start": "2022-09-01T00:00:00Z",
+          "tender_end": "2022-10-03T06:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "openTender",
+          "release_dates": [
+            "2022-09-13T08:25:23Z",
+            "2022-09-25T16:29:38Z",
+            "2022-11-21T14:44:00Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ],
+          "run_id": "fetch-20260926T054718Z-942876"
+        }
+      ],
+      "pre_audit/norm_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1663056980047",
+          "list_date": "2022-11-21T14:44:00Z",
+          "n_records": 3,
+          "published_date": "2022-09-13T08:16:19Z",
+          "tender_start": "2022-09-01T00:00:00Z",
+          "tender_end": "2022-10-03T06:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "opentender",
+          "release_dates": [
+            "2022-09-13T08:25:23Z",
+            "2022-09-25T16:29:38Z",
+            "2022-11-21T14:44:00Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ]
+        }
+      ],
+      "pre_audit/features_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1663056980047",
+          "list_date": "2022-11-21T14:44:00Z",
+          "n_records": 3,
+          "published_date": "2022-09-13T08:16:19Z",
+          "tender_start": "2022-09-01T00:00:00Z",
+          "tender_end": "2022-10-03T06:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "opentender",
+          "release_dates": [
+            "2022-09-13T08:25:23Z",
+            "2022-09-25T16:29:38Z",
+            "2022-11-21T14:44:00Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ],
+          "run_id": "feat-20260926T063359Z-5708b0"
+        }
+      ],
+      "pre_audit/ingest_runs": [],
+      "pre_audit/raw_mof_procedures": []
+    },
+    "derived_JSON_projection": {
+      "ocid": "ocds-b3wdp1-MD-1663056980047",
+      "list_date": null,
+      "published_date": "2022-09-13T08:16:19Z",
+      "tender_start": "2022-09-01T00:00:00Z",
+      "tender_end": "2022-10-03T06:00:00Z",
+      "procurement_method": "open",
+      "procurement_method_details": "opentender"
+    },
+    "record_package_is_not_release_history": true
+  },
+  "ocds-b3wdp1-MD-1665058207960": {
+    "package_sha256": "39ae1740537adae0a85cd0983532597daebc2187cffd4cf2b79c976d0a50bbd1",
+    "compiled_records": [
+      {
+        "pointer": "/records/0/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1665058207960-PN-1665058207960",
+        "id": "ocds-b3wdp1-MD-1665058207960-PN-1665058207960-1665058802330",
+        "tag": [
+          "planningUpdate"
+        ],
+        "date": "2022-10-06T12:20:01Z",
+        "tenderPeriod": {
+          "startDate": "2022-10-01T00:00:00Z",
+          "endDate": "2022-10-26T11:30:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      },
+      {
+        "pointer": "/records/1/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1665058207960",
+        "id": "ocds-b3wdp1-MD-1665058207960-1665121866626",
+        "tag": [
+          "compiled"
+        ],
+        "date": "2022-10-07T05:51:06Z",
+        "tenderPeriod": {
+          "startDate": "2022-10-01T00:00:00Z",
+          "endDate": "2022-10-26T11:30:00Z"
+        },
+        "procurementMethod": "open",
+        "procurementMethodDetails": "microValue"
+      },
+      {
+        "pointer": "/records/2/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1665058207960-EV-1665058802048",
+        "id": "ocds-b3wdp1-MD-1665058207960-EV-1665058802048-1674552248461",
+        "tag": [
+          "awardUpdate"
+        ],
+        "date": "2023-01-24T09:24:07Z",
+        "tenderPeriod": {
+          "startDate": "2022-10-17T11:30:00Z",
+          "endDate": "2022-10-26T11:30:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      }
+    ],
+    "notice_refs": [
+      {
+        "ocid": "ocds-b3wdp1-MD-1665058207960",
+        "pointer": "/records/2/compiledRelease/tender/documents/0",
+        "url": "http://storage.mtender.gov.md/get/c69f3a33-450c-4983-9424-22419c57f5d9-1665058265894",
+        "title": "anunt_de_participare_lucrari_01_12_2021.signed.pdf",
+        "datePublished": "2022-10-06T12:20:01Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      },
+      {
+        "ocid": "ocds-b3wdp1-MD-1665058207960",
+        "pointer": "/records/2/compiledRelease/tender/documents/4",
+        "url": "http://storage.mtender.gov.md/get/615f1f36-bf61-4eb2-a291-1fad8656d861-1665058606027",
+        "title": "anunt_de_participare_lucrari_01_12_2021.signed.pdf",
+        "datePublished": "2022-10-06T12:20:01Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      },
+      {
+        "ocid": "ocds-b3wdp1-MD-1665058207960",
+        "pointer": "/records/2/compiledRelease/bids/details/0/documents/7",
+        "url": "http://storage.mtender.gov.md/get/0f4f9af6-283f-4a94-917c-ec9ceff89385-1666776841986",
+        "title": "anunt_de_participare_lucrari_01_12_2021.signed.pdf",
+        "datePublished": "2022-10-28T06:50:15Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      }
+    ],
+    "amendment_refs": [
+      {
+        "id": "3f9fc545-490c-480a-b1b3-e1bf26e8ffa4",
+        "date": "2022-10-07T05:51:06Z",
+        "releaseID": "ocds-b3wdp1-MD-1665058207960-EV-1665058802048-1665121866628",
+        "amendsReleaseID": "ocds-b3wdp1-MD-1665058207960-EV-1665058802048-1665080328131",
+        "rationale": "General change of Contract Notice"
+      }
+    ],
+    "dump_projections": {
+      "pre_rebuild/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1665058207960",
+          "fetched_at": "2026-09-26T04:37:56Z",
+          "list_date": "2023-01-24T09:24:07Z",
+          "run_id": "scan-20260926T043756Z-eb13ee"
+        }
+      ],
+      "pre_rebuild/raw_tenders": [],
+      "pre_rebuild/norm_tenders": [],
+      "pre_rebuild/features_tenders": [],
+      "pre_rebuild/raw_lookups": [],
+      "pre_rebuild/ingest_runs": [],
+      "pre_audit/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1665058207960",
+          "fetched_at": "2026-09-26T04:37:56Z",
+          "list_date": "2023-01-24T09:24:07Z",
+          "record_fetched": true,
+          "n_records": 3,
+          "run_id": "scan-20260926T043756Z-eb13ee"
+        }
+      ],
+      "pre_audit/raw_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1665058207960",
+          "fetched_at": "2026-09-26T05:47:18Z",
+          "list_date": "2023-01-24T09:24:07Z",
+          "n_records": 3,
+          "published_date": "2022-10-06T12:10:07Z",
+          "tender_start": "2022-10-01T00:00:00Z",
+          "tender_end": "2022-10-26T11:30:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "microValue",
+          "release_dates": [
+            "2022-10-06T12:20:01Z",
+            "2022-10-07T05:51:06Z",
+            "2023-01-24T09:24:07Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ],
+          "run_id": "fetch-20260926T054718Z-942876"
+        }
+      ],
+      "pre_audit/norm_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1665058207960",
+          "list_date": "2023-01-24T09:24:07Z",
+          "n_records": 3,
+          "published_date": "2022-10-06T12:10:07Z",
+          "tender_start": "2022-10-01T00:00:00Z",
+          "tender_end": "2022-10-26T11:30:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "microvalue",
+          "release_dates": [
+            "2022-10-06T12:20:01Z",
+            "2022-10-07T05:51:06Z",
+            "2023-01-24T09:24:07Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ]
+        }
+      ],
+      "pre_audit/features_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1665058207960",
+          "list_date": "2023-01-24T09:24:07Z",
+          "n_records": 3,
+          "published_date": "2022-10-06T12:10:07Z",
+          "tender_start": "2022-10-01T00:00:00Z",
+          "tender_end": "2022-10-26T11:30:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "microvalue",
+          "release_dates": [
+            "2022-10-06T12:20:01Z",
+            "2022-10-07T05:51:06Z",
+            "2023-01-24T09:24:07Z"
+          ],
+          "release_tags": [
+            "planningUpdate",
+            "compiled",
+            "awardUpdate"
+          ],
+          "run_id": "feat-20260926T063359Z-5708b0"
+        }
+      ],
+      "pre_audit/ingest_runs": [],
+      "pre_audit/raw_mof_procedures": []
+    },
+    "derived_JSON_projection": {
+      "ocid": "ocds-b3wdp1-MD-1665058207960",
+      "list_date": null,
+      "published_date": "2022-10-06T12:10:07Z",
+      "tender_start": "2022-10-01T00:00:00Z",
+      "tender_end": "2022-10-26T11:30:00Z",
+      "procurement_method": "open",
+      "procurement_method_details": "microvalue"
+    },
+    "record_package_is_not_release_history": true
+  },
+  "ocds-b3wdp1-MD-1685970121601": {
+    "package_sha256": "380b60b3b641e6bc9daa676b6d2c96cfe9ad5992bd9edddc055fdb7deb1f4b12",
+    "compiled_records": [
+      {
+        "pointer": "/records/0/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1685970121601",
+        "id": "ocds-b3wdp1-MD-1685970121601-1685970549629",
+        "tag": [
+          "compiled"
+        ],
+        "date": "2023-06-05T13:09:08Z",
+        "tenderPeriod": {
+          "startDate": "2023-06-01T00:00:00Z",
+          "endDate": "2023-06-19T06:00:00Z"
+        },
+        "procurementMethod": "open",
+        "procurementMethodDetails": "smallValue"
+      },
+      {
+        "pointer": "/records/1/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1685970121601-PN-1685970121601",
+        "id": "ocds-b3wdp1-MD-1685970121601-PN-1685970121601-1685970549630",
+        "tag": [
+          "planningUpdate"
+        ],
+        "date": "2023-06-05T13:09:08Z",
+        "tenderPeriod": {
+          "startDate": "2023-06-01T00:00:00Z",
+          "endDate": "2023-06-19T06:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      },
+      {
+        "pointer": "/records/2/compiledRelease",
+        "ocid": "ocds-b3wdp1-MD-1685970121601-EV-1685970549411",
+        "id": "ocds-b3wdp1-MD-1685970121601-EV-1685970549411-1690273491537",
+        "tag": [
+          "awardUpdate"
+        ],
+        "date": "2023-07-25T08:24:50Z",
+        "tenderPeriod": {
+          "startDate": "2023-06-10T13:30:00Z",
+          "endDate": "2023-06-19T06:00:00Z"
+        },
+        "procurementMethod": null,
+        "procurementMethodDetails": null
+      }
+    ],
+    "notice_refs": [
+      {
+        "ocid": "ocds-b3wdp1-MD-1685970121601",
+        "pointer": "/records/2/compiledRelease/tender/documents/0",
+        "url": "http://storage.mtender.gov.md/get/fb3f60bd-7b8c-47b4-ac9a-dd9b53e41c28-1685970348833",
+        "title": "1 anunț de participare.pdf",
+        "datePublished": "2023-06-05T13:09:08Z",
+        "dateModified": null,
+        "local_cached_body": 0
+      }
+    ],
+    "amendment_refs": [],
+    "dump_projections": {
+      "pre_rebuild/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1685970121601",
+          "fetched_at": "2026-09-26T04:37:56Z",
+          "list_date": "2023-07-25T08:24:50Z",
+          "run_id": "scan-20260926T043756Z-eb13ee"
+        }
+      ],
+      "pre_rebuild/raw_tenders": [],
+      "pre_rebuild/norm_tenders": [],
+      "pre_rebuild/features_tenders": [],
+      "pre_rebuild/raw_lookups": [],
+      "pre_rebuild/ingest_runs": [],
+      "pre_audit/raw_releases": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1685970121601",
+          "fetched_at": "2026-09-26T04:37:56Z",
+          "list_date": "2023-07-25T08:24:50Z",
+          "record_fetched": true,
+          "n_records": 3,
+          "run_id": "scan-20260926T043756Z-eb13ee"
+        }
+      ],
+      "pre_audit/raw_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1685970121601",
+          "fetched_at": "2026-09-26T05:47:18Z",
+          "list_date": "2023-07-25T08:24:50Z",
+          "n_records": 3,
+          "published_date": "2023-06-05T13:02:01Z",
+          "tender_start": "2023-06-01T00:00:00Z",
+          "tender_end": "2023-06-19T06:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "smallValue",
+          "release_dates": [
+            "2023-06-05T13:09:08Z",
+            "2023-06-05T13:09:08Z",
+            "2023-07-25T08:24:50Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ],
+          "run_id": "fetch-20260926T054718Z-942876"
+        }
+      ],
+      "pre_audit/norm_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1685970121601",
+          "list_date": "2023-07-25T08:24:50Z",
+          "n_records": 3,
+          "published_date": "2023-06-05T13:02:01Z",
+          "tender_start": "2023-06-01T00:00:00Z",
+          "tender_end": "2023-06-19T06:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "smallvalue",
+          "release_dates": [
+            "2023-06-05T13:09:08Z",
+            "2023-06-05T13:09:08Z",
+            "2023-07-25T08:24:50Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ]
+        }
+      ],
+      "pre_audit/features_tenders": [
+        {
+          "ocid": "ocds-b3wdp1-MD-1685970121601",
+          "list_date": "2023-07-25T08:24:50Z",
+          "n_records": 3,
+          "published_date": "2023-06-05T13:02:01Z",
+          "tender_start": "2023-06-01T00:00:00Z",
+          "tender_end": "2023-06-19T06:00:00Z",
+          "procurement_method": "open",
+          "procurement_method_details": "smallvalue",
+          "release_dates": [
+            "2023-06-05T13:09:08Z",
+            "2023-06-05T13:09:08Z",
+            "2023-07-25T08:24:50Z"
+          ],
+          "release_tags": [
+            "compiled",
+            "planningUpdate",
+            "awardUpdate"
+          ],
+          "run_id": "feat-20260926T063359Z-5708b0"
+        }
+      ],
+      "pre_audit/ingest_runs": [],
+      "pre_audit/raw_mof_procedures": []
+    },
+    "derived_JSON_projection": {
+      "ocid": "ocds-b3wdp1-MD-1685970121601",
+      "list_date": null,
+      "published_date": "2023-06-05T13:02:01Z",
+      "tender_start": "2023-06-01T00:00:00Z",
+      "tender_end": "2023-06-19T06:00:00Z",
+      "procurement_method": "open",
+      "procurement_method_details": "smallvalue"
+    },
+    "record_package_is_not_release_history": true
+  }
+}
