@@ -1,0 +1,16 @@
+ocid,ansc_upheld,source_dataset,source_decision_id,n_source_URL_rows,n_complaints,complaint_confirmed,review_type,exact_join_available,publication_date,buyer_id,publication_features_certified,eligible_for_temporal_test,canonical_status
+ocds-b3wdp1-MD-1544104748471,0,MTA-0019,,1,1,0,human_confirmed_assisted_review,1,2018-12-06T13:59:08Z,MD-IDNO-1007601010600,0,0,source_OCID_unchanged
+ocds-b3wdp1-MD-1563452870963,1,MTA-0019,,1,1,1,human_confirmed_assisted_review,1,2019-07-18T12:27:50Z,MD-IDNO-1007601010448,0,0,source_OCID_unchanged
+ocds-b3wdp1-MD-1586171621901-PN-1586171621936,0,MTA-0019,03D-541-20,3,1,1,human_confirmed_assisted_review,0,,,0,0,PN_alias_unapplied
+ocds-b3wdp1-MD-1601638627306,1,MTA-0019,03D-884-20,1,1,0,human_confirmed_assisted_review,1,2020-10-02T11:37:06Z,MD-IDNO-1003602150710,0,0,source_OCID_unchanged
+ocds-b3wdp1-MD-1613458828224,1,MTA-0019,03D-191-21,1,1,1,human_confirmed_assisted_review,1,2021-02-16T07:00:28Z,MD-IDNO-1007601010747,0,0,source_OCID_unchanged
+ocds-b3wdp1-MD-1621581646618,0,MTA-0019,03D-419-18;03D-522-21,1,1,1,human_confirmed_assisted_review,1,2021-05-21T07:20:46Z,MD-IDNO-1015601000259,0,0,source_OCID_unchanged
+ocds-b3wdp1-MD-1627472408649,1,MTA-0019,03D-696-21,1,1,1,human_confirmed_assisted_review,1,2021-07-28T11:40:08Z,MD-IDNO-1007601009565,0,0,source_OCID_unchanged
+ocds-b3wdp1-MD-1656940842812,1,MTA-0019,03D-574-22,1,1,1,human_confirmed_assisted_review,1,2022-07-04T13:20:42Z,MD-IDNO-1007601009369,0,0,source_OCID_unchanged
+ocds-b3wdp1-MD-1665058207960,1,MTA-0019,03D-824-22,1,1,1,human_confirmed_assisted_review,1,2022-10-06T12:10:07Z,MD-IDNO-1007601009705,0,0,source_OCID_unchanged
+ocds-b3wdp1-MD-1644854422949,0,MTA-0021,03D-166-22,1,1,1,targeted_assisted_review,1,2022-02-14T16:00:22Z,MD-IDNO-1003600163408,0,0,exact_raw_parent_and_feature_OCID
+ocds-b3wdp1-MD-1644995653154,0,MTA-0021,03D-181-22,1,1,1,targeted_assisted_review,1,2022-02-16T07:14:12Z,MD-IDNO-1007601009886,0,0,exact_raw_parent_and_feature_OCID
+ocds-b3wdp1-MD-1649084017389,0,MTA-0021,03D-336-22,1,1,1,targeted_assisted_review,1,2022-04-04T14:53:37Z,MD-IDNO-1007601009093,0,0,exact_raw_parent_and_feature_OCID
+ocds-b3wdp1-MD-1659961877383,0,MTA-0021,03D-771-22,1,2,1,targeted_assisted_review,1,2022-08-08T12:31:17Z,MD-IDNO-1007600042792,0,0,exact_raw_parent_and_feature_OCID
+ocds-b3wdp1-MD-1663056980047,0,MTA-0021,03D-739-22,1,2,1,targeted_assisted_review,1,2022-09-13T08:16:19Z,MD-IDNO-1003600153131,0,0,exact_raw_parent_and_feature_OCID
+ocds-b3wdp1-MD-1685970121601,0,MTA-0021,03D-477-23,1,1,1,targeted_assisted_review,1,2023-06-05T13:02:01Z,MD-IDNO-1007601004434,0,0,exact_raw_parent_and_feature_OCID
