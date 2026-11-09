@@ -1,0 +1,22 @@
+{
+  "publication_safe_features": [
+    "bid_window_days",
+    "short_deadline",
+    "long_deadline",
+    "accelerated_like"
+  ],
+  "candidate_buyers": 23,
+  "negative_candidate_buyers": 6,
+  "strata": {
+    "2022|admitted": 9,
+    "2022|partially_admitted": 3,
+    "2022|rejected": 5,
+    "2023|admitted": 6,
+    "2023|mixed": 1,
+    "2023|partially_admitted": 1,
+    "2023|rejected": 1
+  },
+  "raw_packages": 26,
+  "embedded_notice_histories": 0,
+  "certified_publication_snapshots": 0
+}

@@ -1,0 +1,2 @@
+review_row,source_ocid,proposed_feature_ocid,evidence_file,evidence_sha256,evidence,status
+8,ocds-b3wdp1-MD-1586171621901-PN-1586171621936,ocds-b3wdp1-MD-1586171621901,/Users/imustyk/Diplom/data/raw/ocds_packages/ocds-b3wdp1-MD-1586171621901.json.gz,9d8cb7d624d997c9ca024b3545cd8747f1f2ebb0a63da0e28f822ea2d6119b12,mutual parent/planning relatedProcesses; evaluation record shares tender.id and all three decision URLs,PRIMARY_LOCAL_LINK_EVIDENCE_FOUND_NOT_APPLIED

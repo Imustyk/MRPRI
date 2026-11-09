@@ -1,0 +1,11 @@
+{
+  "data/external/ansc_manual_review_50.csv": "31c613c4f3cdb2410ebc8faf0847f993e23d5ec41a3224b0941997daa8ff7682",
+  "data/external/ansc_manual_review_pilot10.csv": "e4850d080e29dc182303e5d480271f528865425aa722b15c5c1d572ebf7203e2",
+  "data/external/ansc_complaint_level_review.csv": "5cd8c19702df2469a118354b2235598ee301f1e207dfa9799a15928a3c3ab35b",
+  "data/external/ansc_review_sample_50.csv": "4cad197f4eb133263a3c8dd0d22ffbb2d2bb2e15529a0a2f13d1c66abab43ee8",
+  "data/external/ansc_upheld_labels.csv": "d0e84a520493a02664647d3cf6a2ae71a38ae000a210cc3eda0e4ca1058356d3",
+  "data/features/features.csv": "9e26782375476571ea770935582c3cee1c286f71cde4ad97ec96d81d3d8d92f7",
+  "results/tables/ansc_decision_inventory.csv": "2597d6fbb0e83a6a850c6573ab885752c4c6b70cd491e8c07da15fe3d5dc13e5",
+  "results/methodology/ansc_decision_inventory.json": "1606c517d68a5ad40f64cf74ed8664bb16a3511800ef0557940c7863a16395f1",
+  "data/raw/ocds_packages/ocds-b3wdp1-MD-1586171621901.json.gz": "9d8cb7d624d997c9ca024b3545cd8747f1f2ebb0a63da0e28f822ea2d6119b12"
+}
