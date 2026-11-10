@@ -36,11 +36,11 @@ import { tr } from "../i18n/backendMap";
 
 const BAND_ORDER: RiskLevel[] = ["critical", "high", "medium", "low", "unscored"];
 const BAND_FILL: Record<string, string> = {
-  critical: "#b4232c",
-  high: "#c2661f",
-  medium: "#c9a02e",
-  low: "#2a6b4a",
-  unscored: "#c3c8cf",
+  critical: "var(--band-critical)",
+  high: "var(--band-high)",
+  medium: "var(--band-medium)",
+  low: "var(--band-low)",
+  unscored: "var(--band-unscored)",
 };
 
 export default function Overview() {
@@ -283,11 +283,11 @@ export default function Overview() {
                 <div role="img" aria-label={t("overview.monthly_line_a11y")}>
                   <ResponsiveContainer width="100%" height={230}>
                     <LineChart data={months} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
-                      <CartesianGrid stroke="#ededf0" vertical={false} />
-                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#626269" }} tickLine={false} axisLine={false} minTickGap={30} />
-                      <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "#626269" }} tickLine={false} axisLine={false} width={40} />
+                      <CartesianGrid stroke="var(--line-soft)" vertical={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} minTickGap={30} />
+                      <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} width={40} />
                       <Tooltip formatter={(value: number | string) => [num1(Number(value)), t("overview.monthly_mean")]} labelFormatter={(label) => String(label)} />
-                      <Line type="linear" dataKey="avg_risk" stroke="#0071e3" strokeWidth={2} dot={false} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
+                      <Line type="linear" dataKey="avg_risk" stroke="var(--navy-soft)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -300,12 +300,12 @@ export default function Overview() {
               <div role="img" aria-label={t("overview.monthly_bar_a11y")}>
                 <ResponsiveContainer width="100%" height={150}>
                   <BarChart data={months} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
-                    <CartesianGrid stroke="#ededf0" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#626269" }} tickLine={false} axisLine={false} minTickGap={30} />
-                    <YAxis tick={{ fontSize: 10, fill: "#626269" }} tickLine={false} axisLine={false} width={54} allowDecimals={false} />
+                    <CartesianGrid stroke="var(--line-soft)" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} minTickGap={30} />
+                    <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} width={54} allowDecimals={false} />
                     <Tooltip formatter={(value: number | string, name: string) => [int(Number(value)), t(name === "n_scored" ? "overview.monthly_scored" : "overview.monthly_unscored")]} />
-                    <Bar dataKey="n_scored" stackId="coverage" fill="#0071e3" isAnimationActive={false} />
-                    <Bar dataKey="n_unscored" stackId="coverage" fill="#b9c0cd" isAnimationActive={false} />
+                    <Bar dataKey="n_scored" stackId="coverage" fill="var(--navy-soft)" isAnimationActive={false} />
+                    <Bar dataKey="n_unscored" stackId="coverage" fill="var(--chart-neutral)" isAnimationActive={false} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -332,16 +332,16 @@ export default function Overview() {
           ) : (
             <ResponsiveContainer width="100%" height={244}>
               <BarChart data={bandData} margin={{ top: 6, right: 8, bottom: 4, left: 0 }}>
-                <CartesianGrid stroke="#eee6d8" vertical={false} />
+                <CartesianGrid stroke="var(--line-soft)" vertical={false} />
                 <XAxis
                   dataKey="level"
-                  tick={{ fontSize: 11, fill: "#5c6673" }}
+                  tick={{ fontSize: 11, fill: "var(--muted)" }}
                   tickLine={false}
-                  axisLine={{ stroke: "#d9d0c0" }}
+                  axisLine={{ stroke: "var(--line)" }}
                   tickFormatter={(v: string) => t(`risk.${v}`)}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#5c6673" }}
+                  tick={{ fontSize: 11, fill: "var(--muted)" }}
                   tickLine={false}
                   axisLine={false}
                   width={60}

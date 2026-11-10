@@ -14,6 +14,12 @@ const Workspace = lazy(() => import("./pages/Workspace"));
 const Method = lazy(() => import("./pages/Method"));
 const Kpis = lazy(() => import("./pages/Kpis"));
 const Raci = lazy(() => import("./pages/Raci"));
+// Dev-only: isolated-fixture verification page. The `import.meta.env.DEV`
+// guard is statically false in a production build, so neither the route nor
+// the chunk survives bundling.
+const ModelCardFixture = import.meta.env.DEV
+  ? lazy(() => import("./pages/ModelCardFixture"))
+  : null;
 const ICONS: Record<string, string> = {
   "/": "M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z",
   "/tenders": "M8 3h8l4 4v14H4V3h4 M8 11h8 M8 16h6",
@@ -125,7 +131,9 @@ export default function App() {
         <Route path="/" element={<Overview />} /><Route path="/tenders" element={<Tenders />} /><Route path="/tenders/:id" element={<TenderDetail />} />
         <Route path="/models" element={<ResearchAnalysis />} /><Route path="/indicators" element={<ResearchAnalysis mode="indicators" />} />
         <Route path="/distributions" element={<Distributions />} /><Route path="/network" element={<Network />} /><Route path="/workspace" element={<Workspace />} />
-        <Route path="/method" element={<Method />} /><Route path="/kpis" element={<Kpis />} /><Route path="/raci" element={<Raci />} /><Route path="*" element={<NotFound />} />
+        <Route path="/method" element={<Method />} /><Route path="/kpis" element={<Kpis />} /><Route path="/raci" element={<Raci />} />
+        {ModelCardFixture && <Route path="/__fixture/model-card" element={<ModelCardFixture />} />}
+        <Route path="*" element={<NotFound />} />
       </Routes></Suspense></main>
       <footer className="app-footer">{t("analysis.disclaimer")}</footer>
     </div>

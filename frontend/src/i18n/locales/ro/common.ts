@@ -58,6 +58,11 @@ const ro: typeof en = {
     table_scrollable: "Tabel de date, derulabil",
     empty_value: "—",
     open_mtender: "Deschide pe MTender",
+    // Screen-reader announcements for the shared request panel.
+    results_loading: "Se încarcă rezultatele pentru {{params}}.",
+    results_updating: "Se actualizează. Sunt afișate rezultatele pentru {{shown}}, se așteaptă {{waiting}}.",
+    results_ready: "Rezultate gata pentru {{params}}.",
+    stale_marker: "Se actualizează — valorile afișate sunt încă pentru {{shown}}; se așteaptă {{waiting}}.",
   },
   risk: {
     unscored: "neevaluat",
@@ -96,6 +101,13 @@ const ro: typeof en = {
     empty_body: "API-ul a returnat un corp gol pentru {{url}} (HTTP {{status}}).",
     malformed_body: "API-ul a returnat un corp incorect pentru {{url}}.",
     bad_json: "Conținutul nu este JSON valid: {{err}}",
+  },
+  fixture: {
+    title: "Fixture ale cardului de model (date de test izolate)",
+    lede:
+      "Detectoare sintetice pentru verificarea stărilor histogramului: marcajul scorului, marcajul pragului hașurat, ambele în același interval, numărătoare zero și scor lipsă.",
+    notice:
+      "Această rută există doar în build-ul de dezvoltare și nu este legată din navigarea produsului. Cifrele de mai jos nu sunt măsurători din datasetul servit.",
   },
 };
 

@@ -11,7 +11,23 @@ export default function ResearchAnalysis({ mode = "models" }: { mode?: "models" 
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const id = params.get("tender") ?? "";
-  const select = useCallback((value: string) => setParams({ tender: value }, { replace: true }), [setParams]);
+  // replace: picking a procedure narrows the current view, it is not a step in
+  // history — Back leaves the page instead of replaying every selection. Other
+  // query parameters (e.g. a carried-over search) are kept intact.
+  const select = useCallback(
+    (value: string) => {
+      setParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (value) next.set("tender", value);
+          else next.delete("tender");
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setParams],
+  );
   const data = useProcedureData(id);
   return <div className="research-page">
     <PageHead kicker={t("analysis.platform")} title={t(mode === "models" ? "analysis.models_title" : "analysis.indicators_title")} lede={t(mode === "models" ? "analysis.models_intro" : "analysis.indicators_intro")} />

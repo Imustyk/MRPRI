@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { tr } from "./i18n/backendMap";
 import type { RiskLevel } from "./api";
+import type { RequestState } from "./hooks";
 
 /** Shared page title block so every route opens with the same rhythm. */
 export function PageHead({
@@ -96,6 +97,85 @@ export function Empty({
       {hint && <p className="muted">{hint}</p>}
       {action}
     </div>
+  );
+}
+
+/**
+ * The five analytics requests share one state machine so every panel answers the
+ * same questions: loading (with a live-region announcement), success, empty and
+ * error — and a result loaded for *other* parameters is only ever shown behind
+ * an explicit "updating" marker that names the parameters it belongs to.
+ */
+export function RequestPanel<T>({
+  state,
+  describe = (key: string) => key,
+  isEmpty,
+  pending,
+  loadingLabel,
+  emptyTitle,
+  emptyHint,
+  emptyAction,
+  children,
+}: {
+  state: RequestState<T>;
+  /** Human label for a parameter key (used in the stale marker and announcements). */
+  describe?: (key: string) => string;
+  isEmpty?: (data: T) => boolean;
+  /** Node while loading with nothing on hand; defaults to the shared spinner. */
+  pending?: ReactNode;
+  loadingLabel?: string;
+  emptyTitle?: string;
+  emptyHint?: string;
+  emptyAction?: ReactNode;
+  children: (data: T) => ReactNode;
+}) {
+  const { t } = useTranslation();
+  // One persistent polite live region: its text changes as the request moves
+  // through loading → updating → done, so a screen reader hears each phase.
+  const announcement = state.error
+    ? ""
+    : state.loading && state.data === null
+      ? t("common.results_loading", { params: describe(state.key) })
+      : state.stale
+        ? t("common.results_updating", {
+            shown: describe(state.dataKey ?? ""),
+            waiting: describe(state.key),
+          })
+        : state.data !== null
+          ? t("common.results_ready", { params: describe(state.dataKey ?? state.key) })
+          : "";
+
+  if (state.error !== null) {
+    return (
+      <>
+        <div role="status" aria-live="polite" className="visually-hidden">{announcement}</div>
+        <ErrorNote error={state.error} onRetry={state.reload} />
+      </>
+    );
+  }
+  if (state.data === null) {
+    return (
+      <>
+        <div role="status" aria-live="polite" className="visually-hidden">{announcement}</div>
+        {state.loading ? pending ?? <Loading label={loadingLabel} /> : null}
+      </>
+    );
+  }
+  const empty = isEmpty?.(state.data) ?? false;
+  return (
+    <>
+      <div role="status" aria-live="polite" className="visually-hidden">{announcement}</div>
+      {state.stale && (
+        <div className="stale-note" role="status">
+          <span className="spinner" aria-hidden="true" />
+          {t("common.stale_marker", {
+            shown: describe(state.dataKey ?? ""),
+            waiting: describe(state.key),
+          })}
+        </div>
+      )}
+      {empty ? <Empty title={emptyTitle ?? t("common.none")} hint={emptyHint} action={emptyAction} /> : children(state.data)}
+    </>
   );
 }
 
@@ -363,10 +443,18 @@ export function MiniStats({
   );
 }
 
-/** Colour scale for a correlation cell: teal for negative, gold for positive. */
+/**
+ * Colour scale for a correlation cell: teal for negative, gold for positive.
+ *
+ * The ramp comes from semantic tokens (`--chart-teal` / `--chart-gold`) so the
+ * same function works in both themes without post-hoc CSS overrides of
+ * Recharts internals; ``color-mix`` keeps it a plain SVG/CSS colour string.
+ */
 export function corrColor(v: number | null, max = 1): string {
   if (v === null || Number.isNaN(v)) return "var(--surface-secondary)";
   const t = Math.min(Math.abs(v) / max, 1);
-  const alpha = 0.1 + 0.3 * t;
-  return v >= 0 ? `rgba(184,137,42,${alpha.toFixed(3)})` : `rgba(42,127,143,${alpha.toFixed(3)})`;
+  const share = Math.round((0.1 + 0.3 * t) * 100);
+  return v >= 0
+    ? `color-mix(in srgb, var(--chart-gold) ${share}%, transparent)`
+    : `color-mix(in srgb, var(--chart-teal) ${share}%, transparent)`;
 }

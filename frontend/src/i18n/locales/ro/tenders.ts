@@ -36,6 +36,7 @@ const tenders: typeof en = {
   prev: "Înapoi",
   next: "Următor",
   of: "din",
+  params_desc: "Pagina {{page}} · {{filters}}",
 };
 
 export default tenders;

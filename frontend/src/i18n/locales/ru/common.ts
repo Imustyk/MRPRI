@@ -58,6 +58,11 @@ const ru: typeof en = {
     table_scrollable: "Таблица данных, прокручиваемая",
     empty_value: "—",
     open_mtender: "Открыть на MTender",
+    // Screen-reader announcements for the shared request panel.
+    results_loading: "Загрузка результатов: {{params}}.",
+    results_updating: "Обновление. Показаны результаты за {{shown}}, ожидание {{waiting}}.",
+    results_ready: "Результаты готовы: {{params}}.",
+    stale_marker: "Обновление — показанные значения ещё относятся к {{shown}}; ожидание {{waiting}}.",
   },
   risk: {
     unscored: "не оценено",
@@ -96,6 +101,13 @@ const ru: typeof en = {
     empty_body: "API вернуло пустое тело для {{url}} (HTTP {{status}}).",
     malformed_body: "API вернуло некорректное тело для {{url}}.",
     bad_json: "Payload не является корректным JSON: {{err}}",
+  },
+  fixture: {
+    title: "Фикстуры карточки модели (изолированные тестовые данные)",
+    lede:
+      "Синтетические детекторы для проверки состояний гистограммы: отметка score, штрихованная отметка границы, обе в одном интервале, нулевые счётчики и отсутствующий score.",
+    notice:
+      "Маршрут существует только в dev-сборке и не связан из навигации продукта. Приведённые числа — не измерения из обслуживаемого датасета.",
   },
 };
 

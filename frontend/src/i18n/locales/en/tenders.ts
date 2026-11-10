@@ -35,6 +35,7 @@ const tenders = {
   prev: "Previous",
   next: "Next",
   of: "of",
+  params_desc: "Page {{page}} · {{filters}}",
 };
 
 export default tenders;
