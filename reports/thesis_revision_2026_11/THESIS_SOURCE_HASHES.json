@@ -1,0 +1,733 @@
+[
+  {
+    "source_id": "A01",
+    "kind": "academic_input",
+    "name": "30 duae.signed (1).pdf",
+    "path": "/Users/imustyk/Desktop/Diplom/темы/30 duae.signed (1).pdf",
+    "bytes": 1032987,
+    "sha256": "7f9997dbf500a6eb48739368ce9bc45fc2c344d160062cef209085b8a12583d4"
+  },
+  {
+    "source_id": "A02",
+    "kind": "academic_input",
+    "name": "30 duae.signed.pdf",
+    "path": "/Users/imustyk/Desktop/Diplom/темы/30 duae.signed.pdf",
+    "bytes": 1032987,
+    "sha256": "7f9997dbf500a6eb48739368ce9bc45fc2c344d160062cef209085b8a12583d4"
+  },
+  {
+    "source_id": "A03",
+    "kind": "academic_input",
+    "name": "glava1-full-draft.md",
+    "path": "/Users/imustyk/Desktop/Diplom/темы/glava1-full-draft.md",
+    "bytes": 23892,
+    "sha256": "12ab1df88ae3c8461e30017c986cab2e1946b1673c273052583ab2b07567d4e1"
+  },
+  {
+    "source_id": "A04",
+    "kind": "academic_input",
+    "name": "glava2-2.2-2.3-glava3-3.5-draft.md.pdf",
+    "path": "/Users/imustyk/Desktop/Diplom/темы/glava2-2.2-2.3-glava3-3.5-draft.md.pdf",
+    "bytes": 351047,
+    "sha256": "9cc530aa8da078e1314292f04a884e08642d36f14098273d61f6e39aaf8f8bdd"
+  },
+  {
+    "source_id": "A05",
+    "kind": "academic_input",
+    "name": "Диссертация_MTender_аномалии.docx",
+    "path": "/Users/imustyk/Desktop/Diplom/темы/Диссертация_MTender_аномалии.docx",
+    "bytes": 68992,
+    "sha256": "404c0a5c7a542e2b3a682d653986ecbd93931a8a316621bbc39f675a30641864",
+    "extracted_chars": 57352
+  },
+  {
+    "source_id": "A06",
+    "kind": "academic_input",
+    "name": "Отчет_MTender_ИИ.docx",
+    "path": "/Users/imustyk/Desktop/Diplom/темы/Отчет_MTender_ИИ.docx",
+    "bytes": 77483,
+    "sha256": "228efbaafc43e90b2a688647ff7557746f8fdc778c22488b21a2dcdb4b00b163",
+    "extracted_chars": 56115
+  },
+  {
+    "source_id": "A07",
+    "kind": "academic_input",
+    "name": "Предложение_темы_магистерской_диссертации_MTender_для_научного_руководителя.docx",
+    "path": "/Users/imustyk/Desktop/Diplom/темы/Предложение_темы_магистерской_диссертации_MTender_для_научного_руководителя.docx",
+    "bytes": 42839,
+    "sha256": "b7fd18d7f821e87baae84377eb4d9f082193e0c7ed32a91fb2c0f02506595a25",
+    "extracted_chars": 11403
+  },
+  {
+    "source_id": "A08",
+    "kind": "academic_input",
+    "name": "Тема_магистерской_диссертации_MTender.docx",
+    "path": "/Users/imustyk/Desktop/Diplom/темы/Тема_магистерской_диссертации_MTender.docx",
+    "bytes": 21414,
+    "sha256": "cba5cf25fdbb442cc0e96cd1c6705907878eaec08af57608602834227cfc9b69",
+    "extracted_chars": 8969
+  },
+  {
+    "source_id": "A09",
+    "kind": "academic_input",
+    "name": "Темы_магистерской_диссертации.docx",
+    "path": "/Users/imustyk/Desktop/Diplom/темы/Темы_магистерской_диссертации.docx",
+    "bytes": 11649,
+    "sha256": "486ebe8f998374554521ade7cdfdbb81a09ff80b575514f40a0bbf93cefc703c",
+    "extracted_chars": 3852
+  },
+  {
+    "source_id": "README",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/README.md",
+    "name": "README.md",
+    "bytes": 26344,
+    "sha256": "ce9a48b7f9de7e5d594755248a539ee856d37bda43327c5ec7a8768a423eb728"
+  },
+  {
+    "source_id": "CODE-F",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/src/mtender/features.py",
+    "name": "features.py",
+    "bytes": 10207,
+    "sha256": "dc86fdac9f6a0e202c1e3a0803b7acd5029d41dd032233b06362c1c4797c0970"
+  },
+  {
+    "source_id": "CODE-O",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/src/mtender/ocds.py",
+    "name": "ocds.py",
+    "bytes": 19624,
+    "sha256": "843239902419d55486619232ab07a97811e9f49a2501199d6f1b2b99285aaadb"
+  },
+  {
+    "source_id": "CODE-N",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/src/mtender/normalize.py",
+    "name": "normalize.py",
+    "bytes": 14627,
+    "sha256": "0130a2764c40b205b09311aaa2b4339348061fcb296a4b2677032c2b64f6ca32"
+  },
+  {
+    "source_id": "CODE-STAGE",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/src/mtender/stage_features.py",
+    "name": "stage_features.py",
+    "bytes": 13745,
+    "sha256": "34a8e2bc245d2991c0e120661e3f79ef195db40ca120372a111c2ab03db6be02"
+  },
+  {
+    "source_id": "CODE-RISK",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/src/mtender/risk_modules.py",
+    "name": "risk_modules.py",
+    "bytes": 29665,
+    "sha256": "e7b8f37c0a1dc2c9253d64d4e93ef1b8121d5207dad8865c1bb1126c062d8145"
+  },
+  {
+    "source_id": "CODE-RAG",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/src/mtender/rag.py",
+    "name": "rag.py",
+    "bytes": 16534,
+    "sha256": "8cf54000b933d44bdadf6e2d8e94e89a9ecdac2f10b5d410313024050f1b4e7e"
+  },
+  {
+    "source_id": "CODE-METRICS",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/src/mtender/eval_metrics.py",
+    "name": "eval_metrics.py",
+    "bytes": 7584,
+    "sha256": "b12c0f7c6df71ac68df3e4cebd0d250c1019851d39d0a0f22d97044c9bf96c19"
+  },
+  {
+    "source_id": "CODE-INGEST",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/01b_fetch_records.py",
+    "name": "01b_fetch_records.py",
+    "bytes": 12594,
+    "sha256": "e9af451a4cf6e1ed19a812bb0ce527ab0afd54162589f5cb1f0bf8e397072148"
+  },
+  {
+    "source_id": "CODE-SCAN",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/01a_scan_ocids.py",
+    "name": "01a_scan_ocids.py",
+    "bytes": 5885,
+    "sha256": "da7646074e90d9ac75f8dfde8f206b6b609e20bda537304babaa4739e7679d0b"
+  },
+  {
+    "source_id": "CODE-NORM",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/02_normalize_mongo.py",
+    "name": "02_normalize_mongo.py",
+    "bytes": 5307,
+    "sha256": "fcbbb971742b9654e8120042392ab7d5e56a06909772ac303d2c31aab384a8fc"
+  },
+  {
+    "source_id": "CODE-FE",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/03_features_mongo.py",
+    "name": "03_features_mongo.py",
+    "bytes": 8954,
+    "sha256": "b816d8398d1817f9976bb528332124a170ed1624ecc1862543cc413581dd5aa8"
+  },
+  {
+    "source_id": "CODE-EXPORT",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/04_export_snapshot.py",
+    "name": "04_export_snapshot.py",
+    "bytes": 6260,
+    "sha256": "54134ce7f34a6c233d60eaaedbd404c6adc17a03f89b54de3fc035709b307639"
+  },
+  {
+    "source_id": "CODE-DET",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/06_detect_anomalies.py",
+    "name": "06_detect_anomalies.py",
+    "bytes": 14952,
+    "sha256": "f9cff290841093d8d7c6dddd46c71e421549967b6ea62d4b61737e04ccec7f12"
+  },
+  {
+    "source_id": "CODE-XAI",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/07_explainability.py",
+    "name": "07_explainability.py",
+    "bytes": 9106,
+    "sha256": "fd2c10440dcd4a1e0b17aa9a9b577d75bb7204a966f6accd01099bc25498327c"
+  },
+  {
+    "source_id": "CODE-XAI2",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/24_xai_consistency.py",
+    "name": "24_xai_consistency.py",
+    "bytes": 31773,
+    "sha256": "2db270bf1157840709f0092a316655fb472cbc37c14af0e26e1a34a9710d401b"
+  },
+  {
+    "source_id": "CODE-EXT",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/35_external_validation.py",
+    "name": "35_external_validation.py",
+    "bytes": 38916,
+    "sha256": "e7e2d3861b51434da79933fc449d9897ee114d769a48a128bc6de1f5ab1cb04f"
+  },
+  {
+    "source_id": "CODE-RISK-RUN",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/34_risk_modules.py",
+    "name": "34_risk_modules.py",
+    "bytes": 22389,
+    "sha256": "97a65c51bde5c5e63275e8e76a227d0c1767f137ea9aadb3819b045100609316"
+  },
+  {
+    "source_id": "CODE-RAG-RUN",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/scripts/26_rag_eval.py",
+    "name": "26_rag_eval.py",
+    "bytes": 14651,
+    "sha256": "89868db8d5568fe20108414371db80d4f6d2b6f3c60bc449e030f06fd253ea92"
+  },
+  {
+    "source_id": "CODE-API",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/backend/app/main.py",
+    "name": "main.py",
+    "bytes": 9670,
+    "sha256": "26bd57ae06cca9884435267a85306fcec91ffa742b7de560dc1f6cad6798d797"
+  },
+  {
+    "source_id": "CODE-ADAPTER",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/backend/app/adapter.py",
+    "name": "adapter.py",
+    "bytes": 24642,
+    "sha256": "0b29fe11f7a7107d692bd2de9bdde05fc894636d07b52586cdf4582bef7aed0b"
+  },
+  {
+    "source_id": "CODE-STORE",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/backend/app/store.py",
+    "name": "store.py",
+    "bytes": 31743,
+    "sha256": "024984fd1f1ea86e2ffe1d95e52df6bf905c1176fa21deb62ceae15d858c9ba0"
+  },
+  {
+    "source_id": "CODE-EXPLAIN",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/backend/app/explain.py",
+    "name": "explain.py",
+    "bytes": 8489,
+    "sha256": "f64277777b06430fb390a59c3581e3a7fc61f2d81029da05143325ccb5151cae"
+  },
+  {
+    "source_id": "CODE-RESEARCH",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/backend/app/research_api.py",
+    "name": "research_api.py",
+    "bytes": 2355,
+    "sha256": "4a6a337c2e9dc7d60ec52a3a095e950b7cff3dc23830dec73a308a5c0cf655f2"
+  },
+  {
+    "source_id": "CODE-UI",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/frontend/src/App.tsx",
+    "name": "App.tsx",
+    "bytes": 3500,
+    "sha256": "f14a970bacb7a7eeddd80840c3f3728e5d34f7a9a8f317d255516c71cc05dc1d"
+  },
+  {
+    "source_id": "CODE-UI-META",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/frontend/package.json",
+    "name": "package.json",
+    "bytes": 618,
+    "sha256": "bc625b809d21f375ecc76b9d16e5ea9f0d17573fa1f1dbc2ae0120a8a60d9873"
+  },
+  {
+    "source_id": "CODE-WORKSPACE",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/src/mtender/workspace.py",
+    "name": "workspace.py",
+    "bytes": 20702,
+    "sha256": "9745d694616d9ecfd753c8663dd200dba7c5c0037b9807eff2a6eeee1cfa9880"
+  },
+  {
+    "source_id": "DATA",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/data/features/features.csv",
+    "name": "features.csv",
+    "bytes": 85211079,
+    "sha256": "9e26782375476571ea770935582c3cee1c286f71cde4ad97ec96d81d3d8d92f7"
+  },
+  {
+    "source_id": "SCORES",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/tables/tender_anomaly_scores.csv",
+    "name": "tender_anomaly_scores.csv",
+    "bytes": 52881664,
+    "sha256": "d698f71872db5bbcd56838b590e9604547ba8348a1e68af83e5f97fcce7d941d"
+  },
+  {
+    "source_id": "DET",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/mongo/detection_summary.json",
+    "name": "detection_summary.json",
+    "bytes": 2997,
+    "sha256": "20a26eef7365d665ad04eedd00be37459f118f358dbb6d79551fdc55eef03d62"
+  },
+  {
+    "source_id": "FE",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/mongo/features_summary.json",
+    "name": "features_summary.json",
+    "bytes": 1764,
+    "sha256": "2f300c8fbd1aca3557f16d265209f72db822aeca1dac74384141dbf79ddf0b72"
+  },
+  {
+    "source_id": "EXPORT",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/mongo/export_manifest.json",
+    "name": "export_manifest.json",
+    "bytes": 2706,
+    "sha256": "b96c850e3f2d7fc4de8abe3b8c7fc3965dd0cc2c8f3b4dac6f7f0d7ee463b85a"
+  },
+  {
+    "source_id": "FETCH",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/mongo/fetch_summary.json",
+    "name": "fetch_summary.json",
+    "bytes": 557,
+    "sha256": "34b2005ba424e6d1cc8a05ac824ca8c78647d37648fdbfe2162f5531183b674e"
+  },
+  {
+    "source_id": "EXT",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/methodology/external_validation_framework.json",
+    "name": "external_validation_framework.json",
+    "bytes": 23652,
+    "sha256": "2f156778ebebb49bb44ff15e5e96d0cbf455d56adf920b2ab07c7bdfb3553fb5"
+  },
+  {
+    "source_id": "EXT-TABLE",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/tables/external_baselines.csv",
+    "name": "external_baselines.csv",
+    "bytes": 18022,
+    "sha256": "be07662b18b28c7d916aefb524d5a3091b33eee90cd59fe548cda82edcc5c684"
+  },
+  {
+    "source_id": "MODULES",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/methodology/risk_modules.json",
+    "name": "risk_modules.json",
+    "bytes": 13058,
+    "sha256": "eb5b1de820b41cf160a65c2fae4e6a8b4ece1650b56823be7bf816d818fa8fee"
+  },
+  {
+    "source_id": "SEED",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/methodology/robustness_seeds.json",
+    "name": "robustness_seeds.json",
+    "bytes": 1295,
+    "sha256": "7bfc1e07c8cd2bbbbf08cfea5735eed753030a6c01550a72c4033bd3dc096fd3"
+  },
+  {
+    "source_id": "NOISE",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/methodology/noise_sensitivity.json",
+    "name": "noise_sensitivity.json",
+    "bytes": 40409,
+    "sha256": "ee1513b7b824d4e2c3afb59939c2ef7d667a7f4cfaadfc04eb609c7046c80925"
+  },
+  {
+    "source_id": "BIAS",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/methodology/bias_audit.json",
+    "name": "bias_audit.json",
+    "bytes": 17959,
+    "sha256": "6b2c128575dd9d034ed2bc8cbf5fa2eddf6cbce7ff48cb2092c7ec73031faca6"
+  },
+  {
+    "source_id": "BIAS-V6",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/methodology/bias_audit_v6.json",
+    "name": "bias_audit_v6.json",
+    "bytes": 22367,
+    "sha256": "b350e2369a6ef67601fddb24f24a2b7a3173e9dc6969841918780e4aa2d4b60a"
+  },
+  {
+    "source_id": "CIRC",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/methodology/circularity_check.json",
+    "name": "circularity_check.json",
+    "bytes": 6923,
+    "sha256": "e4973e949383e0b3d72d2483a16e05008adcce6ad802d51349346b85b9b5f1cf"
+  },
+  {
+    "source_id": "XAI",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/methodology/xai_consistency.json",
+    "name": "xai_consistency.json",
+    "bytes": 15624,
+    "sha256": "f66baa45638e5796b2ee4e868a1e2a72835b70aa6cd9a762db71328dec606b4a"
+  },
+  {
+    "source_id": "XAI-INITIAL",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/mongo/explainability_summary.json",
+    "name": "explainability_summary.json",
+    "bytes": 5367,
+    "sha256": "1c9769d2d99e23da059a3810f281cba0e6ed13ab7456c371fa2c959e0422a089"
+  },
+  {
+    "source_id": "RAG",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/methodology/rag_eval.json",
+    "name": "rag_eval.json",
+    "bytes": 2938,
+    "sha256": "0af8c6c0819f348ecbdb478927e77a46016eaeba25e62cc09e64eee617e0d243"
+  },
+  {
+    "source_id": "RAG-MANIFEST",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/rag/manifest.json",
+    "name": "manifest.json",
+    "bytes": 3194,
+    "sha256": "0c65b0dc96919e0df621ac26e7b662f4aa5b5f73ee3fe3d68783f593c6be13a5"
+  },
+  {
+    "source_id": "M19",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/reports/MTA-0019_FINAL_VALIDATION.md",
+    "name": "MTA-0019_FINAL_VALIDATION.md",
+    "bytes": 26539,
+    "sha256": "82d2899909571a3fae3cd09d0a78ea4d123583080a3fdbc19d308641d20e0660"
+  },
+  {
+    "source_id": "M19-METRICS",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/methodology/ansc_review_metrics.json",
+    "name": "ansc_review_metrics.json",
+    "bytes": 8989,
+    "sha256": "b334d40ab7bb759ca8f2571f1977c26d024ea11143c9e7ac24721dae85f7a4dd"
+  },
+  {
+    "source_id": "M19-AUDIT",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/tables/ansc_final_audit.json",
+    "name": "ansc_final_audit.json",
+    "bytes": 11923,
+    "sha256": "387f55df2f4c140801892e7b93952a71035c661f8b165d35173a0b971c7631cd"
+  },
+  {
+    "source_id": "M21",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/reports/MTA-0021_NEGATIVE_REVIEW_AUDIT.md",
+    "name": "MTA-0021_NEGATIVE_REVIEW_AUDIT.md",
+    "bytes": 20384,
+    "sha256": "25fe79f4b1f55c1ab1b51894cbadb174f4f09cdf3378abee91973cdcd16a83e1"
+  },
+  {
+    "source_id": "M21-LABELS",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/tables/ansc_mta0021_combined_procedure_labels.csv",
+    "name": "ansc_mta0021_combined_procedure_labels.csv",
+    "bytes": 2646,
+    "sha256": "502d732d32166296dc7c10648cb1d1ae3e36133272121e58d557ea98f1ea154b"
+  },
+  {
+    "source_id": "M22",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/reports/MTA-0022_TEMPORAL_DATA_AUDIT.md",
+    "name": "MTA-0022_TEMPORAL_DATA_AUDIT.md",
+    "bytes": 30956,
+    "sha256": "b56020b137572c5893309e9aec7bbde1eb57045e0131bfd698197c7e50c0ba7e"
+  },
+  {
+    "source_id": "M22-SUM",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/tables/mta0022_summary.json",
+    "name": "mta0022_summary.json",
+    "bytes": 510,
+    "sha256": "69ed21cb802f071fe848597056be9bf3c317bfb228e18f9705b0b54eced94ac6"
+  },
+  {
+    "source_id": "M22-CERT",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/tables/mta0022_feature_certification.csv",
+    "name": "mta0022_feature_certification.csv",
+    "bytes": 16297,
+    "sha256": "a6c7340594aca8b441511e1ac8b6d8d7ba9aff7e63d4fb95f399b9ea4c92cb09"
+  },
+  {
+    "source_id": "M23",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/reports/MTA-0023_SOURCE_RECOVERY_PILOT.md",
+    "name": "MTA-0023_SOURCE_RECOVERY_PILOT.md",
+    "bytes": 24127,
+    "sha256": "10c650e51a95b83100cba72d02e26b42deeeb6e0b76568ea96d4ef4f387b629d"
+  },
+  {
+    "source_id": "M23-SUM",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/tables/mta0023_summary.json",
+    "name": "mta0023_summary.json",
+    "bytes": 431,
+    "sha256": "e1fff89d9ccac441bffc0a645c00d5b72508faab085c4f7f108b3638ac41fe0b"
+  },
+  {
+    "source_id": "M23-CERT",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/tables/mta0023_publication_evidence.csv",
+    "name": "mta0023_publication_evidence.csv",
+    "bytes": 7399,
+    "sha256": "c66f714fe4026b60caa0dc0cb6b845fe8ff5f594718172dc4933fd346e80cacd"
+  },
+  {
+    "source_id": "M20-PLAN",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/reports/MTA-0020_EVALUATION_PLAN.md",
+    "name": "MTA-0020_EVALUATION_PLAN.md",
+    "bytes": 21301,
+    "sha256": "6233b51cafbeb2e9bb219d2d19fcca27c549bf9c83c2ad6d0205221003deee95"
+  },
+  {
+    "source_id": "TEST-TIME",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/tests/test_temporal_leakage.py",
+    "name": "test_temporal_leakage.py",
+    "bytes": 10584,
+    "sha256": "e00757846a61846bf74c25ebdba8850bf4875f75a2244cfd815ddbe032abea3d"
+  },
+  {
+    "source_id": "TEST-M22",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/tests/test_temporal_data_audit.py",
+    "name": "test_temporal_data_audit.py",
+    "bytes": 3617,
+    "sha256": "df4ed09e1444187556a9b74106e045898cf20d33a8fcd0c0ab600c444bf4cf47"
+  },
+  {
+    "source_id": "TEST-M23",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/tests/test_source_recovery_pilot.py",
+    "name": "test_source_recovery_pilot.py",
+    "bytes": 2907,
+    "sha256": "75c11b7ec1949dadca1ed374b19bebddbb1442920cacc0d2567710f6021171f8"
+  },
+  {
+    "source_id": "TEST-RISK",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/tests/test_risk_modules.py",
+    "name": "test_risk_modules.py",
+    "bytes": 21583,
+    "sha256": "aa7fc9773a73466d0bbc822e83c14ecc67a60ea785f0d2578bf856584080bd45"
+  },
+  {
+    "source_id": "TEST-RAG",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/tests/test_rag.py",
+    "name": "test_rag.py",
+    "bytes": 6457,
+    "sha256": "09b7b13c905a7f891b41b916a6e11bda75f0f63760f098e1eb72c1ddeac4cd62"
+  },
+  {
+    "source_id": "TEST-API",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/tests/test_api_real_data.py",
+    "name": "test_api_real_data.py",
+    "bytes": 25103,
+    "sha256": "654c693c5b813cd5b0c02d808c7e3876229c2c62e8881741b08aa1d361fd622e"
+  },
+  {
+    "source_id": "TEST-REVIEW",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/tests/test_ansc_negative_review_register.py",
+    "name": "test_ansc_negative_review_register.py",
+    "bytes": 3661,
+    "sha256": "cf16ba4eb4150da6db457f1b20fa01bf18d4f990b8dbe044f05de7102232c860"
+  },
+  {
+    "source_id": "OLD-COMPARE",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/docs/EXPERIMENTAL_MODEL_COMPARISON.md",
+    "name": "EXPERIMENTAL_MODEL_COMPARISON.md",
+    "bytes": 8552,
+    "sha256": "4182c99ee23ef7cd261b1a209d8341a5baf2c0021434a94439d3bdf0adc9bf8f"
+  },
+  {
+    "source_id": "OLD-EXT",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/docs/EXTERNAL_VALIDATION_REPORT.md",
+    "name": "EXTERNAL_VALIDATION_REPORT.md",
+    "bytes": 12127,
+    "sha256": "4847a0f6e209e02e5080292fc71ca4d53f2d8c1f5a58cb48d2c6d64daca79209"
+  },
+  {
+    "source_id": "OLD-TIME",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/docs/TEMPORAL_LEAKAGE_AUDIT.md",
+    "name": "TEMPORAL_LEAKAGE_AUDIT.md",
+    "bytes": 13399,
+    "sha256": "553f2dd197a5255e55d670b3fdce48371bd47d15a3bf9f4b50edfc48e508d526"
+  },
+  {
+    "source_id": "OLD-STATUS",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/thesis/STATUS.md",
+    "name": "STATUS.md",
+    "bytes": 20585,
+    "sha256": "ebffe07d16cefc9499c4eb0fbfdcbc7c9e873158c30d5245de39cc5353c5420c"
+  },
+  {
+    "source_id": "FIG-ANOM",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/figures/anomaly_overview.png",
+    "name": "anomaly_overview.png",
+    "bytes": 227591,
+    "sha256": "a5b2970f4fe88a77a4203eba1f242a247b39ca39f577794dca7178a7e2bd1cc4"
+  },
+  {
+    "source_id": "FIG-EXT",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/docs/figures/external_validation_baselines.png",
+    "name": "external_validation_baselines.png",
+    "bytes": 121840,
+    "sha256": "3bc42bd5a8f5f249c93a35c4b0270c64cabdb30af16b20d1ecaefb841e47510b"
+  },
+  {
+    "source_id": "FIG-PAIRED",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/docs/figures/external_validation_paired_vs_v0.png",
+    "name": "external_validation_paired_vs_v0.png",
+    "bytes": 118635,
+    "sha256": "8c0e6671663a0f10f7d3fb040485993342b04974cf850ef0b18639eb9da20401"
+  },
+  {
+    "source_id": "FIG-SEED",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/figures/seed_robustness.png",
+    "name": "seed_robustness.png",
+    "bytes": 91033,
+    "sha256": "290ffb7c959af909b00714f1b30ec34decb0ffa68fa2abc8f1dcafc125132f97"
+  },
+  {
+    "source_id": "FIG-NOISE",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/figures/noise_sensitivity_stability.png",
+    "name": "noise_sensitivity_stability.png",
+    "bytes": 66313,
+    "sha256": "7f5284651703af12d7ae18a1c5b9d32dd4490aa8e3dcc3f14bbfe45a488d3e64"
+  },
+  {
+    "source_id": "FIG-XAI",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/figures/xai_global.png",
+    "name": "xai_global.png",
+    "bytes": 107763,
+    "sha256": "9782b591042b76998a0987a5c5db9960cfcc679c93ed71fc3fe05b4390bf3a7c"
+  },
+  {
+    "source_id": "FIG-BIAS",
+    "kind": "project_artifact",
+    "path": "/Users/imustyk/Diplom/results/figures/bias_audit.png",
+    "name": "bias_audit.png",
+    "bytes": 266011,
+    "sha256": "f657f669467d9d7619ab611772c0dd8e55f628a8cd50c8a11f295c99d3a5fc01"
+  },
+  {
+    "source_id": "UTM",
+    "kind": "external_primary_reference",
+    "path": "https://utm.md/wp-content/uploads/2020/05/Ghid-Elaborarea-si-sustinerea-tezelor-de-master-Master.pdf",
+    "name": "UTM",
+    "bytes": null,
+    "sha256": null,
+    "access_note": "Guide approved30.04.2020; currently linked by official UTM normative page; web text inspected, local download403; FCIM addendum unverified"
+  },
+  {
+    "source_id": "UTM-INDEX",
+    "kind": "external_primary_reference",
+    "path": "https://utm.md/documente-institutionale/acte-normative/",
+    "name": "UTM-INDEX",
+    "bytes": null,
+    "sha256": null,
+    "access_note": "Official current guide listing inspected09.11.2026"
+  },
+  {
+    "source_id": "IF",
+    "kind": "external_primary_reference",
+    "path": "https://cs.nju.edu.cn/zhouzh/zhouzh.files/publication.htm",
+    "name": "IF",
+    "bytes": null,
+    "sha256": null,
+    "access_note": "Author publication page verifies Isolation Forest ICDM2008 reference; direct paper fetch timed out"
+  },
+  {
+    "source_id": "LOF",
+    "kind": "external_primary_reference",
+    "path": "https://www.dbs.ifi.lmu.de/Publikationen/Papers/LOF.pdf",
+    "name": "LOF",
+    "bytes": null,
+    "sha256": null,
+    "access_note": "Breunig et al.2000 primary paper/publication record"
+  },
+  {
+    "source_id": "SVM",
+    "kind": "external_primary_reference",
+    "path": "https://proceedings.neurips.cc/paper/1999/hash/8725fb777f25776ffa9076e44fcfd776-Abstract.html",
+    "name": "SVM",
+    "bytes": null,
+    "sha256": null,
+    "access_note": "Schölkopf et al. NIPS1999 proceedings abstract"
+  },
+  {
+    "source_id": "SHAP",
+    "kind": "external_primary_reference",
+    "path": "https://arxiv.org/abs/1705.07874",
+    "name": "SHAP",
+    "bytes": null,
+    "sha256": null,
+    "access_note": "Lundberg and Lee2017 v2 author preprint abstract inspected"
+  }
+]
