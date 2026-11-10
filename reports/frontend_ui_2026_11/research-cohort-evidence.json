@@ -1,0 +1,493 @@
+{
+  "status": "PASS",
+  "date_basis": "OCDS package.publishedDate",
+  "range": [
+    "2018-10",
+    "2024-04"
+  ],
+  "n_total": 152378,
+  "n_dated": 152378,
+  "n_scored": 152378,
+  "n_missing_date": 0,
+  "n_invalid_date": 0,
+  "months": 67,
+  "legacy_months": 0,
+  "viewports": [
+    1512,
+    1024,
+    768,
+    390
+  ],
+  "javascript_errors": [],
+  "monthly": [
+    {
+      "month": "2018-10",
+      "n": 599,
+      "n_scored": 599,
+      "n_unscored": 0,
+      "avg_risk": 85.99
+    },
+    {
+      "month": "2018-11",
+      "n": 1480,
+      "n_scored": 1480,
+      "n_unscored": 0,
+      "avg_risk": 84.74
+    },
+    {
+      "month": "2018-12",
+      "n": 1287,
+      "n_scored": 1287,
+      "n_unscored": 0,
+      "avg_risk": 85.43
+    },
+    {
+      "month": "2019-01",
+      "n": 896,
+      "n_scored": 896,
+      "n_unscored": 0,
+      "avg_risk": 86.52
+    },
+    {
+      "month": "2019-02",
+      "n": 764,
+      "n_scored": 764,
+      "n_unscored": 0,
+      "avg_risk": 86.27
+    },
+    {
+      "month": "2019-03",
+      "n": 822,
+      "n_scored": 822,
+      "n_unscored": 0,
+      "avg_risk": 84.95
+    },
+    {
+      "month": "2019-04",
+      "n": 893,
+      "n_scored": 893,
+      "n_unscored": 0,
+      "avg_risk": 85.32
+    },
+    {
+      "month": "2019-05",
+      "n": 849,
+      "n_scored": 849,
+      "n_unscored": 0,
+      "avg_risk": 85.2
+    },
+    {
+      "month": "2019-06",
+      "n": 785,
+      "n_scored": 785,
+      "n_unscored": 0,
+      "avg_risk": 84.37
+    },
+    {
+      "month": "2019-07",
+      "n": 860,
+      "n_scored": 860,
+      "n_unscored": 0,
+      "avg_risk": 83.14
+    },
+    {
+      "month": "2019-08",
+      "n": 792,
+      "n_scored": 792,
+      "n_unscored": 0,
+      "avg_risk": 82.11
+    },
+    {
+      "month": "2019-09",
+      "n": 759,
+      "n_scored": 759,
+      "n_unscored": 0,
+      "avg_risk": 82.62
+    },
+    {
+      "month": "2019-10",
+      "n": 922,
+      "n_scored": 922,
+      "n_unscored": 0,
+      "avg_risk": 82.26
+    },
+    {
+      "month": "2019-11",
+      "n": 1125,
+      "n_scored": 1125,
+      "n_unscored": 0,
+      "avg_risk": 83.12
+    },
+    {
+      "month": "2019-12",
+      "n": 1402,
+      "n_scored": 1402,
+      "n_unscored": 0,
+      "avg_risk": 84.37
+    },
+    {
+      "month": "2020-01",
+      "n": 916,
+      "n_scored": 916,
+      "n_unscored": 0,
+      "avg_risk": 83.63
+    },
+    {
+      "month": "2020-02",
+      "n": 1016,
+      "n_scored": 1016,
+      "n_unscored": 0,
+      "avg_risk": 82.64
+    },
+    {
+      "month": "2020-03",
+      "n": 832,
+      "n_scored": 832,
+      "n_unscored": 0,
+      "avg_risk": 83.2
+    },
+    {
+      "month": "2020-04",
+      "n": 327,
+      "n_scored": 327,
+      "n_unscored": 0,
+      "avg_risk": 84.37
+    },
+    {
+      "month": "2020-05",
+      "n": 747,
+      "n_scored": 747,
+      "n_unscored": 0,
+      "avg_risk": 82.71
+    },
+    {
+      "month": "2020-06",
+      "n": 975,
+      "n_scored": 975,
+      "n_unscored": 0,
+      "avg_risk": 82.7
+    },
+    {
+      "month": "2020-07",
+      "n": 960,
+      "n_scored": 960,
+      "n_unscored": 0,
+      "avg_risk": 82.66
+    },
+    {
+      "month": "2020-08",
+      "n": 855,
+      "n_scored": 855,
+      "n_unscored": 0,
+      "avg_risk": 82.02
+    },
+    {
+      "month": "2020-09",
+      "n": 856,
+      "n_scored": 856,
+      "n_unscored": 0,
+      "avg_risk": 82.62
+    },
+    {
+      "month": "2020-10",
+      "n": 831,
+      "n_scored": 831,
+      "n_unscored": 0,
+      "avg_risk": 82.36
+    },
+    {
+      "month": "2020-11",
+      "n": 1033,
+      "n_scored": 1033,
+      "n_unscored": 0,
+      "avg_risk": 82.94
+    },
+    {
+      "month": "2020-12",
+      "n": 1182,
+      "n_scored": 1182,
+      "n_unscored": 0,
+      "avg_risk": 83.55
+    },
+    {
+      "month": "2021-01",
+      "n": 923,
+      "n_scored": 923,
+      "n_unscored": 0,
+      "avg_risk": 83.92
+    },
+    {
+      "month": "2021-02",
+      "n": 910,
+      "n_scored": 910,
+      "n_unscored": 0,
+      "avg_risk": 83.12
+    },
+    {
+      "month": "2021-03",
+      "n": 1066,
+      "n_scored": 1066,
+      "n_unscored": 0,
+      "avg_risk": 81.56
+    },
+    {
+      "month": "2021-04",
+      "n": 1040,
+      "n_scored": 1040,
+      "n_unscored": 0,
+      "avg_risk": 82.64
+    },
+    {
+      "month": "2021-05",
+      "n": 859,
+      "n_scored": 859,
+      "n_unscored": 0,
+      "avg_risk": 82.37
+    },
+    {
+      "month": "2021-06",
+      "n": 950,
+      "n_scored": 950,
+      "n_unscored": 0,
+      "avg_risk": 82.26
+    },
+    {
+      "month": "2021-07",
+      "n": 979,
+      "n_scored": 979,
+      "n_unscored": 0,
+      "avg_risk": 83.22
+    },
+    {
+      "month": "2021-08",
+      "n": 871,
+      "n_scored": 871,
+      "n_unscored": 0,
+      "avg_risk": 83.58
+    },
+    {
+      "month": "2021-09",
+      "n": 791,
+      "n_scored": 791,
+      "n_unscored": 0,
+      "avg_risk": 82.39
+    },
+    {
+      "month": "2021-10",
+      "n": 890,
+      "n_scored": 890,
+      "n_unscored": 0,
+      "avg_risk": 83.04
+    },
+    {
+      "month": "2021-11",
+      "n": 1387,
+      "n_scored": 1387,
+      "n_unscored": 0,
+      "avg_risk": 82.8
+    },
+    {
+      "month": "2021-12",
+      "n": 1376,
+      "n_scored": 1376,
+      "n_unscored": 0,
+      "avg_risk": 83.77
+    },
+    {
+      "month": "2022-01",
+      "n": 1049,
+      "n_scored": 1049,
+      "n_unscored": 0,
+      "avg_risk": 82.44
+    },
+    {
+      "month": "2022-02",
+      "n": 1230,
+      "n_scored": 1230,
+      "n_unscored": 0,
+      "avg_risk": 82.41
+    },
+    {
+      "month": "2022-03",
+      "n": 1403,
+      "n_scored": 1403,
+      "n_unscored": 0,
+      "avg_risk": 82.53
+    },
+    {
+      "month": "2022-04",
+      "n": 1185,
+      "n_scored": 1185,
+      "n_unscored": 0,
+      "avg_risk": 81.46
+    },
+    {
+      "month": "2022-05",
+      "n": 1162,
+      "n_scored": 1162,
+      "n_unscored": 0,
+      "avg_risk": 81.42
+    },
+    {
+      "month": "2022-06",
+      "n": 1294,
+      "n_scored": 1294,
+      "n_unscored": 0,
+      "avg_risk": 81.96
+    },
+    {
+      "month": "2022-07",
+      "n": 1071,
+      "n_scored": 1071,
+      "n_unscored": 0,
+      "avg_risk": 82.01
+    },
+    {
+      "month": "2022-08",
+      "n": 1158,
+      "n_scored": 1158,
+      "n_unscored": 0,
+      "avg_risk": 83.97
+    },
+    {
+      "month": "2022-09",
+      "n": 1554,
+      "n_scored": 1554,
+      "n_unscored": 0,
+      "avg_risk": 83.49
+    },
+    {
+      "month": "2022-10",
+      "n": 1043,
+      "n_scored": 1043,
+      "n_unscored": 0,
+      "avg_risk": 83.11
+    },
+    {
+      "month": "2022-11",
+      "n": 1364,
+      "n_scored": 1364,
+      "n_unscored": 0,
+      "avg_risk": 82.71
+    },
+    {
+      "month": "2022-12",
+      "n": 1502,
+      "n_scored": 1502,
+      "n_unscored": 0,
+      "avg_risk": 84.35
+    },
+    {
+      "month": "2023-01",
+      "n": 1168,
+      "n_scored": 1168,
+      "n_unscored": 0,
+      "avg_risk": 83.26
+    },
+    {
+      "month": "2023-02",
+      "n": 1414,
+      "n_scored": 1414,
+      "n_unscored": 0,
+      "avg_risk": 82.01
+    },
+    {
+      "month": "2023-03",
+      "n": 1463,
+      "n_scored": 1463,
+      "n_unscored": 0,
+      "avg_risk": 81.91
+    },
+    {
+      "month": "2023-04",
+      "n": 1002,
+      "n_scored": 1002,
+      "n_unscored": 0,
+      "avg_risk": 82.41
+    },
+    {
+      "month": "2023-05",
+      "n": 1104,
+      "n_scored": 1104,
+      "n_unscored": 0,
+      "avg_risk": 81.82
+    },
+    {
+      "month": "2023-06",
+      "n": 1050,
+      "n_scored": 1050,
+      "n_unscored": 0,
+      "avg_risk": 81.03
+    },
+    {
+      "month": "2023-07",
+      "n": 1407,
+      "n_scored": 1407,
+      "n_unscored": 0,
+      "avg_risk": 81.55
+    },
+    {
+      "month": "2023-08",
+      "n": 2704,
+      "n_scored": 2704,
+      "n_unscored": 0,
+      "avg_risk": 78.93
+    },
+    {
+      "month": "2023-09",
+      "n": 3897,
+      "n_scored": 3897,
+      "n_unscored": 0,
+      "avg_risk": 73.63
+    },
+    {
+      "month": "2023-10",
+      "n": 15317,
+      "n_scored": 15317,
+      "n_unscored": 0,
+      "avg_risk": 70.1
+    },
+    {
+      "month": "2023-11",
+      "n": 8950,
+      "n_scored": 8950,
+      "n_unscored": 0,
+      "avg_risk": 73.54
+    },
+    {
+      "month": "2023-12",
+      "n": 10629,
+      "n_scored": 10629,
+      "n_unscored": 0,
+      "avg_risk": 72.03
+    },
+    {
+      "month": "2024-01",
+      "n": 21497,
+      "n_scored": 21497,
+      "n_unscored": 0,
+      "avg_risk": 70.87
+    },
+    {
+      "month": "2024-02",
+      "n": 12454,
+      "n_scored": 12454,
+      "n_unscored": 0,
+      "avg_risk": 74.13
+    },
+    {
+      "month": "2024-03",
+      "n": 12610,
+      "n_scored": 12610,
+      "n_unscored": 0,
+      "avg_risk": 73.01
+    },
+    {
+      "month": "2024-04",
+      "n": 3890,
+      "n_scored": 3890,
+      "n_unscored": 0,
+      "avg_risk": 73.24
+    }
+  ]
+}

@@ -116,7 +116,8 @@ export default function Overview() {
     level: b,
     n: stats.level_counts[b],
   }));
-  const months = stats.monthly.map((r) => ({ ...r, label: monthLabel(r.month) }));
+  const cohorts = stats.snapshot_cohorts;
+  const months = (cohorts?.monthly ?? []).map((r) => ({ ...r, label: monthLabel(r.month) }));
   const hasNoPublishedBids = stats.n_with_bid_data === 0;
   // The detection run scored a sample, not the whole corpus. Every share that
   // describes model behaviour must use scored records as its denominator,
@@ -272,40 +273,55 @@ export default function Overview() {
           {months.length === 0 ? (
             <Empty title={t("overview.monthly_empty")} hint={t("overview.monthly_empty_hint")} />
           ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={months} margin={{ top: 6, right: 8, bottom: 4, left: 0 }}>
-                <CartesianGrid stroke="#eee6d8" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 11, fill: "#5c6673" }}
-                  tickLine={false}
-                  axisLine={{ stroke: "#d9d0c0" }}
-                  minTickGap={24}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fontSize: 11, fill: "#5c6673" }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={60}
-                />
-                <Tooltip
-                  formatter={(v: number | string) => [
-                    num1(Number(v)),
-                    t("overview.monthly_mean"),
-                  ]}
-                  labelFormatter={(l) => String(l)}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="avg_risk"
-                  stroke="#1e3a5f"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <>
+              <div className="cohort-summary">
+                <span>{t("overview.monthly_period", { from: months[0].label, to: months[months.length - 1].label })}</span>
+                <span>{t("overview.monthly_coverage", { dated: int(cohorts!.n_dated), total: int(cohorts!.n_total), scored: int(cohorts!.n_scored) })}</span>
+              </div>
+              <h3 className="cohort-chart-title">{t("overview.monthly_mean")}</h3>
+              {months.some((month) => month.n_scored > 0) ? (
+                <div role="img" aria-label={t("overview.monthly_line_a11y")}>
+                  <ResponsiveContainer width="100%" height={230}>
+                    <LineChart data={months} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+                      <CartesianGrid stroke="#ededf0" vertical={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#626269" }} tickLine={false} axisLine={false} minTickGap={30} />
+                      <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "#626269" }} tickLine={false} axisLine={false} width={40} />
+                      <Tooltip formatter={(value: number | string) => [num1(Number(value)), t("overview.monthly_mean")]} labelFormatter={(label) => String(label)} />
+                      <Line type="linear" dataKey="avg_risk" stroke="#0071e3" strokeWidth={2} dot={false} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : <Empty title={t("overview.monthly_no_scores")} />}
+              <h3 className="cohort-chart-title">{t("overview.monthly_volume")}</h3>
+              <ul className="legend">
+                <li><span className="cohort-dot scored" />{t("overview.monthly_scored")}</li>
+                <li><span className="cohort-dot unscored" />{t("overview.monthly_unscored")}</li>
+              </ul>
+              <div role="img" aria-label={t("overview.monthly_bar_a11y")}>
+                <ResponsiveContainer width="100%" height={150}>
+                  <BarChart data={months} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
+                    <CartesianGrid stroke="#ededf0" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#626269" }} tickLine={false} axisLine={false} minTickGap={30} />
+                    <YAxis tick={{ fontSize: 10, fill: "#626269" }} tickLine={false} axisLine={false} width={54} allowDecimals={false} />
+                    <Tooltip formatter={(value: number | string, name: string) => [int(Number(value)), t(name === "n_scored" ? "overview.monthly_scored" : "overview.monthly_unscored")]} />
+                    <Bar dataKey="n_scored" stackId="coverage" fill="#0071e3" isAnimationActive={false} />
+                    <Bar dataKey="n_unscored" stackId="coverage" fill="#b9c0cd" isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="cohort-source">{t("overview.monthly_source")}</p>
+              <p className="cohort-source">{t("overview.monthly_excluded", { missing: int(cohorts!.n_missing_date), invalid: int(cohorts!.n_invalid_date) })}</p>
+              <details className="cohort-values">
+                <summary>{t("overview.monthly_table")}</summary>
+                <TableWrap>
+                  <table>
+                    <caption className="visually-hidden">{t("overview.monthly_h")}</caption>
+                    <thead><tr><th scope="col">{t("overview.monthly_month")}</th><th scope="col">{t("overview.monthly_volume")}</th><th scope="col">{t("overview.monthly_scored")}</th><th scope="col">{t("overview.monthly_mean")}</th></tr></thead>
+                    <tbody>{months.map((month) => <tr key={month.month}><th scope="row">{month.label}</th><td>{int(month.n)}</td><td>{int(month.n_scored)}</td><td>{month.avg_risk === null ? "—" : num1(month.avg_risk)}</td></tr>)}</tbody>
+                  </table>
+                </TableWrap>
+              </details>
+            </>
           )}
         </div>
         <div className="card">

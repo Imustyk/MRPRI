@@ -19,6 +19,7 @@ returned as ``null`` together with a reason in ``UNAVAILABLE``.
 from __future__ import annotations
 
 import math
+from datetime import datetime, timezone
 from typing import Any
 
 # Fields MTender does not publish. The dashboard must render these as "not
@@ -245,6 +246,69 @@ def project_tender(row: dict, score: dict | None) -> dict:
     }
 
 
+def build_snapshot_cohorts(rows: list[dict]) -> dict:
+    """Retrospective cohorts by the package timestamp, never a t0 snapshot.
+
+    No fallback to list dates, tender periods or award dates. An unscored row
+    contributes to coverage, never to the mean. Calendar gaps remain null.
+    """
+    buckets: dict[str, dict] = {}
+    missing = invalid = 0
+    for row in rows:
+        raw = row.get("published_at")
+        if raw is None or raw == "":
+            missing += 1
+            continue
+        try:
+            stamp = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+            if stamp.tzinfo is None or stamp.utcoffset() is None:
+                raise ValueError("timestamp requires a timezone")
+            stamp = stamp.astimezone(timezone.utc)
+            if stamp == datetime(1970, 1, 1, tzinfo=timezone.utc):
+                raise ValueError("epoch placeholder")
+        except (ValueError, TypeError, OverflowError):
+            invalid += 1
+            continue
+        month = f"{stamp.year:04d}-{stamp.month:02d}"
+        bucket = buckets.setdefault(month, {"n": 0, "scores": []})
+        bucket["n"] += 1
+        score = _num(row.get("risk_score"))
+        if score is not None and 0 <= score <= 100:
+            bucket["scores"].append(score)
+
+    monthly = []
+    if buckets:
+        first, last = min(buckets), max(buckets)
+        year, month = map(int, first.split("-"))
+        while f"{year:04d}-{month:02d}" <= last:
+            key = f"{year:04d}-{month:02d}"
+            bucket = buckets.get(key, {"n": 0, "scores": []})
+            scores = bucket["scores"]
+            monthly.append({
+                "month": key,
+                "n": bucket["n"],
+                "n_scored": len(scores),
+                "n_unscored": bucket["n"] - len(scores),
+                "avg_risk": round(sum(scores) / len(scores), 2) if scores else None,
+            })
+            month += 1
+            if month == 13:
+                year, month = year + 1, 1
+    return {
+        "date_field": "published_at",
+        "source_field": "OCDS package.publishedDate",
+        "timezone": "UTC",
+        "interpretation": "retrospective_snapshot_cohorts",
+        "publication_time_certified": False,
+        "n_total": len(rows),
+        "n_dated": sum(item["n"] for item in monthly),
+        "n_scored": sum(item["n_scored"] for item in monthly),
+        "n_missing_date": missing,
+        "n_invalid_date": invalid,
+        "monthly": monthly,
+    }
+
+
 def build_stats(rows: list[dict], feature_columns: list[str]) -> dict:
     """Descriptive statistics computed from the real rows, not from a file."""
     n = len(rows)
@@ -368,6 +432,7 @@ def build_stats(rows: list[dict], feature_columns: list[str]) -> dict:
         "procedure_counts": _group("procedure"),
         "top_cpv": _top("cpv_code"),
         "monthly": monthly_rows,
+        "snapshot_cohorts": build_snapshot_cohorts(rows),
         "top_risky_buyers": sorted(
             buyer_rows, key=lambda d: (-(d["avg_risk"] or 0), -d["n"])
         )[:10],

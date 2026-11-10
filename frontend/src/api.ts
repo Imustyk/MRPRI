@@ -102,7 +102,20 @@ export type Stats = {
   level_counts: Record<string, number>;
   procedure_counts: Record<string, number>;
   top_cpv: { cpv_code: string; cpv_label: null; n: number; avg_risk: number | null; value: number }[];
-  monthly: { month: string; n: number; avg_risk: number; value: number }[];
+  monthly: { month: string; n: number; avg_risk: number | null; value: number }[];
+  snapshot_cohorts?: {
+    date_field: "published_at";
+    source_field: string;
+    timezone: "UTC";
+    interpretation: "retrospective_snapshot_cohorts";
+    publication_time_certified: false;
+    n_total: number;
+    n_dated: number;
+    n_scored: number;
+    n_missing_date: number;
+    n_invalid_date: number;
+    monthly: { month: string; n: number; n_scored: number; n_unscored: number; avg_risk: number | null }[];
+  };
   top_risky_buyers: {
     buyer_id: string;
     buyer_name: string;

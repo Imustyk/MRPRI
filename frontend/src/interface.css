@@ -161,3 +161,13 @@ button.ghost:hover:enabled { background: #f0f6ff; }
 @media (prefers-reduced-transparency: reduce) {
   .app-topbar { background: #fafafc; -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
+
+/* Separate cohort scores from cohort sizes; do not disguise coverage as risk. */
+.cohort-summary { display: flex; gap: 8px 16px; flex-wrap: wrap; padding: 12px 14px; background: #f5f7fb; border-radius: 12px; font-size: 11px; color: #4c5665; }
+.cohort-chart-title { font-size: 12px; font-weight: 600; margin: 20px 0 10px; }
+.cohort-source { font-size: 11px; line-height: 1.65; color: var(--muted); }
+.cohort-dot { display: inline-block; width: 8px; height: 8px; border-radius: 3px; margin-right: 6px; }
+.cohort-dot.scored { background: #0071e3; }
+.cohort-dot.unscored { background: #b9c0cd; }
+.cohort-values summary { cursor: pointer; color: var(--navy); font-size: 12px; padding: 8px 0; }
+.cohort-values .table-wrap { max-height: 350px; overflow: auto; margin-top: 8px; }
