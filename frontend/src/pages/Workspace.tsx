@@ -123,6 +123,7 @@ export default function Workspace() {
       )}
 
       <Tabs<TabKey>
+        panelId="workspace-panel"
         active={tab}
         onChange={setTab}
         tabs={[
@@ -133,10 +134,12 @@ export default function Workspace() {
         ]}
       />
 
+      <div id="workspace-panel" role="tabpanel" aria-labelledby={`workspace-panel-${tab}`}>
       {tab === "cases" && <CasesTab vocab={summary?.vocab} notify={bump} />}
       {tab === "annotations" && <AnnotationsTab vocab={summary?.vocab} notify={bump} />}
       {tab === "watchlists" && <WatchlistsTab colors={summary?.vocab.watchlist_colors} notify={bump} />}
       {tab === "views" && <ViewsTab notify={bump} />}
+      </div>
 
       <ActivityFeed />
       <Toast message={toast} onDone={() => setToast(null)} />

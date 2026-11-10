@@ -17,7 +17,7 @@ const ru: typeof en = {
     award_total: "Итог награды (MDL)",
     first_award: "Первая награда (MDL)",
     estimated: "Оценочная стоимость (MDL)",
-    award_estimate_ratio: "Награда / оценка",
+    award_estimate_ratio: "Оценка / сумма присуждений",
     value_vs_cpv: "Стоимость относительно медианы CPV",
     distinct_bidders: "Уникальные заявители",
     bid_records: "Заявки (в разрезе лотов)",

@@ -56,7 +56,7 @@ def tender_explanation(tender_id: str) -> dict:
     if row is None:
         raise HTTPException(status_code=404, detail="unknown tender id")
     xai = store.load_explainability().get("xai_consistency") or {}
-    run = store.detection_run()
+    run = store.detection_run() or {}
     return build_explanation(
         row,
         store.load_population_stats(),
@@ -64,3 +64,14 @@ def tender_explanation(tender_id: str) -> dict:
         scoring_run_id=run.get("run_id"),
         scoring_generated_at=run.get("generated_at"),
     )
+
+
+@router.get("/tenders/{tender_id}/model-analysis")
+def tender_model_analysis(tender_id: str) -> dict:
+    """Same-run reference distributions; existing scores and verdicts stay intact."""
+    from .model_analysis import build_model_analysis
+    rows = store.load_tenders()
+    row = next((r for r in rows if r.get("tender_id") == tender_id), None)
+    if row is None:
+        raise HTTPException(status_code=404, detail="unknown tender id")
+    return build_model_analysis(row, rows, store.detection_run())

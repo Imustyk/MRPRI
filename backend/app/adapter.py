@@ -224,6 +224,10 @@ def project_tender(row: dict, score: dict | None) -> dict:
         "n_models_flagging": n_flagging,
         # null = this detector never scored the record (see _bin_flag)
         "model_flags": model_flags,
+        "score_provenance": {
+            "run_id": _s(score.get("run_id")),
+            "source": _s(score.get("_source")),
+        },
         "consensus_flag": _bin_flag(score.get("consensus")),
         "iso_score": _num(score.get("score_isolation_forest")),
         "lof_score": _num(score.get("score_local_outlier_factor")),

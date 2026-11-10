@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import i18n from "../i18n";
 import { tr } from "../i18n/backendMap";
@@ -136,6 +136,7 @@ export default function Distributions() {
       </div>
 
       <Tabs<TabKey>
+        panelId="distribution-panel"
         active={tab}
         onChange={setTab}
         tabs={[
@@ -146,12 +147,14 @@ export default function Distributions() {
         ]}
       />
 
+      <div id="distribution-panel" role="tabpanel" aria-labelledby={`distribution-panel-${tab}`}>
       {tab === "corr" && <CorrelationsTab features={usable} />}
       {tab === "dist" && <DistributionsTab features={usable} cats={cats} />}
       {tab === "rel" && (
         <RelationshipsTab features={usable} cats={cats} bands={bands ? [bands.key] : []} />
       )}
       {tab === "mix" && <CompositionTab features={usable} cats={cats} />}
+      </div>
     </div>
   );
 }
@@ -248,7 +251,7 @@ function CorrelationsTab({ features }: { features: FeatureCatalog["features"] })
                 </div>
               ))}
               {data.columns.map((rowKey, i) => (
-                <>
+                <Fragment key={rowKey}>
                   <div className="corr-cell head" key={`r-${rowKey}`}>
                     {label(rowKey)}
                   </div>
@@ -269,7 +272,7 @@ function CorrelationsTab({ features }: { features: FeatureCatalog["features"] })
                       </div>
                     );
                   })}
-                </>
+                </Fragment>
               ))}
             </div>
             <div className="corr-legend">

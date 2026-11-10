@@ -65,6 +65,7 @@ export type Tender = {
    * are different claims, so the missing case is not folded into false.
    */
   model_flags: Record<string, boolean | null>;
+  score_provenance?: { run_id: string | null; source: string | null };
   /** Flagged by at least three of the four detectors, or null if unscored. */
   consensus_flag: boolean | null;
   iso_score: number | null;
@@ -226,8 +227,8 @@ export function val(n: number | null | undefined, digits = 2): string {
   });
 }
 
-export async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(url, { signal });
   return readJson<T>(res, url);
 }
 
@@ -1172,9 +1173,9 @@ export const getExplainability = () => getJson<Explainability>("/api/explainabil
  * explanation stored" instead of surfacing an HTTP error. Every other failure
  * rejects through the shared error templates, exactly like `getJson`.
  */
-export async function getTenderExplanation(id: string): Promise<TenderExplanation | null> {
+export async function getTenderExplanation(id: string, signal?: AbortSignal): Promise<TenderExplanation | null> {
   const url = `/api/tenders/${encodeURIComponent(id)}/explanation`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal });
   if (res.status === 404) return null;
   return readJson<TenderExplanation>(res, url);
 }
@@ -1186,3 +1187,38 @@ export async function getTenderExplanation(id: string): Promise<TenderExplanatio
 export function mtenderUrl(ocid: string): string {
   return `https://public.mtender.gov.md/tenders/${encodeURIComponent(ocid)}`;
 }
+
+export type DetectorKey = "statistical_mad_zscore" | "isolation_forest" | "local_outlier_factor" | "one_class_svm";
+export type DetectorAnalysis = {
+  key: DetectorKey;
+  label: string;
+  field: string;
+  score: number | null;
+  verdict: "flagged" | "not_flagged" | "unavailable";
+  n_reference: number;
+  n_missing_score: number;
+  score_percentile: number | null;
+  bins: { index: number; start: number; end: number; n: number; selected: boolean }[];
+  threshold: { value: number; operator: string; source: string } | null;
+  threshold_matches_verdict: boolean | null;
+  params: Record<string, unknown>;
+  features: string[];
+  training_medians: null;
+  training_mad: null;
+  local_attribution: null;
+};
+export type ModelAnalysis = {
+  tender_id: string;
+  run_id: string | null;
+  source: string | null;
+  summary_matches_run: boolean;
+  generated_at: string | null;
+  model_version: string | null;
+  n_reference: number;
+  n_corpus: number;
+  scope: "same_run_available_scores";
+  detectors: DetectorAnalysis[];
+  agreement: { left: string; right: string; n: number; n_agree: number; agreement: number | null }[][];
+  consensus: { n_models_flagging: number | null; flag: boolean | null; band: string | null; percentile: number | null };
+};
+export const getModelAnalysis = (id: string, signal?: AbortSignal) => getJson<ModelAnalysis>(`/api/tenders/${encodeURIComponent(id)}/model-analysis`, signal);

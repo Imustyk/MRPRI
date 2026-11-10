@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Production: all eleven routes, dynamic chunks and API",
+    "status": "PASS"
+  },
+  {
+    "name": "Selected procedure survives navigation; Inspect brings model into focus",
+    "status": "PASS"
+  },
+  {
+    "name": "Tab panels and labels are connected on distributions and workspace",
+    "status": "PASS"
+  },
+  {
+    "name": "Tooltips remain within viewport at desktop and mobile widths",
+    "status": "PASS"
+  },
+  {
+    "name": "Final real-data previews: light, dark, mobile and indicators",
+    "status": "PASS"
+  },
+  {
+    "name": "Production JavaScript exceptions",
+    "status": "PASS",
+    "errors": []
+  }
+]

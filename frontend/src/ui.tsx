@@ -202,10 +202,12 @@ export function Tabs<T extends string>({
   tabs,
   active,
   onChange,
+  panelId,
 }: {
   tabs: { key: T; label: string; count?: number }[];
   active: T;
   onChange: (key: T) => void;
+  panelId?: string;
 }) {
   return (
     <div className="tabs" role="tablist">
@@ -213,6 +215,8 @@ export function Tabs<T extends string>({
         <button
           key={t.key}
           role="tab"
+          id={panelId ? `${panelId}-${t.key}` : undefined}
+          aria-controls={panelId}
           aria-selected={t.key === active}
           tabIndex={t.key === active ? 0 : -1}
           onKeyDown={(event) => {
@@ -361,8 +365,8 @@ export function MiniStats({
 
 /** Colour scale for a correlation cell: teal for negative, gold for positive. */
 export function corrColor(v: number | null, max = 1): string {
-  if (v === null || Number.isNaN(v)) return "#f1f2f4";
+  if (v === null || Number.isNaN(v)) return "var(--surface-secondary)";
   const t = Math.min(Math.abs(v) / max, 1);
-  const alpha = 0.1 + 0.62 * t;
+  const alpha = 0.1 + 0.3 * t;
   return v >= 0 ? `rgba(184,137,42,${alpha.toFixed(3)})` : `rgba(42,127,143,${alpha.toFixed(3)})`;
 }

@@ -21,7 +21,7 @@ const backend = {
     award_total: "Award total (MDL)",
     first_award: "First award value (MDL)",
     estimated: "Estimated value (MDL)",
-    award_estimate_ratio: "Award / estimate ratio",
+    award_estimate_ratio: "Estimate / awarded total",
     value_vs_cpv: "Value vs CPV median",
     distinct_bidders: "Distinct bidders",
     bid_records: "Bid records (per lot)",

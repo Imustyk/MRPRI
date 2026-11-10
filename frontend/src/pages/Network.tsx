@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getGraph,
@@ -114,11 +114,18 @@ function Tip({
   sub?: string;
   rows: [string, string][];
 }) {
-  // Flip before the right/bottom edge so a cell near the border stays readable.
-  const left = Math.max(8, Math.min(x + 14, window.innerWidth - 260));
-  const top = Math.max(8, Math.min(y + 16, window.innerHeight - 160));
+  const tip = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ left: 8, top: 8 });
+  useLayoutEffect(() => {
+    const box = tip.current?.getBoundingClientRect();
+    if (!box) return;
+    setPosition({
+      left: Math.max(8, Math.min(x + 14, window.innerWidth - box.width - 8)),
+      top: Math.max(8, Math.min(y + 16, window.innerHeight - box.height - 8)),
+    });
+  }, [x, y, title, sub]);
   return (
-    <div className="vz-tip" style={{ left, top }} aria-hidden="true">
+    <div className="vz-tip" ref={tip} style={position} aria-hidden="true">
       <div className="vz-tip-title">{title}</div>
       {sub && <div className="vz-tip-sub">{sub}</div>}
       {rows.map(([k, v]) => (

@@ -17,7 +17,7 @@ const ro: typeof en = {
     award_total: "Total contract (MDL)",
     first_award: "Valoarea primului contract (MDL)",
     estimated: "Valoare estimată (MDL)",
-    award_estimate_ratio: "Contract / estimare",
+    award_estimate_ratio: "Estimare / total atribuit",
     value_vs_cpv: "Valoare față de mediana CPV",
     distinct_bidders: "Ofertanți distincți",
     bid_records: "Înregistrări de oferte (per lot)",

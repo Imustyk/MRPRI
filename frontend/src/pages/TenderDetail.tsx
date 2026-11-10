@@ -1,470 +1,73 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Trans, useTranslation } from "react-i18next";
-import {
-  dateLabel,
-  getJson,
-  getTenderExplanation,
-  int,
-  mdl,
-  mtenderUrl,
-  pct,
-  pctile,
-  val,
-  type ExplanationDetectorItem,
-  type ExplanationFactItem,
-  type ExplanationIndicatorItem,
-  type ExplanationLayer,
-  type ExplanationLimitationItem,
-  type ExplanationReferenceItem,
-  type Tender,
-  type TenderExplanation,
-} from "../api";
-import { BandBadge, ErrorNote, PageHead, Pill, Skeleton, TableWrap } from "../ui";
+import { useTranslation } from "react-i18next";
+import { dateLabel, mdl, mtenderUrl } from "../api";
 import { tr } from "../i18n/backendMap";
+import { BandBadge, ErrorNote, Loading, PageHead, Pill, Skeleton, TableWrap } from "../ui";
+import { IndicatorPanel } from "../components/IndicatorPanel";
+import { ModelWorkbench, metric } from "../components/ModelExplanationCard";
+import { useProcedureData } from "../components/useProcedureData";
 
-/** The four detectors, in run order. Verdicts arrive per record in model_flags. */
-const DETECTORS: { key: string; labelKey: string }[] = [
-  { key: "statistical_mad_zscore", labelKey: "tenderDetail.det_mad" },
-  { key: "isolation_forest", labelKey: "tenderDetail.det_iforest" },
-  { key: "local_outlier_factor", labelKey: "tenderDetail.det_lof" },
-  { key: "one_class_svm", labelKey: "tenderDetail.det_svm" },
-];
-
-const DETECTOR_LABEL_KEY: Record<string, string> = Object.fromEntries(
-  DETECTORS.map((d) => [d.key, d.labelKey]),
-);
-
-/**
- * Observed-fact fields whose generic server label has no catalog entry of its
- * own; every other label localises through the backend map ("CPV code",
- * "Published", "Distinct bidders", …).
- */
-const FACT_LABEL_KEY: Record<string, string> = {
-  title: "tenderDetail.cf_title",
-  bid_deadline: "tenderDetail.cf_deadline",
-  award_date: "tenderDetail.cf_award_decision",
-  award_value_mdl: "tenderDetail.cf_award_first",
-  award_total_mdl: "tenderDetail.cf_award_total",
-  buyer_name: "tenderDetail.cf_authority",
-  buyer_locality: "tenderDetail.cf_locality",
-  winner_idno: "tenderDetail.cf_winner_idno",
-  tender_id: "tenderDetail.cf_tender_id",
-};
-
-/** ISO date fields rendered as localised dates rather than raw strings. */
-const DATE_FIELDS = new Set(["published_at", "tender_start", "bid_deadline", "award_date"]);
-
-/** Money in MDL, counts as integers, dates localised; null never fakes a 0. */
-function factValue(f: ExplanationFactItem): string {
-  if (f.value === null || f.value === "") return "\u2014";
-  if (typeof f.value === "string") {
-    return DATE_FIELDS.has(f.field) ? dateLabel(f.value) : f.value;
-  }
-  if (f.field.endsWith("_mdl")) return mdl(f.value);
-  return int(f.value);
-}
-
-/** Narrowed items of one layer; an id the server omitted renders as empty. */
-function itemsOf(expl: TenderExplanation, id: "facts"): ExplanationFactItem[];
-function itemsOf(expl: TenderExplanation, id: "indicators"): ExplanationIndicatorItem[];
-function itemsOf(expl: TenderExplanation, id: "detectors"): ExplanationDetectorItem[];
-function itemsOf(expl: TenderExplanation, id: "references"): ExplanationReferenceItem[];
-function itemsOf(expl: TenderExplanation, id: "limitations"): ExplanationLimitationItem[];
-function itemsOf(
-  expl: TenderExplanation,
-  id: ExplanationLayer["id"],
-): ExplanationLayer["items"][number][] {
-  const hit = expl.layers.find((l) => l.id === id);
-  return hit ? hit.items : [];
-}
+const money = (value: number | null) => value === null ? "—" : mdl(value);
 
 export default function TenderDetail() {
   const { t } = useTranslation();
-  const { id } = useParams();
-  const [tender, setTender] = useState<Tender | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [expl, setExpl] = useState<TenderExplanation | null>(null);
-  const [explErr, setExplErr] = useState<string | null>(null);
-  const [explLoading, setExplLoading] = useState(false);
-
-  const load = () => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    getJson<Tender>(`/api/tenders/${id}`)
-      .then((d) => {
-        setTender(d);
-        setLoading(false);
-      })
-      .catch((e: Error) => {
-        setError(e.message);
-        setLoading(false);
-      });
-  };
-
-  // Loaded separately and lazily with the page: the explanation is a heavier
-  // aggregate, and a failure here must never take the record view down.
-  const loadExplain = () => {
-    if (!id) return;
-    setExplLoading(true);
-    setExplErr(null);
-    getTenderExplanation(id)
-      .then((d) => {
-        setExpl(d);
-        setExplLoading(false);
-      })
-      .catch((e: Error) => {
-        setExplErr(e.message);
-        setExplLoading(false);
-      });
-  };
-
-  useEffect(load, [id]);
-  useEffect(() => {
-    loadExplain();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div>
-        <Link to="/tenders" className="back-link">
-          {t("tenderDetail.back")}
-        </Link>
-        <h1 style={{ marginTop: 10 }}>{t("tenderDetail.loading_title")}</h1>
-        <Skeleton rows={3} height={40} />
-        <Skeleton rows={6} />
-      </div>
-    );
-  }
-
-  if (error || !tender) {
-    return (
-      <div>
-        <Link to="/tenders" className="back-link">
-          {t("tenderDetail.back")}
-        </Link>
-        <h1 style={{ marginTop: 10 }}>{t("tenderDetail.not_found_title")}</h1>
-        <p className="lede">
-          <Trans i18nKey="tenderDetail.not_found_lede" values={{ id }} components={{ code: <code /> }} />
-        </p>
-        <ErrorNote error={error ?? t("tenderDetail.no_record")} onRetry={load} />
-        <div style={{ marginTop: 16 }}>
-          <Link to="/tenders" className="back-link">
-            {t("tenderDetail.back_to_all")}
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const flags = Array.isArray(tender.flags) ? tender.flags : [];
-  const hasBids = (tender.n_bidders ?? 0) > 0;
-  const multiLot = (tender.n_lots ?? 0) > 1;
-
-  return (
-    <div>
-      <Link to="/tenders" className="back-link">
-        {t("tenderDetail.back")}
-      </Link>
-      <PageHead
-        kickerPlain
-        kicker={tender.tender_id ?? tender.ocid ?? "—"}
-        title={tender.title ?? t("tenderDetail.untitled")}
-        lede={
-          [tender.buyer_name, tender.buyer_locality, tender.procedure, tender.status]
-            .filter(Boolean)
-            .join(" · ") || t("tenderDetail.no_meta")
-        }
-      />
-
-      {/* The source of record, when the OCDS identifier is known. */}
-      {tender.ocid && (
-        <p className="ext-link-row">
-          <a
-            className="ext-link"
-            href={mtenderUrl(tender.ocid)}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            {t("common.open_mtender")} <span aria-hidden="true">↗</span>
-          </a>
-        </p>
-      )}
-
-      <div className="detail-grid">
-        <div className="card">
-          <h2>
-            {t("tenderDetail.band_h")}{" "}
-            <BandBadge level={tender.risk_level} nModels={tender.n_models_flagging} />
-          </h2>
-          <p className="muted">
-            {t("tenderDetail.band_note", { n: tender.n_models_flagging ?? 0 })}
-          </p>
-          <p>
-            {t("tenderDetail.percentile")}{" "}
-            <strong className="mono">{val(tender.risk_score, 1)}</strong> / 100
-          </p>
-          <p className="muted">
-            {t("tenderDetail.scores", {
-              mad: val(tender.rule_score, 2),
-              iso: val(tender.iso_score, 3),
-              lof: val(tender.lof_score, 1),
-              svm: val(tender.svm_score, 3),
-            })}
-          </p>
-          {tender.model_flags && (
-            <div className="flags" style={{ marginTop: 10 }}>
-              {DETECTORS.map(({ key, labelKey }) => {
-                const verdict = tender.model_flags[key];
-                const text =
-                  verdict === true
-                    ? t("tenderDetail.verdict_flagged")
-                    : verdict === false
-                      ? t("tenderDetail.verdict_cleared")
-                      : t("tenderDetail.verdict_unscored");
-                const cls =
-                  verdict === true
-                    ? "flag"
-                    : verdict === false
-                      ? "flag clear"
-                      : "flag unscored";
-                return (
-                  <span key={key} className={cls}>
-                    {t(labelKey)}: {text}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-
-          <h2 style={{ marginTop: 20 }}>{t("tenderDetail.flags_h")}</h2>
-          <div className="flags">
-            {flags.length ? (
-              flags.map((f) => (
-                <span key={f} className="flag">
-                  {tr(f)}
-                </span>
-              ))
-            ) : (
-              <span className="muted">{t("tenderDetail.flags_none")}</span>
-            )}
-          </div>
-
-          <h2 style={{ marginTop: 20 }}>{t("tenderDetail.comp_h")}</h2>
-          <dl className="kv">
-            <dt>{t("tenderDetail.comp_bidders")}</dt>
-            <dd className="mono">{int(tender.n_bidders)}</dd>
-            <dt>{t("tenderDetail.comp_bid_records")}</dt>
-            <dd className="mono">{int(tender.n_bid_records)}</dd>
-            <dt>{t("tenderDetail.comp_lots")}</dt>
-            <dd className="mono">{int(tender.n_lots)}</dd>
-          </dl>
-          <p className="muted" style={{ marginTop: 12 }}>
-            {hasBids ? (
-              <Trans
-                i18nKey="tenderDetail.bids_note"
-                count={tender.n_lots ?? 0}
-                values={{
-                  records: int(tender.n_bid_records),
-                  lots: int(tender.n_lots),
-                  bidders: int(tender.n_bidders),
-                }}
-                components={{ code: <code /> }}
-              />
-            ) : (
-              <Trans i18nKey="tenderDetail.no_bids_note" />
-            )}
-          </p>
-        </div>
-
-        <div className="card">
-          <h2>{t("tenderDetail.case_h")}</h2>
-          <dl className="kv">
-            <dt>{t("tenderDetail.cf_cpv")}</dt>
-            <dd className="mono">{tender.cpv_code ?? "—"}</dd>
-            <dt>{t("tenderDetail.cf_published")}</dt>
-            <dd>{dateLabel(tender.published_at)}</dd>
-            <dt>{t("tenderDetail.cf_deadline")}</dt>
-            <dd>{dateLabel(tender.bid_deadline)}</dd>
-            <dt>{t("tenderDetail.cf_window")}</dt>
-            <dd className="mono">
-              {tender.bid_window_days === null || tender.bid_window_days === undefined
-                ? "—"
-                : t("tenderDetail.cf_days", { count: tender.bid_window_days, n: tender.bid_window_days })}
-            </dd>
-            <dt>{t("tenderDetail.cf_status")}</dt>
-            <dd>{tender.status ?? "—"}</dd>
-            <dt>{t("tenderDetail.cf_method")}</dt>
-            <dd>{tender.procurement_method ?? "—"}</dd>
-            <dt>{t("tenderDetail.cf_estimate")}</dt>
-            <dd className="mono">
-              {tender.estimated_value_mdl === null ? "—" : mdl(tender.estimated_value_mdl)}
-            </dd>
-            <dt>{t("tenderDetail.cf_award_first")}</dt>
-            <dd className="mono">
-              {tender.award_value_mdl === null ? "—" : mdl(tender.award_value_mdl)}
-            </dd>
-            <dt>{t("tenderDetail.cf_award_total")}</dt>
-            <dd className="mono">
-              {tender.award_total_mdl === null ? "—" : mdl(tender.award_total_mdl)}
-            </dd>
-            <dt>{t("tenderDetail.cf_winner")}</dt>
-            <dd>{tender.winner_name ?? "—"}</dd>
-            <dt>{t("tenderDetail.cf_winner_idno")}</dt>
-            <dd className="mono">{tender.winner_idno ?? "—"}</dd>
-          </dl>
-          {multiLot && (
-            <p className="muted" style={{ marginTop: 12 }}>
-              {t("tenderDetail.multilot_note", { count: tender.n_lots ?? 0, n: tender.n_lots ?? 0 })}
-            </p>
-          )}
-          <p className="muted" style={{ marginTop: 16 }}>
-            <Trans i18nKey="tenderDetail.legal_note" />
-          </p>
-        </div>
-      </div>
-
-      {/* Layered explanation: facts, indicators, detector verdicts, sources,
-          limitations — kept apart so no layer can read as another. */}
-      <div className="card" style={{ marginTop: 16 }}>
-        <h2>{t("tenderDetail.explain_h")}</h2>
-        <p className="muted">{t("tenderDetail.explain_p")}</p>
-
-        {explLoading ? (
-          <Skeleton rows={5} />
-        ) : explErr ? (
-          <ErrorNote error={explErr} onRetry={loadExplain} />
-        ) : !expl ? (
-          <p className="muted">{t("tenderDetail.explain_na")}</p>
-        ) : (
-          <>
-            <p className="muted mono" style={{ fontSize: 12 }}>
-              {t("tenderDetail.explain_meta", {
-                version: expl.model_version,
-                run: expl.scoring_run_id ?? "\u2014",
-                date: expl.scoring_generated_at ?? "\u2014",
-              })}
-            </p>
-
-            <h3 style={{ marginTop: 14 }}>{t("tenderDetail.explainLayerFacts")}</h3>
-            <dl className="kv">
-              {itemsOf(expl, "facts").map((f) => (
-                <Fragment key={f.field}>
-                  <dt>{FACT_LABEL_KEY[f.field] ? t(FACT_LABEL_KEY[f.field]) : tr(f.label)}</dt>
-                  <dd className="mono">
-                    {factValue(f)}
-                    {f.percentile !== null && f.percentile !== undefined && (
-                      <span
-                        className="muted"
-                        style={{ marginLeft: 8, fontSize: 12 }}
-                        title={t("tenderDetail.explain_pct_hint")}
-                      >
-                        {t("tenderDetail.explain_pct", { v: pctile(f.percentile) })}
-                      </span>
-                    )}
-                  </dd>
-                </Fragment>
-              ))}
-            </dl>
-
-            <h3 style={{ marginTop: 16 }}>{t("tenderDetail.explainLayerIndicators")}</h3>
-            <div className="flags">
-              {itemsOf(expl, "indicators").map((i) => (
-                <span key={i.key} className={i.triggered ? "flag" : "flag clear"}>
-                  <strong>{tr(i.label)}</strong>:{" "}
-                  {i.triggered
-                    ? t("tenderDetail.explain_triggered")
-                    : t("tenderDetail.explain_not_triggered")}
-                  {i.corpus_rate !== null && i.corpus_rate !== undefined && (
-                    <>
-                      {" · "}
-                      {t("tenderDetail.explain_rate", {
-                        rate: pct(i.corpus_rate),
-                        n: int(i.corpus_n),
-                      })}
-                    </>
-                  )}
-                </span>
-              ))}
-            </div>
-
-            <h3 style={{ marginTop: 16 }}>{t("tenderDetail.explainLayerDetectors")}</h3>
-            <TableWrap>
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">{t("kpis.cat_th_detector")}</th>
-                    <th scope="col">{t("tenderDetail.explain_th_verdict")}</th>
-                    <th scope="col">{t("tenderDetail.explain_th_score")}</th>
-                    <th scope="col">{t("tenderDetail.explain_th_pct")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {itemsOf(expl, "detectors").map((d) => (
-                    <tr key={d.key}>
-                      <td>{DETECTOR_LABEL_KEY[d.key] ? t(DETECTOR_LABEL_KEY[d.key]) : tr(d.label)}</td>
-                      <td>
-                        <Pill
-                          tone={
-                            d.verdict === "flagged"
-                              ? "risk"
-                              : d.verdict === "not_flagged"
-                                ? "ok"
-                                : "muted"
-                          }
-                        >
-                          {d.verdict === "flagged"
-                            ? t("tenderDetail.verdict_flagged")
-                            : d.verdict === "not_flagged"
-                              ? t("tenderDetail.verdict_cleared")
-                              : t("tenderDetail.verdict_unscored")}
-                        </Pill>
-                      </td>
-                      <td className="mono">{val(d.score, 3)}</td>
-                      <td className="mono">
-                        {t("tenderDetail.explain_pct", { v: pctile(d.score_percentile) })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </TableWrap>
-
-            <h3 style={{ marginTop: 16 }}>{t("tenderDetail.explainLayerReferences")}</h3>
-            <ul className="muted" style={{ paddingLeft: 18, marginTop: 0 }}>
-              {itemsOf(expl, "references").map((r) => (
-                <li key={r.path} style={r.available ? undefined : { opacity: 0.65 }}>
-                  {tr(r.label)}{" "}
-                  <span className="mono" style={{ fontSize: 12 }}>
-                    {r.path}
-                  </span>
-                  {!r.available && (
-                    <>
-                      {" — "}
-                      <em>{t("tenderDetail.explain_source_na")}</em>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-
-            <h3 style={{ marginTop: 16 }}>{t("tenderDetail.explainLayerLimitations")}</h3>
-            <ul style={{ paddingLeft: 18, marginTop: 0 }}>
-              {itemsOf(expl, "limitations").map((l, idx) => (
-                <li key={idx} className="muted">
-                  {tr(l.text)}
-                </li>
-              ))}
-            </ul>
-            <p className="muted" style={{ marginTop: 12, fontSize: 12.5 }}>
-              {t("tenderDetail.explain_disclaimer")}
-            </p>
-          </>
-        )}
-      </div>
-    </div>
-  );
+  const { id = "" } = useParams();
+  const data = useProcedureData(id);
+  const tender = data.tender;
+  if (data.loading) return <div><h1>{t("tenderDetail.loading_title")}</h1><Skeleton rows={5} height={40} /></div>;
+  if (data.error || !tender) return <div><Link className="back-link" to="/tenders">← {t("tenderDetail.back")}</Link><h1>{t("tenderDetail.not_found_title")}</h1>{data.error && <ErrorNote error={data.error} onRetry={data.retry} />}</div>;
+  const facts: [string, string][] = [
+    [t("tenderDetail.cf_authority"), tender.buyer_name ?? "—"],
+    ["OCID", tender.ocid ?? "—"],
+    [t("tenderDetail.cf_cpv"), tender.cpv_code ?? "—"],
+    [t("analysis.package_date"), dateLabel(tender.published_at)],
+    [t("tenderDetail.cf_deadline"), dateLabel(tender.bid_deadline)],
+    [t("tenderDetail.cf_estimate"), money(tender.estimated_value_mdl)],
+    [t("tenderDetail.cf_award_total"), money(tender.award_total_mdl)],
+    [t("tenderDetail.cf_method"), tender.procedure ?? tender.procurement_method ?? "—"],
+    [t("tenderDetail.cf_status"), tender.status ?? "—"],
+    [t("tenderDetail.cf_winner"), tender.winner_name ?? "—"],
+  ];
+  return <div className="tender-analysis">
+    <Link className="back-link" to="/tenders">← {t("tenderDetail.back")}</Link>
+    <PageHead kickerPlain kicker={tender.ocid ?? id} title={tender.title ?? t("tenderDetail.untitled")} lede={tender.buyer_name ?? undefined} actions={<>
+      {tender.ocid && <a className="action-secondary" href={mtenderUrl(tender.ocid)} target="_blank" rel="noreferrer noopener">{t("common.open_mtender")} ↗</a>}
+      <Link className="action-secondary" to={`/models?tender=${encodeURIComponent(id)}`}>{t("analysis.models_title")} →</Link>
+    </>} />
+    <nav className="case-section-nav" aria-label={t("analysis.case_sections")}><a href="#case-facts">{t("analysis.facts")}</a><a href="#case-models">{t("analysis.compare_models")}</a><a href="#case-indicators">{t("analysis.indicators_title")}</a><a href="#case-evidence">{t("analysis.evidence")}</a></nav>
+    <section id="case-facts" className="surface case-facts">
+      <div className="section-heading"><h2>{t("analysis.facts")}</h2><BandBadge level={tender.risk_level} nModels={tender.n_models_flagging} /></div>
+      <dl className="facts-grid">{facts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+      <div className="flags"><Pill tone={tender.has_bid_data ? "info" : "muted"}>{t(tender.has_bid_data ? "analysis.bid_data_available" : "analysis.bid_data_missing")}</Pill><Pill tone={tender.has_award_data ? "info" : "muted"}>{t(tender.has_award_data ? "analysis.award_data_available" : "analysis.award_data_missing")}</Pill></div>
+      <details className="research-disclosure"><summary>{t("analysis.additional_facts")}</summary><dl className="kv">
+        <dt>{t("tenderDetail.cf_window")}</dt><dd>{metric(tender.bid_window_days)} · {t("analysis.days")}</dd>
+        <dt>{t("tenderDetail.comp_bidders")}</dt><dd>{tender.has_bid_data === true ? metric(tender.n_bidders, 0) : t("analysis.unavailable")}</dd>
+        <dt>{t("tenderDetail.comp_bid_records")}</dt><dd>{tender.has_bid_data === true ? metric(tender.n_bid_records, 0) : t("analysis.unavailable")}</dd>
+        <dt>{t("tenderDetail.comp_lots")}</dt><dd>{metric(tender.n_lots, 0)}</dd>
+        <dt>{t("tenderDetail.cf_award_first")}</dt><dd>{money(tender.award_value_mdl)}</dd>
+        <dt>{t("tenderDetail.cf_winner_idno")}</dt><dd>{tender.winner_idno ?? "—"}</dd>
+      </dl><p className="microcopy">{t("analysis.raw_facts_limit")}</p></details>
+    </section>
+    <section id="case-models">
+      {data.analysisError && <ErrorNote error={data.analysisError} onRetry={data.retry} />}
+      {!data.analysis && !data.analysisError && <Loading label={t("analysis.loading_models")} />}
+      {data.analysis && <ModelWorkbench tender={tender} analysis={data.analysis} />}
+    </section>
+    <section id="case-indicators"><IndicatorPanel tender={tender} /></section>
+    <section id="case-evidence" className="surface evidence-panel">
+      <div className="section-heading"><div><span className="eyebrow">{t("analysis.traceability")}</span><h2>{t("analysis.evidence")}</h2></div></div>
+      <p className="microcopy break-anywhere">{t("analysis.source")}: {data.analysis?.source ?? t("analysis.unavailable")} · {t("analysis.run")}: <code>{data.analysis?.run_id ?? "—"}</code></p>
+      <p className="microcopy">{t("analysis.run_date")}: {dateLabel(data.analysis?.generated_at)} · {t("analysis.reference_size")}: {metric(data.analysis?.n_reference, 0)}</p>
+      {data.explanation ? data.explanation.layers.map((layer) => <details className="research-disclosure" key={layer.id}><summary>{t(`tenderDetail.${({ facts: "explainLayerFacts", indicators: "explainLayerIndicators", detectors: "explainLayerDetectors", references: "explainLayerReferences", limitations: "explainLayerLimitations" })[layer.id]}`)}</summary>
+        {layer.id === "facts" ? <dl className="kv">{layer.items.map((item) => <Fragment key={item.field}><dt>{tr(item.label)}</dt><dd>{item.value === null ? "—" : String(item.value)}{item.percentile != null && <span className="microcopy" title={t("tenderDetail.explain_pct_hint")}> · {t("tenderDetail.explain_pct", { v: metric(item.percentile, 1) })}</span>}</dd></Fragment>)}</dl>
+        : layer.id === "references" ? <ul className="evidence-list">{layer.items.map((item) => <li key={item.path}><strong>{tr(item.label)}</strong><code>{item.path}</code><Pill tone={item.available ? "info" : "muted"}>{t(item.available ? "analysis.reference_present" : "analysis.unavailable")}</Pill></li>)}</ul>
+        : layer.id === "limitations" ? <ul>{layer.items.map((item, i) => <li key={i}>{tr(item.text)}</li>)}</ul>
+        : layer.id === "detectors" ? <TableWrap><table><thead><tr><th scope="col">{t("analysis.model")}</th><th scope="col">{t("analysis.raw_score")}</th><th scope="col">{t("analysis.verdict")}</th></tr></thead><tbody>{layer.items.map((item) => <tr key={item.key}><th scope="row">{item.label}</th><td>{metric(item.score, 6)}</td><td>{t(item.verdict === "unscored" ? "analysis.unavailable" : `analysis.${item.verdict}`)}</td></tr>)}</tbody></table></TableWrap>
+        : <ul>{layer.items.map((item) => <li key={item.key}>{tr(item.label)}: {t(item.triggered ? "analysis.recorded_signal" : "analysis.not_recorded")} · {t("analysis.corpus_frequency")}: {item.corpus_rate === null ? "—" : `${metric(item.corpus_rate * 100, 2)}%`} (n = {metric(item.corpus_n, 0)})</li>)}</ul>}
+      </details>) : <p className="muted">{t("analysis.explanation_unavailable")}</p>}
+      <p className="microcopy">{t("analysis.peer_limit")}</p>
+    </section>
+    <aside className="methodology-notice">{t("analysis.disclaimer")}</aside>
+  </div>;
 }

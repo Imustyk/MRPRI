@@ -120,7 +120,7 @@ def _scores_by_ocid(ocids: list[str]) -> dict[str, dict]:
                 chunk = list(unique)[start : start + SCORE_LOOKUP_CHUNK]
                 # newest run first so a re-run supersedes older scores
                 for doc in db[ANOMALY_SCORES].find({"ocid": {"$in": chunk}}).sort("run_id", -1):
-                    out.setdefault(doc["ocid"], doc)
+                    out.setdefault(doc["ocid"], {**doc, "_source": "mongodb.anomaly_scores"})
         except Exception:  # noqa: BLE001 - Mongo unavailable, fall back to CSV
             out = {}
 
@@ -169,6 +169,7 @@ def _csv_scores() -> dict[str, dict]:
             for key in _SCORE_NUMERIC:
                 if key in row:
                     row[key] = _to_number(row[key])
+            row["_source"] = "results/tables/tender_anomaly_scores.csv"
             out[ocid] = row
     return out
 
