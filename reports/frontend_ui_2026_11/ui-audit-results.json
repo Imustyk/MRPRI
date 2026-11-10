@@ -1,0 +1,64 @@
+[
+  {
+    "name": "Overview: real statistics, provenance and charts",
+    "status": "PASS"
+  },
+  {
+    "name": "Procedures: pagination, filters, empty state and reset",
+    "status": "PASS"
+  },
+  {
+    "name": "Global search: URL, results and repeated search on same route",
+    "status": "PASS"
+  },
+  {
+    "name": "Procedure detail: source link, facts and explanation",
+    "status": "PASS"
+  },
+  {
+    "name": "Distributions: all four tabs and keyboard navigation",
+    "status": "PASS"
+  },
+  {
+    "name": "Network: real matrix, filtering, empty state and reset",
+    "status": "PASS"
+  },
+  {
+    "name": "Workspace: all four tabs with original database read only",
+    "status": "PASS"
+  },
+  {
+    "name": "Methodology, model KPIs and RACI",
+    "status": "PASS"
+  },
+  {
+    "name": "All pages: desktop, tablet and mobile widths",
+    "status": "PASS"
+  },
+  {
+    "name": "Mobile navigation, Escape, route closing and skip link",
+    "status": "PASS"
+  },
+  {
+    "name": "EN / RO / RU: language and active control agree",
+    "status": "PASS"
+  },
+  {
+    "name": "Missing procedure: visible error, no crash",
+    "status": "PASS"
+  },
+  {
+    "name": "Backend interruption: error and retry recovery",
+    "status": "PASS"
+  },
+  {
+    "name": "Uncaught JavaScript exceptions",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "name": "Unexpected API server errors",
+    "status": "PASS",
+    "errors": []
+  }
+]

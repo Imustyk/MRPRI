@@ -3,6 +3,12 @@ import type en from "../en/common";
 /** Русский. Формы _one/_few/_many/_other для счётных строк. */
 const ru: typeof en = {
   nav: {
+    not_found: "Страница не найдена",
+    not_found_hint: "Проверьте адрес или вернитесь к обзору.",
+    search: "Поиск закупок",
+    search_placeholder: "Название, заказчик или OCID",
+    open_menu: "Открыть меню",
+    close_menu: "Закрыть меню",
     group_analysis: "Анализ",
     group_thesis: "Диплом",
     overview: "Обзор",

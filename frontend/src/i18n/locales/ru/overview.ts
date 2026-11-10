@@ -1,6 +1,8 @@
 import type en from "../en/overview";
 
 const overview: typeof en = {
+  explore: "Исследовать закупки",
+  how_it_works: "Как это работает",
   err_kicker: "Глава 3 · результаты",
   err_title: "Результаты недоступны",
   err_lede: `Эта панель читает реальные данные MTender в <code>data/processed/tenders.json</code> и оценки аномалий в MongoDB. Получите их конвейером ETL:`,

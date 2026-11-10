@@ -293,7 +293,7 @@ export default function TenderDetail() {
             <dd className="mono">
               {tender.bid_window_days === null || tender.bid_window_days === undefined
                 ? "—"
-                : t("tenderDetail.cf_days", { count: tender.bid_window_days })}
+                : t("tenderDetail.cf_days", { count: tender.bid_window_days, n: tender.bid_window_days })}
             </dd>
             <dt>{t("tenderDetail.cf_status")}</dt>
             <dd>{tender.status ?? "—"}</dd>
@@ -318,7 +318,7 @@ export default function TenderDetail() {
           </dl>
           {multiLot && (
             <p className="muted" style={{ marginTop: 12 }}>
-              {t("tenderDetail.multilot_note", { count: tender.n_lots ?? 0 })}
+              {t("tenderDetail.multilot_note", { count: tender.n_lots ?? 0, n: tender.n_lots ?? 0 })}
             </p>
           )}
           <p className="muted" style={{ marginTop: 16 }}>

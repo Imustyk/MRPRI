@@ -9,18 +9,21 @@ export function PageHead({
   title,
   lede,
   kickerPlain,
+  actions,
 }: {
   kicker: string;
   title: string;
   lede?: ReactNode;
   /** Keep the kicker in source case (procedure IDs). */
   kickerPlain?: boolean;
+  actions?: ReactNode;
 }) {
   return (
     <header className="page-head">
       <div className={kickerPlain ? "kicker kicker-plain mono" : "kicker"}>{kicker}</div>
       <h1>{title}</h1>
       {lede && <p className="lede">{lede}</p>}
+      {actions && <div className="page-actions">{actions}</div>}
     </header>
   );
 }
@@ -211,6 +214,19 @@ export function Tabs<T extends string>({
           key={t.key}
           role="tab"
           aria-selected={t.key === active}
+          tabIndex={t.key === active ? 0 : -1}
+          onKeyDown={(event) => {
+            const index = tabs.findIndex((tab) => tab.key === t.key);
+            const next = event.key === "ArrowRight" ? (index + 1) % tabs.length
+              : event.key === "ArrowLeft" ? (index - 1 + tabs.length) % tabs.length
+              : event.key === "Home" ? 0
+              : event.key === "End" ? tabs.length - 1 : -1;
+            if (next < 0) return;
+            event.preventDefault();
+            onChange(tabs[next].key);
+            const buttons = event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+            buttons?.[next].focus();
+          }}
           className={`tab${t.key === active ? " active" : ""}`}
           onClick={() => onChange(t.key)}
         >

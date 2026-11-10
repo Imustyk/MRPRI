@@ -1,6 +1,8 @@
 import type en from "../en/overview";
 
 const overview: typeof en = {
+  explore: "Explorează procedurile",
+  how_it_works: "Cum funcționează",
   err_kicker: "Capitolul 3 · rezultate",
   err_title: "Rezultatele nu sunt disponibile",
   err_lede: `Acest panou citește ieșirea reală MTender din <code>data/processed/tenders.json</code> și scorurile de anomalie din MongoDB. Generați-le cu ETL-ul:`,

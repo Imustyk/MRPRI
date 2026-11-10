@@ -9,6 +9,12 @@
  */
 const en = {
   nav: {
+    not_found: "Page not found",
+    not_found_hint: "Check the address or return to the overview.",
+    search: "Search procedures",
+    search_placeholder: "Title, buyer or OCID",
+    open_menu: "Open menu",
+    close_menu: "Close menu",
     group_analysis: "Analysis",
     group_thesis: "Thesis",
     overview: "Overview",

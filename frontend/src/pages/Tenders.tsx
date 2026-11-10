@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { getJson, int, mdl, mtenderUrl, num, pctile, type Tender } from "../api";
+import { getJson, int, mdl, mtenderUrl, num, pctile, type Stats, type Tender } from "../api";
 import { BandBadge, Empty, ErrorNote, PageHead, Skeleton, TableWrap } from "../ui";
 
 const PAGE = 40;
@@ -9,18 +9,39 @@ const PAGE = 40;
 export default function Tenders() {
   const { t } = useTranslation();
   const nav = useNavigate();
-  const [q, setQ] = useState("");
+  const [searchParams] = useSearchParams();
+  const { key: navigationKey } = useLocation();
+  const queryFromUrl = searchParams.get("q") ?? "";
+  const [q, setQ] = useState(queryFromUrl);
   // Debounced so a request is not fired per keystroke; the upstream API is
   // fragile and also rate-limited.
-  const [debouncedQ, setDebouncedQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState(queryFromUrl);
   const [level, setLevel] = useState("");
   const [procedure, setProcedure] = useState("");
+  const [procedureOptions, setProcedureOptions] = useState<string[]>([]);
   const [minRisk, setMinRisk] = useState(0);
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
   const [items, setItems] = useState<Tender[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let live = true;
+    getJson<Stats>("/api/stats").then((stats) => {
+      if (live) setProcedureOptions(Object.keys(stats.procedure_counts).sort());
+    }).catch(() => undefined);
+    return () => { live = false; };
+  }, []);
+
+  useEffect(() => {
+    setQ(queryFromUrl);
+    setOffset(0);
+    setLevel("");
+    setProcedure("");
+    setMinRisk(0);
+  }, [queryFromUrl, navigationKey]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQ(q.trim()), 300);
@@ -30,6 +51,7 @@ export default function Tenders() {
   useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams({
+      sort: "risk",
       limit: String(PAGE),
       offset: String(offset),
       min_risk: String(minRisk),
@@ -56,7 +78,7 @@ export default function Tenders() {
     return () => {
       live = false;
     };
-  }, [debouncedQ, level, procedure, minRisk, offset]);
+  }, [debouncedQ, level, procedure, minRisk, offset, attempt]);
 
   const reset = () => setOffset(0);
   const filtered = Boolean(q || level || procedure || minRisk > 0);
@@ -105,12 +127,14 @@ export default function Tenders() {
             <option value="high">{t("tenders.f_level_high")}</option>
             <option value="medium">{t("tenders.f_level_medium")}</option>
             <option value="low">{t("tenders.f_level_low")}</option>
+            <option value="unscored">{t("risk.unscored")}</option>
           </select>
         </div>
         <div className="field">
           <label htmlFor="f-proc">{t("tenders.f_proc")}</label>
           <select
             id="f-proc"
+            disabled={procedureOptions.length === 0}
             value={procedure}
             onChange={(e) => {
               reset();
@@ -118,10 +142,9 @@ export default function Tenders() {
             }}
           >
             <option value="">{t("tenders.f_proc_all")}</option>
-            <option value="open">{t("tenders.f_proc_open")}</option>
-            <option value="restricted">{t("tenders.f_proc_restricted")}</option>
-            <option value="negotiated">{t("tenders.f_proc_negotiated")}</option>
-            <option value="small_value">{t("tenders.f_proc_small")}</option>
+            {procedureOptions.map((option) => (
+              <option key={option} value={option}>{option.replaceAll("_", " ")}</option>
+            ))}
           </select>
         </div>
         <div className="field">
@@ -146,11 +169,11 @@ export default function Tenders() {
         )}
       </div>
 
-      {err ? <ErrorNote error={err} /> : null}
+      {err ? <ErrorNote error={err} onRetry={() => setAttempt((value) => value + 1)} /> : null}
 
       {loading ? (
         <Skeleton rows={8} height={34} />
-      ) : items.length === 0 ? (
+      ) : err ? null : items.length === 0 ? (
         <Empty
           title={t("tenders.empty")}
           hint={
@@ -235,7 +258,7 @@ export default function Tenders() {
 
       {/* The table rows themselves are not focusable, so this list gives
           keyboard and screen-reader users the same navigation. */}
-      {items.length > 0 && (
+      {!err && !loading && items.length > 0 && (
         <nav className="muted" aria-label={t("tenders.open_nav")} style={{ marginTop: 10, fontSize: 12 }}>
           {t("tenders.open_directly")}{" "}
           {items.slice(0, 6).map((row) => (

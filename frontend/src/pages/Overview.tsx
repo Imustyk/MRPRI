@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -124,11 +125,15 @@ export default function Overview() {
   const unscoredRows = stats.level_counts.unscored ?? 0;
 
   return (
-    <div>
+    <div className="overview-page">
       <PageHead
         kicker={t("overview.kicker")}
         title={t("overview.title")}
         lede={t("overview.lede", { n: stats.n_tenders.toLocaleString() })}
+        actions={<>
+          <Link className="action-primary" to="/tenders">{t("overview.explore")} <span aria-hidden="true">↗</span></Link>
+          <Link className="action-secondary" to="/method">{t("overview.how_it_works")} <span aria-hidden="true">›</span></Link>
+        </>}
       />
 
       {unscoredRows > 0 && (
@@ -179,8 +184,8 @@ export default function Overview() {
       </div>
 
       {/* Provenance: where the rows came from and how the run is traceable. */}
-      <div className="card" style={{ marginTop: 16 }}>
-        <h2>{t("overview.prov_h")}</h2>
+      <details className="card provenance-disclosure" open={datasetErr !== null || dataset?.origin.synthetic_in_use === true || dataset?.verification.hash_matches_manifest === false}>
+        <summary>{t("overview.prov_h")}</summary>
         <p className="muted">{t("overview.prov_p")}</p>
         {datasetErr ? (
           <p className="muted">
@@ -256,7 +261,7 @@ export default function Overview() {
             </dl>
           </>
         )}
-      </div>
+      </details>
 
       <div className="grid row2">
         <div className="card">
@@ -268,7 +273,7 @@ export default function Overview() {
             <Empty title={t("overview.monthly_empty")} hint={t("overview.monthly_empty_hint")} />
           ) : (
             <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={months} margin={{ top: 6, right: 8, bottom: 4, left: -18 }}>
+              <LineChart data={months} margin={{ top: 6, right: 8, bottom: 4, left: 0 }}>
                 <CartesianGrid stroke="#eee6d8" vertical={false} />
                 <XAxis
                   dataKey="label"
@@ -282,7 +287,7 @@ export default function Overview() {
                   tick={{ fontSize: 11, fill: "#5c6673" }}
                   tickLine={false}
                   axisLine={false}
-                  width={44}
+                  width={60}
                 />
                 <Tooltip
                   formatter={(v: number | string) => [
@@ -310,7 +315,7 @@ export default function Overview() {
             <Empty title={t("overview.bands_empty")} />
           ) : (
             <ResponsiveContainer width="100%" height={244}>
-              <BarChart data={bandData} margin={{ top: 6, right: 8, bottom: 4, left: -18 }}>
+              <BarChart data={bandData} margin={{ top: 6, right: 8, bottom: 4, left: 0 }}>
                 <CartesianGrid stroke="#eee6d8" vertical={false} />
                 <XAxis
                   dataKey="level"
@@ -323,7 +328,7 @@ export default function Overview() {
                   tick={{ fontSize: 11, fill: "#5c6673" }}
                   tickLine={false}
                   axisLine={false}
-                  width={44}
+                  width={60}
                 />
                 <Tooltip
                   formatter={(v: number | string) => [num(Number(v)), t("overview.bands_procedures")]}

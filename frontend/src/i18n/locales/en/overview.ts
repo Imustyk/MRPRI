@@ -1,5 +1,7 @@
 /** Overview page strings (English = source). */
 const overview = {
+  explore: "Explore procedures",
+  how_it_works: "How it works",
   err_kicker: "Chapter 3 · results",
   err_title: "Results not available",
   err_lede: `This dashboard reads the real MTender output in <code>data/processed/tenders.json</code> and the anomaly scores in MongoDB. Produce them with the ETL:`,
@@ -7,8 +9,8 @@ const overview = {
   load_title: "Corruption-risk radar",
   kicker: "Republic of Moldova · public procurement",
   title: "Corruption-risk radar",
-  lede: `Four independent detectors — MAD z-score, Isolation Forest, Local Outlier Factor and One-Class SVM — score a flagged-candidate sample drawn from {{n}} real procedures in the MTender feed. The priority band is set by how many of them agreed, so a band means corroboration rather than one model&apos;s opinion.`,
-  coverage: `Coverage first. {{unscored}} of the {{total}} procedures here ({{share}}) have <em>no</em> detector output — the detection run scored {{scored}} of them. Those records are shown as <strong>not scored</strong>, never as &quot;low risk&quot;: no model examined them, so nothing clears them. Every figure below that describes model behaviour is a share of the {{scored}} scored records only.`,
+  lede: `Four independent detectors — MAD z-score, Isolation Forest, Local Outlier Factor and One-Class SVM — score a flagged-candidate sample drawn from {{n}} real procedures in the MTender feed. The priority band is set by how many of them agreed, so a band means corroboration rather than one model’s opinion.`,
+  coverage: `Coverage first. {{unscored}} of the {{total}} procedures here ({{share}}) have <em>no</em> detector output — the detection run scored {{scored}} of them. Those records are shown as <strong>not scored</strong>, never as “low risk”: no model examined them, so nothing clears them. Every figure below that describes model behaviour is a share of the {{scored}} scored records only.`,
   stat_scored: "Procedures scored",
   stat_scored_note: "of {{n}} in the corpus",
   stat_high: "High / critical",
@@ -20,7 +22,7 @@ const overview = {
   stat_single_none: "No procedure published a participant list",
   stat_single_note: "of {{n}} with a published bidder list",
   monthly_h: "Mean anomaly percentile by month",
-  monthly_p: `Rank of each procedure&apos;s most extreme detector within this dataset, averaged per month. Not a probability, and not comparable across pipeline runs.`,
+  monthly_p: `Rank of each procedure’s most extreme detector within this dataset, averaged per month. Not a probability, and not comparable across pipeline runs.`,
   monthly_mean: "mean percentile",
   monthly_empty: "No dated procedures",
   monthly_empty_hint: "The export contains no usable dates.",

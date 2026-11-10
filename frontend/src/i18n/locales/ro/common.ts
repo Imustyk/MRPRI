@@ -3,6 +3,12 @@ import type en from "../en/common";
 /** Română. Regula de plural: one / other. */
 const ro: typeof en = {
   nav: {
+    not_found: "Pagina nu a fost găsită",
+    not_found_hint: "Verifică adresa sau revino la prezentarea generală.",
+    search: "Caută proceduri",
+    search_placeholder: "Titlu, cumpărător sau OCID",
+    open_menu: "Deschide meniul",
+    close_menu: "Închide meniul",
     group_analysis: "Analiză",
     group_thesis: "Teză",
     overview: "Prezentare",
