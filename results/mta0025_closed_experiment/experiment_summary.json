@@ -1,0 +1,1962 @@
+{
+  "protocol": {
+    "population": "inner join of features.csv and the stage-period export, sorted by ocid",
+    "n_ocids": 152378,
+    "period_values_changed": 152038,
+    "period_values_unchanged": 340,
+    "random_state": 42,
+    "outlier_rate": 0.05,
+    "neighbourhood_fit_cap": 20000,
+    "methods": [
+      "mad",
+      "isolation_forest",
+      "lof",
+      "one_class_svm",
+      "ensemble",
+      "simple_indicators"
+    ],
+    "arms": {
+      "legacy": "production feature snapshot, including the filled bid window",
+      "stage_consistent": "same non-period features; period features from one evaluation release; missing stays missing in the table",
+      "ablation": "same rows without bid_window_days, short_deadline and long_deadline"
+    },
+    "ensemble_flag": "at least 3 of mad, isolation forest, lof and one-class svm",
+    "simple_indicator_flag": "exact top 5 percent of the binary count, ties broken by ocid",
+    "external_labels_used": false,
+    "superiority_claim": false,
+    "historically_certified": false
+  },
+  "preprocess": {
+    "legacy": {
+      "policy": "production_fillna_0_on_already_filled_snapshot",
+      "constant_30_fill_applied_here": false,
+      "columns": [
+        "log_award_value",
+        "value_vs_cpv_median",
+        "value_zscore_cpv",
+        "estimate_to_award_ratio",
+        "log_award_total",
+        "multi_award_tender",
+        "n_bidders_log",
+        "single_bidder",
+        "no_bid_data",
+        "multi_supplier_award",
+        "bid_window_days",
+        "short_deadline",
+        "long_deadline",
+        "n_amendments",
+        "amended",
+        "accelerated_like",
+        "cancelled",
+        "no_award_after_tender",
+        "buyer_supplier_repeat_share",
+        "winner_share_of_buyer_awards",
+        "supplier_win_concentration",
+        "supplier_award_count_log"
+      ]
+    },
+    "stage_consistent": {
+      "policy": "median_of_observed_windows_plus_missing_indicator",
+      "constant_30_fill": false,
+      "median_defined": true,
+      "median_observed_window": 5.0,
+      "median_equals_legacy_constant_30": false,
+      "n_missing_window": 93618,
+      "n_observed_window": 58760,
+      "columns": [
+        "log_award_value",
+        "value_vs_cpv_median",
+        "value_zscore_cpv",
+        "estimate_to_award_ratio",
+        "log_award_total",
+        "multi_award_tender",
+        "n_bidders_log",
+        "single_bidder",
+        "no_bid_data",
+        "multi_supplier_award",
+        "bid_window_days",
+        "short_deadline",
+        "long_deadline",
+        "n_amendments",
+        "amended",
+        "accelerated_like",
+        "cancelled",
+        "no_award_after_tender",
+        "buyer_supplier_repeat_share",
+        "winner_share_of_buyer_awards",
+        "supplier_win_concentration",
+        "supplier_award_count_log",
+        "submission_window_missing"
+      ]
+    },
+    "ablation": {
+      "policy": "drop_period_columns_fillna_0",
+      "dropped": [
+        "bid_window_days",
+        "short_deadline",
+        "long_deadline"
+      ],
+      "columns": [
+        "log_award_value",
+        "value_vs_cpv_median",
+        "value_zscore_cpv",
+        "estimate_to_award_ratio",
+        "log_award_total",
+        "multi_award_tender",
+        "n_bidders_log",
+        "single_bidder",
+        "no_bid_data",
+        "multi_supplier_award",
+        "n_amendments",
+        "amended",
+        "accelerated_like",
+        "cancelled",
+        "no_award_after_tender",
+        "buyer_supplier_repeat_share",
+        "winner_share_of_buyer_awards",
+        "supplier_win_concentration",
+        "supplier_award_count_log"
+      ]
+    }
+  },
+  "arms": {
+    "legacy": {
+      "columns": [
+        "log_award_value",
+        "value_vs_cpv_median",
+        "value_zscore_cpv",
+        "estimate_to_award_ratio",
+        "log_award_total",
+        "multi_award_tender",
+        "n_bidders_log",
+        "single_bidder",
+        "no_bid_data",
+        "multi_supplier_award",
+        "bid_window_days",
+        "short_deadline",
+        "long_deadline",
+        "n_amendments",
+        "amended",
+        "accelerated_like",
+        "cancelled",
+        "no_award_after_tender",
+        "buyer_supplier_repeat_share",
+        "winner_share_of_buyer_awards",
+        "supplier_win_concentration",
+        "supplier_award_count_log"
+      ],
+      "n_columns": 22,
+      "preprocess": {
+        "policy": "production_fillna_0_on_already_filled_snapshot",
+        "constant_30_fill_applied_here": false,
+        "columns": [
+          "log_award_value",
+          "value_vs_cpv_median",
+          "value_zscore_cpv",
+          "estimate_to_award_ratio",
+          "log_award_total",
+          "multi_award_tender",
+          "n_bidders_log",
+          "single_bidder",
+          "no_bid_data",
+          "multi_supplier_award",
+          "bid_window_days",
+          "short_deadline",
+          "long_deadline",
+          "n_amendments",
+          "amended",
+          "accelerated_like",
+          "cancelled",
+          "no_award_after_tender",
+          "buyer_supplier_repeat_share",
+          "winner_share_of_buyer_awards",
+          "supplier_win_concentration",
+          "supplier_award_count_log"
+        ]
+      },
+      "seconds": {
+        "mad": 0.094,
+        "isolation_forest": 2.498,
+        "lof": 1.737,
+        "one_class_svm": 6.495,
+        "ensemble": 0.042,
+        "simple_indicators": 0.013
+      },
+      "seconds_total": 10.879,
+      "fit_rows": 20000,
+      "bid_window_observed_stats": {
+        "n": 152378,
+        "median": 30.0,
+        "mad": 0.0,
+        "std": 11.680141135849311
+      },
+      "methods": {
+        "mad": {
+          "n_flagged": 15529,
+          "pct_flagged": 10.1911,
+          "mean_score": 2.667646,
+          "median_score": 1.476749,
+          "p95_score": 9.940588,
+          "seconds": 0.094,
+          "params": {
+            "z_threshold": 5.0,
+            "scored_features": [
+              "log_award_value",
+              "log_award_total",
+              "buyer_supplier_repeat_share",
+              "winner_share_of_buyer_awards",
+              "supplier_award_count_log"
+            ],
+            "binary_features_excluded": [
+              "multi_award_tender",
+              "single_bidder",
+              "no_bid_data",
+              "multi_supplier_award",
+              "short_deadline",
+              "long_deadline",
+              "amended",
+              "accelerated_like",
+              "cancelled",
+              "no_award_after_tender"
+            ],
+            "spike_like_features_excluded": [
+              "value_vs_cpv_median",
+              "value_zscore_cpv",
+              "supplier_win_concentration"
+            ],
+            "constant_features_excluded": [
+              "estimate_to_award_ratio",
+              "n_bidders_log",
+              "bid_window_days",
+              "n_amendments"
+            ]
+          }
+        },
+        "isolation_forest": {
+          "n_flagged": 7618,
+          "pct_flagged": 4.9994,
+          "mean_score": 0.421842,
+          "median_score": 0.390309,
+          "p95_score": 0.56128,
+          "seconds": 2.498,
+          "params": {
+            "n_estimators": 300,
+            "contamination": 0.05,
+            "random_state": 42
+          }
+        },
+        "lof": {
+          "n_flagged": 7606,
+          "pct_flagged": 4.9915,
+          "mean_score": 1817768.689941,
+          "median_score": 1.032322,
+          "p95_score": 1.428093,
+          "seconds": 1.737,
+          "params": {
+            "n_neighbors": 20,
+            "contamination": 0.05,
+            "novelty": true,
+            "fitted_on": 20000,
+            "fit_sample": "uniform random without replacement, seeded, after sorting by ocid"
+          }
+        },
+        "one_class_svm": {
+          "n_flagged": 7740,
+          "pct_flagged": 5.0795,
+          "mean_score": -6.021701,
+          "median_score": -7.497752,
+          "p95_score": 0.00378,
+          "seconds": 6.495,
+          "params": {
+            "kernel": "rbf",
+            "nu": 0.05,
+            "gamma": "scale",
+            "fitted_on": 20000,
+            "fit_sample": "uniform random without replacement, seeded, after sorting by ocid"
+          }
+        },
+        "ensemble": {
+          "n_flagged": 3031,
+          "pct_flagged": 1.9891,
+          "mean_score": 0.500003,
+          "median_score": 0.505623,
+          "p95_score": 0.822831,
+          "seconds": 0.042,
+          "params": {
+            "score": "mean of within-arm percentile ranks of mad, isolation_forest, lof, one_class_svm",
+            "flag": "at least 3 of the 4 detector flags",
+            "votes_mean": 0.25261520691963407
+          }
+        },
+        "simple_indicators": {
+          "n_flagged": 7619,
+          "pct_flagged": 5.0001,
+          "mean_score": 1.535458,
+          "median_score": 1.0,
+          "p95_score": 3.0,
+          "seconds": 0.013,
+          "params": {
+            "score": "count of listed binary indicators equal to 1; missing period flags do not count",
+            "flag": "exact top fraction after OCID tie-break",
+            "rate": 0.05,
+            "n_flagged_by_construction": 7619,
+            "note": "a reporting convention aligned with contamination 0.05, not a validated threshold"
+          }
+        }
+      },
+      "scores_file": "scores_legacy.csv.gz",
+      "scores_sha256": "f52b9b6cc9bbfc4664c0a38417ac64209eac35a360e2eb5cb686cec3bb817e12"
+    },
+    "stage_consistent": {
+      "columns": [
+        "log_award_value",
+        "value_vs_cpv_median",
+        "value_zscore_cpv",
+        "estimate_to_award_ratio",
+        "log_award_total",
+        "multi_award_tender",
+        "n_bidders_log",
+        "single_bidder",
+        "no_bid_data",
+        "multi_supplier_award",
+        "bid_window_days",
+        "short_deadline",
+        "long_deadline",
+        "n_amendments",
+        "amended",
+        "accelerated_like",
+        "cancelled",
+        "no_award_after_tender",
+        "buyer_supplier_repeat_share",
+        "winner_share_of_buyer_awards",
+        "supplier_win_concentration",
+        "supplier_award_count_log",
+        "submission_window_missing"
+      ],
+      "n_columns": 23,
+      "preprocess": {
+        "policy": "median_of_observed_windows_plus_missing_indicator",
+        "constant_30_fill": false,
+        "median_defined": true,
+        "median_observed_window": 5.0,
+        "median_equals_legacy_constant_30": false,
+        "n_missing_window": 93618,
+        "n_observed_window": 58760,
+        "columns": [
+          "log_award_value",
+          "value_vs_cpv_median",
+          "value_zscore_cpv",
+          "estimate_to_award_ratio",
+          "log_award_total",
+          "multi_award_tender",
+          "n_bidders_log",
+          "single_bidder",
+          "no_bid_data",
+          "multi_supplier_award",
+          "bid_window_days",
+          "short_deadline",
+          "long_deadline",
+          "n_amendments",
+          "amended",
+          "accelerated_like",
+          "cancelled",
+          "no_award_after_tender",
+          "buyer_supplier_repeat_share",
+          "winner_share_of_buyer_awards",
+          "supplier_win_concentration",
+          "supplier_award_count_log",
+          "submission_window_missing"
+        ]
+      },
+      "seconds": {
+        "mad": 0.097,
+        "isolation_forest": 2.65,
+        "lof": 1.7,
+        "one_class_svm": 6.76,
+        "ensemble": 0.041,
+        "simple_indicators": 0.013
+      },
+      "seconds_total": 11.262,
+      "fit_rows": 20000,
+      "bid_window_observed_stats": {
+        "n": 58760,
+        "median": 5.0,
+        "mad": 2.0,
+        "std": 5.485018176239285
+      },
+      "methods": {
+        "mad": {
+          "n_flagged": 15529,
+          "pct_flagged": 10.1911,
+          "mean_score": 2.667646,
+          "median_score": 1.476749,
+          "p95_score": 9.940588,
+          "seconds": 0.097,
+          "params": {
+            "z_threshold": 5.0,
+            "scored_features": [
+              "log_award_value",
+              "log_award_total",
+              "buyer_supplier_repeat_share",
+              "winner_share_of_buyer_awards",
+              "supplier_award_count_log"
+            ],
+            "binary_features_excluded": [
+              "multi_award_tender",
+              "single_bidder",
+              "no_bid_data",
+              "multi_supplier_award",
+              "short_deadline",
+              "long_deadline",
+              "amended",
+              "accelerated_like",
+              "cancelled",
+              "no_award_after_tender",
+              "submission_window_missing"
+            ],
+            "spike_like_features_excluded": [
+              "value_vs_cpv_median",
+              "value_zscore_cpv",
+              "supplier_win_concentration"
+            ],
+            "constant_features_excluded": [
+              "estimate_to_award_ratio",
+              "n_bidders_log",
+              "bid_window_days",
+              "n_amendments"
+            ]
+          }
+        },
+        "isolation_forest": {
+          "n_flagged": 7563,
+          "pct_flagged": 4.9633,
+          "mean_score": 0.434819,
+          "median_score": 0.400392,
+          "p95_score": 0.575384,
+          "seconds": 2.65,
+          "params": {
+            "n_estimators": 300,
+            "contamination": 0.05,
+            "random_state": 42
+          }
+        },
+        "lof": {
+          "n_flagged": 7720,
+          "pct_flagged": 5.0663,
+          "mean_score": 11917201.108024,
+          "median_score": 1.032837,
+          "p95_score": 1.456491,
+          "seconds": 1.7,
+          "params": {
+            "n_neighbors": 20,
+            "contamination": 0.05,
+            "novelty": true,
+            "fitted_on": 20000,
+            "fit_sample": "uniform random without replacement, seeded, after sorting by ocid"
+          }
+        },
+        "one_class_svm": {
+          "n_flagged": 8321,
+          "pct_flagged": 5.4608,
+          "mean_score": -5.845465,
+          "median_score": -7.615942,
+          "p95_score": 0.007638,
+          "seconds": 6.76,
+          "params": {
+            "kernel": "rbf",
+            "nu": 0.05,
+            "gamma": "scale",
+            "fitted_on": 20000,
+            "fit_sample": "uniform random without replacement, seeded, after sorting by ocid"
+          }
+        },
+        "ensemble": {
+          "n_flagged": 2873,
+          "pct_flagged": 1.8854,
+          "mean_score": 0.500003,
+          "median_score": 0.517871,
+          "p95_score": 0.820578,
+          "seconds": 0.041,
+          "params": {
+            "score": "mean of within-arm percentile ranks of mad, isolation_forest, lof, one_class_svm",
+            "flag": "at least 3 of the 4 detector flags",
+            "votes_mean": 0.25681528829621075
+          }
+        },
+        "simple_indicators": {
+          "n_flagged": 7619,
+          "pct_flagged": 5.0001,
+          "mean_score": 1.750253,
+          "median_score": 1.0,
+          "p95_score": 4.0,
+          "seconds": 0.013,
+          "params": {
+            "score": "count of listed binary indicators equal to 1; missing period flags do not count",
+            "flag": "exact top fraction after OCID tie-break",
+            "rate": 0.05,
+            "n_flagged_by_construction": 7619,
+            "note": "a reporting convention aligned with contamination 0.05, not a validated threshold"
+          }
+        }
+      },
+      "scores_file": "scores_stage_consistent.csv.gz",
+      "scores_sha256": "8e7e3c12770464f1f70daf1483aaa57472c256694a25bdf14898940e04407fb7"
+    },
+    "ablation": {
+      "columns": [
+        "log_award_value",
+        "value_vs_cpv_median",
+        "value_zscore_cpv",
+        "estimate_to_award_ratio",
+        "log_award_total",
+        "multi_award_tender",
+        "n_bidders_log",
+        "single_bidder",
+        "no_bid_data",
+        "multi_supplier_award",
+        "n_amendments",
+        "amended",
+        "accelerated_like",
+        "cancelled",
+        "no_award_after_tender",
+        "buyer_supplier_repeat_share",
+        "winner_share_of_buyer_awards",
+        "supplier_win_concentration",
+        "supplier_award_count_log"
+      ],
+      "n_columns": 19,
+      "preprocess": {
+        "policy": "drop_period_columns_fillna_0",
+        "dropped": [
+          "bid_window_days",
+          "short_deadline",
+          "long_deadline"
+        ],
+        "columns": [
+          "log_award_value",
+          "value_vs_cpv_median",
+          "value_zscore_cpv",
+          "estimate_to_award_ratio",
+          "log_award_total",
+          "multi_award_tender",
+          "n_bidders_log",
+          "single_bidder",
+          "no_bid_data",
+          "multi_supplier_award",
+          "n_amendments",
+          "amended",
+          "accelerated_like",
+          "cancelled",
+          "no_award_after_tender",
+          "buyer_supplier_repeat_share",
+          "winner_share_of_buyer_awards",
+          "supplier_win_concentration",
+          "supplier_award_count_log"
+        ]
+      },
+      "seconds": {
+        "mad": 0.088,
+        "isolation_forest": 2.625,
+        "lof": 1.652,
+        "one_class_svm": 6.355,
+        "ensemble": 0.042,
+        "simple_indicators": 0.012
+      },
+      "seconds_total": 10.774,
+      "fit_rows": 20000,
+      "bid_window_observed_stats": null,
+      "methods": {
+        "mad": {
+          "n_flagged": 15529,
+          "pct_flagged": 10.1911,
+          "mean_score": 2.667646,
+          "median_score": 1.476749,
+          "p95_score": 9.940588,
+          "seconds": 0.088,
+          "params": {
+            "z_threshold": 5.0,
+            "scored_features": [
+              "log_award_value",
+              "log_award_total",
+              "buyer_supplier_repeat_share",
+              "winner_share_of_buyer_awards",
+              "supplier_award_count_log"
+            ],
+            "binary_features_excluded": [
+              "multi_award_tender",
+              "single_bidder",
+              "no_bid_data",
+              "multi_supplier_award",
+              "amended",
+              "accelerated_like",
+              "cancelled",
+              "no_award_after_tender"
+            ],
+            "spike_like_features_excluded": [
+              "value_vs_cpv_median",
+              "value_zscore_cpv",
+              "supplier_win_concentration"
+            ],
+            "constant_features_excluded": [
+              "estimate_to_award_ratio",
+              "n_bidders_log",
+              "n_amendments"
+            ]
+          }
+        },
+        "isolation_forest": {
+          "n_flagged": 7619,
+          "pct_flagged": 5.0001,
+          "mean_score": 0.433127,
+          "median_score": 0.405443,
+          "p95_score": 0.569431,
+          "seconds": 2.625,
+          "params": {
+            "n_estimators": 300,
+            "contamination": 0.05,
+            "random_state": 42
+          }
+        },
+        "lof": {
+          "n_flagged": 7810,
+          "pct_flagged": 5.1254,
+          "mean_score": 3626245.195459,
+          "median_score": 1.033265,
+          "p95_score": 1.655993,
+          "seconds": 1.652,
+          "params": {
+            "n_neighbors": 20,
+            "contamination": 0.05,
+            "novelty": true,
+            "fitted_on": 20000,
+            "fit_sample": "uniform random without replacement, seeded, after sorting by ocid"
+          }
+        },
+        "one_class_svm": {
+          "n_flagged": 35171,
+          "pct_flagged": 23.0814,
+          "mean_score": -6.316039,
+          "median_score": -8.344989,
+          "p95_score": 0.000316,
+          "seconds": 6.355,
+          "params": {
+            "kernel": "rbf",
+            "nu": 0.05,
+            "gamma": "scale",
+            "fitted_on": 20000,
+            "fit_sample": "uniform random without replacement, seeded, after sorting by ocid"
+          }
+        },
+        "ensemble": {
+          "n_flagged": 2700,
+          "pct_flagged": 1.7719,
+          "mean_score": 0.500003,
+          "median_score": 0.507613,
+          "p95_score": 0.815147,
+          "seconds": 0.042,
+          "params": {
+            "score": "mean of within-arm percentile ranks of mad, isolation_forest, lof, one_class_svm",
+            "flag": "at least 3 of the 4 detector flags",
+            "votes_mean": 0.43397997086193546
+          }
+        },
+        "simple_indicators": {
+          "n_flagged": 7619,
+          "pct_flagged": 5.0001,
+          "mean_score": 1.516873,
+          "median_score": 1.0,
+          "p95_score": 3.0,
+          "seconds": 0.012,
+          "params": {
+            "score": "count of listed binary indicators equal to 1; missing period flags do not count",
+            "flag": "exact top fraction after OCID tie-break",
+            "rate": 0.05,
+            "n_flagged_by_construction": 7619,
+            "note": "a reporting convention aligned with contamination 0.05, not a validated threshold"
+          }
+        }
+      },
+      "scores_file": "scores_ablation.csv.gz",
+      "scores_sha256": "339177690971645423b5a1460545bc18a4570442d56611d4596a25537b43cec2"
+    }
+  },
+  "pairwise": [
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "method": "mad",
+      "spearman": 0.9999999999999999,
+      "spearman_where_period_changed": 1.0,
+      "spearman_where_period_unchanged": 1.0,
+      "both": 15529,
+      "only_left": 0,
+      "only_right": 0,
+      "neither": 136849,
+      "jaccard": 1.0,
+      "median_abs_percentile_gap": 0.0,
+      "median_abs_percentile_gap_changed": 0.0,
+      "median_abs_percentile_gap_unchanged": 0.0,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 50,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "100": {
+          "k": 100,
+          "intersection": 100,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "200": {
+          "k": 200,
+          "intersection": 200,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "500": {
+          "k": 500,
+          "intersection": 500,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 1000,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "method": "isolation_forest",
+      "spearman": 0.9794605251558975,
+      "spearman_where_period_changed": 0.9796940899344542,
+      "spearman_where_period_unchanged": 0.5576074908687286,
+      "both": 5415,
+      "only_left": 2203,
+      "only_right": 2148,
+      "neither": 142612,
+      "jaccard": 0.5544747081712063,
+      "median_abs_percentile_gap": 0.023212012232737056,
+      "median_abs_percentile_gap_changed": 0.023212012232737056,
+      "median_abs_percentile_gap_unchanged": 0.05987412881124571,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 26,
+          "overlap": 0.52,
+          "only_left": 24,
+          "only_right": 24
+        },
+        "100": {
+          "k": 100,
+          "intersection": 47,
+          "overlap": 0.47,
+          "only_left": 53,
+          "only_right": 53
+        },
+        "200": {
+          "k": 200,
+          "intersection": 108,
+          "overlap": 0.54,
+          "only_left": 92,
+          "only_right": 92
+        },
+        "500": {
+          "k": 500,
+          "intersection": 288,
+          "overlap": 0.576,
+          "only_left": 212,
+          "only_right": 212
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 606,
+          "overlap": 0.606,
+          "only_left": 394,
+          "only_right": 394
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "method": "lof",
+      "spearman": 0.8376598882881168,
+      "spearman_where_period_changed": 0.8387639609988641,
+      "spearman_where_period_unchanged": 0.3741069098058967,
+      "both": 4800,
+      "only_left": 2806,
+      "only_right": 2920,
+      "neither": 141852,
+      "jaccard": 0.4560136804104123,
+      "median_abs_percentile_gap": 0.007858746013204007,
+      "median_abs_percentile_gap_changed": 0.007842339445326751,
+      "median_abs_percentile_gap_unchanged": 0.15598380343619153,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 0,
+          "overlap": 0.0,
+          "only_left": 50,
+          "only_right": 50
+        },
+        "100": {
+          "k": 100,
+          "intersection": 0,
+          "overlap": 0.0,
+          "only_left": 100,
+          "only_right": 100
+        },
+        "200": {
+          "k": 200,
+          "intersection": 0,
+          "overlap": 0.0,
+          "only_left": 200,
+          "only_right": 200
+        },
+        "500": {
+          "k": 500,
+          "intersection": 1,
+          "overlap": 0.002,
+          "only_left": 499,
+          "only_right": 499
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 16,
+          "overlap": 0.016,
+          "only_left": 984,
+          "only_right": 984
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "method": "one_class_svm",
+      "spearman": 0.9041526614297386,
+      "spearman_where_period_changed": 0.9058695545950101,
+      "spearman_where_period_unchanged": 0.7462004396963923,
+      "both": 5786,
+      "only_left": 1954,
+      "only_right": 2535,
+      "neither": 142103,
+      "jaccard": 0.5631143552311435,
+      "median_abs_percentile_gap": 0.025751748940135766,
+      "median_abs_percentile_gap_changed": 0.025751748940135766,
+      "median_abs_percentile_gap_unchanged": 0.30001378151701685,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 21,
+          "overlap": 0.42,
+          "only_left": 29,
+          "only_right": 29
+        },
+        "100": {
+          "k": 100,
+          "intersection": 29,
+          "overlap": 0.29,
+          "only_left": 71,
+          "only_right": 71
+        },
+        "200": {
+          "k": 200,
+          "intersection": 46,
+          "overlap": 0.23,
+          "only_left": 154,
+          "only_right": 154
+        },
+        "500": {
+          "k": 500,
+          "intersection": 251,
+          "overlap": 0.502,
+          "only_left": 249,
+          "only_right": 249
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 704,
+          "overlap": 0.704,
+          "only_left": 296,
+          "only_right": 296
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "method": "ensemble",
+      "spearman": 0.9428350585582388,
+      "spearman_where_period_changed": 0.9434391723629046,
+      "spearman_where_period_unchanged": 0.6793648200823712,
+      "both": 2016,
+      "only_left": 1015,
+      "only_right": 857,
+      "neither": 148490,
+      "jaccard": 0.5185185185185185,
+      "median_abs_percentile_gap": 0.02899040543910536,
+      "median_abs_percentile_gap_changed": 0.02899040543910536,
+      "median_abs_percentile_gap_unchanged": 0.11769087401068395,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 23,
+          "overlap": 0.46,
+          "only_left": 27,
+          "only_right": 27
+        },
+        "100": {
+          "k": 100,
+          "intersection": 49,
+          "overlap": 0.49,
+          "only_left": 51,
+          "only_right": 51
+        },
+        "200": {
+          "k": 200,
+          "intersection": 115,
+          "overlap": 0.575,
+          "only_left": 85,
+          "only_right": 85
+        },
+        "500": {
+          "k": 500,
+          "intersection": 356,
+          "overlap": 0.712,
+          "only_left": 144,
+          "only_right": 144
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 760,
+          "overlap": 0.76,
+          "only_left": 240,
+          "only_right": 240
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "method": "simple_indicators",
+      "spearman": 0.9503197545430829,
+      "spearman_where_period_changed": 0.9502270208656514,
+      "spearman_where_period_unchanged": 1.0,
+      "both": 3712,
+      "only_left": 3907,
+      "only_right": 3907,
+      "neither": 140852,
+      "jaccard": 0.32205448551101856,
+      "median_abs_percentile_gap": 0.015681397577078038,
+      "median_abs_percentile_gap_changed": 0.015681397577078038,
+      "median_abs_percentile_gap_unchanged": 0.07119466064655,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 1,
+          "overlap": 0.02,
+          "only_left": 49,
+          "only_right": 49
+        },
+        "100": {
+          "k": 100,
+          "intersection": 2,
+          "overlap": 0.02,
+          "only_left": 98,
+          "only_right": 98
+        },
+        "200": {
+          "k": 200,
+          "intersection": 17,
+          "overlap": 0.085,
+          "only_left": 183,
+          "only_right": 183
+        },
+        "500": {
+          "k": 500,
+          "intersection": 69,
+          "overlap": 0.138,
+          "only_left": 431,
+          "only_right": 431
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 206,
+          "overlap": 0.206,
+          "only_left": 794,
+          "only_right": 794
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "method": "mad",
+      "spearman": 0.9999999999999999,
+      "spearman_where_period_changed": 1.0,
+      "spearman_where_period_unchanged": 1.0,
+      "both": 15529,
+      "only_left": 0,
+      "only_right": 0,
+      "neither": 136849,
+      "jaccard": 1.0,
+      "median_abs_percentile_gap": 0.0,
+      "median_abs_percentile_gap_changed": 0.0,
+      "median_abs_percentile_gap_unchanged": 0.0,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 50,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "100": {
+          "k": 100,
+          "intersection": 100,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "200": {
+          "k": 200,
+          "intersection": 200,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "500": {
+          "k": 500,
+          "intersection": 500,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 1000,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "method": "isolation_forest",
+      "spearman": 0.9857964061507181,
+      "spearman_where_period_changed": 0.9860746398081457,
+      "spearman_where_period_unchanged": 0.6647160413449268,
+      "both": 5694,
+      "only_left": 1924,
+      "only_right": 1925,
+      "neither": 142835,
+      "jaccard": 0.5966677145551713,
+      "median_abs_percentile_gap": 0.014014490280749196,
+      "median_abs_percentile_gap_changed": 0.013980036488206948,
+      "median_abs_percentile_gap_unchanged": 0.05566420349394269,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 28,
+          "overlap": 0.56,
+          "only_left": 22,
+          "only_right": 22
+        },
+        "100": {
+          "k": 100,
+          "intersection": 50,
+          "overlap": 0.5,
+          "only_left": 50,
+          "only_right": 50
+        },
+        "200": {
+          "k": 200,
+          "intersection": 113,
+          "overlap": 0.565,
+          "only_left": 87,
+          "only_right": 87
+        },
+        "500": {
+          "k": 500,
+          "intersection": 317,
+          "overlap": 0.634,
+          "only_left": 183,
+          "only_right": 183
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 676,
+          "overlap": 0.676,
+          "only_left": 324,
+          "only_right": 324
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "method": "lof",
+      "spearman": 0.813913033585512,
+      "spearman_where_period_changed": 0.8155035647661268,
+      "spearman_where_period_unchanged": 0.20921062064735105,
+      "both": 3414,
+      "only_left": 4192,
+      "only_right": 4396,
+      "neither": 140376,
+      "jaccard": 0.2844525912347942,
+      "median_abs_percentile_gap": 0.012678995655540815,
+      "median_abs_percentile_gap_changed": 0.012649463833361786,
+      "median_abs_percentile_gap_unchanged": 0.15269592723359016,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 13,
+          "overlap": 0.26,
+          "only_left": 37,
+          "only_right": 37
+        },
+        "100": {
+          "k": 100,
+          "intersection": 13,
+          "overlap": 0.13,
+          "only_left": 87,
+          "only_right": 87
+        },
+        "200": {
+          "k": 200,
+          "intersection": 14,
+          "overlap": 0.07,
+          "only_left": 186,
+          "only_right": 186
+        },
+        "500": {
+          "k": 500,
+          "intersection": 14,
+          "overlap": 0.028,
+          "only_left": 486,
+          "only_right": 486
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 40,
+          "overlap": 0.04,
+          "only_left": 960,
+          "only_right": 960
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "method": "one_class_svm",
+      "spearman": 0.9125235120546551,
+      "spearman_where_period_changed": 0.9138433992184442,
+      "spearman_where_period_unchanged": 0.7152127505287794,
+      "both": 5793,
+      "only_left": 1947,
+      "only_right": 29378,
+      "neither": 115260,
+      "jaccard": 0.1560698313486718,
+      "median_abs_percentile_gap": 0.03643570594180262,
+      "median_abs_percentile_gap_changed": 0.03637007967029363,
+      "median_abs_percentile_gap_unchanged": 0.2384120411082965,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 17,
+          "overlap": 0.34,
+          "only_left": 33,
+          "only_right": 33
+        },
+        "100": {
+          "k": 100,
+          "intersection": 22,
+          "overlap": 0.22,
+          "only_left": 78,
+          "only_right": 78
+        },
+        "200": {
+          "k": 200,
+          "intersection": 38,
+          "overlap": 0.19,
+          "only_left": 162,
+          "only_right": 162
+        },
+        "500": {
+          "k": 500,
+          "intersection": 243,
+          "overlap": 0.486,
+          "only_left": 257,
+          "only_right": 257
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 692,
+          "overlap": 0.692,
+          "only_left": 308,
+          "only_right": 308
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "method": "ensemble",
+      "spearman": 0.9475625995950745,
+      "spearman_where_period_changed": 0.9480906186132086,
+      "spearman_where_period_unchanged": 0.6384007671732234,
+      "both": 2082,
+      "only_left": 949,
+      "only_right": 618,
+      "neither": 148729,
+      "jaccard": 0.5705672787064949,
+      "median_abs_percentile_gap": 0.014431217104831418,
+      "median_abs_percentile_gap_changed": 0.014381997401199609,
+      "median_abs_percentile_gap_unchanged": 0.11431768365512085,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 25,
+          "overlap": 0.5,
+          "only_left": 25,
+          "only_right": 25
+        },
+        "100": {
+          "k": 100,
+          "intersection": 52,
+          "overlap": 0.52,
+          "only_left": 48,
+          "only_right": 48
+        },
+        "200": {
+          "k": 200,
+          "intersection": 125,
+          "overlap": 0.625,
+          "only_left": 75,
+          "only_right": 75
+        },
+        "500": {
+          "k": 500,
+          "intersection": 358,
+          "overlap": 0.716,
+          "only_left": 142,
+          "only_right": 142
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 812,
+          "overlap": 0.812,
+          "only_left": 188,
+          "only_right": 188
+        }
+      }
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "method": "simple_indicators",
+      "spearman": 0.9940534305405823,
+      "spearman_where_period_changed": 0.9944271278516038,
+      "spearman_where_period_unchanged": 0.7947614843797439,
+      "both": 6696,
+      "only_left": 923,
+      "only_right": 923,
+      "neither": 143836,
+      "jaccard": 0.7838913603371576,
+      "median_abs_percentile_gap": 0.0012009607686149226,
+      "median_abs_percentile_gap_changed": 0.0012009607686149226,
+      "median_abs_percentile_gap_unchanged": 0.00788499652180763,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 0,
+          "overlap": 0.0,
+          "only_left": 50,
+          "only_right": 50
+        },
+        "100": {
+          "k": 100,
+          "intersection": 15,
+          "overlap": 0.15,
+          "only_left": 85,
+          "only_right": 85
+        },
+        "200": {
+          "k": 200,
+          "intersection": 40,
+          "overlap": 0.2,
+          "only_left": 160,
+          "only_right": 160
+        },
+        "500": {
+          "k": 500,
+          "intersection": 130,
+          "overlap": 0.26,
+          "only_left": 370,
+          "only_right": 370
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 355,
+          "overlap": 0.355,
+          "only_left": 645,
+          "only_right": 645
+        }
+      }
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "method": "mad",
+      "spearman": 0.9999999999999999,
+      "spearman_where_period_changed": 1.0,
+      "spearman_where_period_unchanged": 1.0,
+      "both": 15529,
+      "only_left": 0,
+      "only_right": 0,
+      "neither": 136849,
+      "jaccard": 1.0,
+      "median_abs_percentile_gap": 0.0,
+      "median_abs_percentile_gap_changed": 0.0,
+      "median_abs_percentile_gap_unchanged": 0.0,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 50,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "100": {
+          "k": 100,
+          "intersection": 100,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "200": {
+          "k": 200,
+          "intersection": 200,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "500": {
+          "k": 500,
+          "intersection": 500,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 1000,
+          "overlap": 1.0,
+          "only_left": 0,
+          "only_right": 0
+        }
+      }
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "method": "isolation_forest",
+      "spearman": 0.9832529271558873,
+      "spearman_where_period_changed": 0.9833068045282543,
+      "spearman_where_period_unchanged": 0.9036696923250142,
+      "both": 5085,
+      "only_left": 2478,
+      "only_right": 2534,
+      "neither": 142281,
+      "jaccard": 0.5036149351292463,
+      "median_abs_percentile_gap": 0.018270353988108556,
+      "median_abs_percentile_gap_changed": 0.018270353988108556,
+      "median_abs_percentile_gap_unchanged": 0.031160994369265893,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 30,
+          "overlap": 0.6,
+          "only_left": 20,
+          "only_right": 20
+        },
+        "100": {
+          "k": 100,
+          "intersection": 58,
+          "overlap": 0.58,
+          "only_left": 42,
+          "only_right": 42
+        },
+        "200": {
+          "k": 200,
+          "intersection": 120,
+          "overlap": 0.6,
+          "only_left": 80,
+          "only_right": 80
+        },
+        "500": {
+          "k": 500,
+          "intersection": 292,
+          "overlap": 0.584,
+          "only_left": 208,
+          "only_right": 208
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 590,
+          "overlap": 0.59,
+          "only_left": 410,
+          "only_right": 410
+        }
+      }
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "method": "lof",
+      "spearman": 0.7927967804556101,
+      "spearman_where_period_changed": 0.7936551771302452,
+      "spearman_where_period_unchanged": 0.3832152144084899,
+      "both": 3335,
+      "only_left": 4385,
+      "only_right": 4475,
+      "neither": 140183,
+      "jaccard": 0.2734727347273473,
+      "median_abs_percentile_gap": 0.00465618396356432,
+      "median_abs_percentile_gap_changed": 0.00464634002283798,
+      "median_abs_percentile_gap_unchanged": 0.09667898253028645,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 0,
+          "overlap": 0.0,
+          "only_left": 50,
+          "only_right": 50
+        },
+        "100": {
+          "k": 100,
+          "intersection": 0,
+          "overlap": 0.0,
+          "only_left": 100,
+          "only_right": 100
+        },
+        "200": {
+          "k": 200,
+          "intersection": 2,
+          "overlap": 0.01,
+          "only_left": 198,
+          "only_right": 198
+        },
+        "500": {
+          "k": 500,
+          "intersection": 18,
+          "overlap": 0.036,
+          "only_left": 482,
+          "only_right": 482
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 169,
+          "overlap": 0.169,
+          "only_left": 831,
+          "only_right": 831
+        }
+      }
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "method": "one_class_svm",
+      "spearman": 0.9356192095556243,
+      "spearman_where_period_changed": 0.9356888220186441,
+      "spearman_where_period_unchanged": 0.9273983641415257,
+      "both": 6356,
+      "only_left": 1965,
+      "only_right": 28815,
+      "neither": 115242,
+      "jaccard": 0.17115467470917708,
+      "median_abs_percentile_gap": 0.042027064274370314,
+      "median_abs_percentile_gap_changed": 0.04201393902006856,
+      "median_abs_percentile_gap_unchanged": 0.06018749425770122,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 27,
+          "overlap": 0.54,
+          "only_left": 23,
+          "only_right": 23
+        },
+        "100": {
+          "k": 100,
+          "intersection": 56,
+          "overlap": 0.56,
+          "only_left": 44,
+          "only_right": 44
+        },
+        "200": {
+          "k": 200,
+          "intersection": 140,
+          "overlap": 0.7,
+          "only_left": 60,
+          "only_right": 60
+        },
+        "500": {
+          "k": 500,
+          "intersection": 393,
+          "overlap": 0.786,
+          "only_left": 107,
+          "only_right": 107
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 838,
+          "overlap": 0.838,
+          "only_left": 162,
+          "only_right": 162
+        }
+      }
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "method": "ensemble",
+      "spearman": 0.9581087631863356,
+      "spearman_where_period_changed": 0.9582449729721917,
+      "spearman_where_period_unchanged": 0.8267970999667732,
+      "both": 1987,
+      "only_left": 886,
+      "only_right": 713,
+      "neither": 148792,
+      "jaccard": 0.5540992749581707,
+      "median_abs_percentile_gap": 0.02650316974891387,
+      "median_abs_percentile_gap_changed": 0.02650316974891387,
+      "median_abs_percentile_gap_unchanged": 0.05042394571394826,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 31,
+          "overlap": 0.62,
+          "only_left": 19,
+          "only_right": 19
+        },
+        "100": {
+          "k": 100,
+          "intersection": 67,
+          "overlap": 0.67,
+          "only_left": 33,
+          "only_right": 33
+        },
+        "200": {
+          "k": 200,
+          "intersection": 111,
+          "overlap": 0.555,
+          "only_left": 89,
+          "only_right": 89
+        },
+        "500": {
+          "k": 500,
+          "intersection": 340,
+          "overlap": 0.68,
+          "only_left": 160,
+          "only_right": 160
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 791,
+          "overlap": 0.791,
+          "only_left": 209,
+          "only_right": 209
+        }
+      }
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "method": "simple_indicators",
+      "spearman": 0.9510992677760337,
+      "spearman_where_period_changed": 0.951173993239151,
+      "spearman_where_period_unchanged": 0.7947614843797439,
+      "both": 4010,
+      "only_left": 3609,
+      "only_right": 3609,
+      "neither": 141150,
+      "jaccard": 0.35714285714285715,
+      "median_abs_percentile_gap": 0.01688235834569296,
+      "median_abs_percentile_gap_changed": 0.01688235834569296,
+      "median_abs_percentile_gap_unchanged": 0.07705836800588006,
+      "topk": {
+        "50": {
+          "k": 50,
+          "intersection": 11,
+          "overlap": 0.22,
+          "only_left": 39,
+          "only_right": 39
+        },
+        "100": {
+          "k": 100,
+          "intersection": 43,
+          "overlap": 0.43,
+          "only_left": 57,
+          "only_right": 57
+        },
+        "200": {
+          "k": 200,
+          "intersection": 91,
+          "overlap": 0.455,
+          "only_left": 109,
+          "only_right": 109
+        },
+        "500": {
+          "k": 500,
+          "intersection": 249,
+          "overlap": 0.498,
+          "only_left": 251,
+          "only_right": 251
+        },
+        "1000": {
+          "k": 1000,
+          "intersection": 514,
+          "overlap": 0.514,
+          "only_left": 486,
+          "only_right": 486
+        }
+      }
+    }
+  ],
+  "ensemble_topk_movement": [
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "k": 50,
+      "left_only": 27,
+      "right_only": 27,
+      "intersection": 23
+    },
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "k": 100,
+      "left_only": 51,
+      "right_only": 51,
+      "intersection": 49
+    },
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "k": 200,
+      "left_only": 85,
+      "right_only": 85,
+      "intersection": 115
+    },
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "k": 500,
+      "left_only": 144,
+      "right_only": 144,
+      "intersection": 356
+    },
+    {
+      "left": "legacy",
+      "right": "stage_consistent",
+      "k": 1000,
+      "left_only": 240,
+      "right_only": 240,
+      "intersection": 760
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "k": 50,
+      "left_only": 25,
+      "right_only": 25,
+      "intersection": 25
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "k": 100,
+      "left_only": 48,
+      "right_only": 48,
+      "intersection": 52
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "k": 200,
+      "left_only": 75,
+      "right_only": 75,
+      "intersection": 125
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "k": 500,
+      "left_only": 142,
+      "right_only": 142,
+      "intersection": 358
+    },
+    {
+      "left": "legacy",
+      "right": "ablation",
+      "k": 1000,
+      "left_only": 188,
+      "right_only": 188,
+      "intersection": 812
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "k": 50,
+      "left_only": 19,
+      "right_only": 19,
+      "intersection": 31
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "k": 100,
+      "left_only": 33,
+      "right_only": 33,
+      "intersection": 67
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "k": 200,
+      "left_only": 89,
+      "right_only": 89,
+      "intersection": 111
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "k": 500,
+      "left_only": 160,
+      "right_only": 160,
+      "intersection": 340
+    },
+    {
+      "left": "stage_consistent",
+      "right": "ablation",
+      "k": 1000,
+      "left_only": 209,
+      "right_only": 209,
+      "intersection": 791
+    }
+  ],
+  "within_arm": [
+    {
+      "arm": "legacy",
+      "left": "mad",
+      "right": "isolation_forest",
+      "spearman": 0.36675568374257306,
+      "both": 2463,
+      "only_left": 13066,
+      "only_right": 5155,
+      "neither": 131694,
+      "jaccard": 0.11907754786308257
+    },
+    {
+      "arm": "legacy",
+      "left": "mad",
+      "right": "lof",
+      "spearman": 0.09853704940385566,
+      "both": 1735,
+      "only_left": 13794,
+      "only_right": 5871,
+      "neither": 130978,
+      "jaccard": 0.08107476635514019
+    },
+    {
+      "arm": "legacy",
+      "left": "mad",
+      "right": "one_class_svm",
+      "spearman": 0.24924075515336375,
+      "both": 2175,
+      "only_left": 13354,
+      "only_right": 5565,
+      "neither": 131284,
+      "jaccard": 0.10310988906798142
+    },
+    {
+      "arm": "legacy",
+      "left": "isolation_forest",
+      "right": "lof",
+      "spearman": 0.3566656487173883,
+      "both": 1946,
+      "only_left": 5672,
+      "only_right": 5660,
+      "neither": 139100,
+      "jaccard": 0.14655821659888538
+    },
+    {
+      "arm": "legacy",
+      "left": "isolation_forest",
+      "right": "one_class_svm",
+      "spearman": 0.1662330009746803,
+      "both": 4855,
+      "only_left": 2763,
+      "only_right": 2885,
+      "neither": 141875,
+      "jaccard": 0.4622488812720175
+    },
+    {
+      "arm": "legacy",
+      "left": "lof",
+      "right": "one_class_svm",
+      "spearman": -0.11351023832196755,
+      "both": 2542,
+      "only_left": 5064,
+      "only_right": 5198,
+      "neither": 139574,
+      "jaccard": 0.1985317088409872
+    },
+    {
+      "arm": "stage_consistent",
+      "left": "mad",
+      "right": "isolation_forest",
+      "spearman": 0.3579992761554986,
+      "both": 1868,
+      "only_left": 13661,
+      "only_right": 5695,
+      "neither": 131154,
+      "jaccard": 0.08801356954391255
+    },
+    {
+      "arm": "stage_consistent",
+      "left": "mad",
+      "right": "lof",
+      "spearman": 0.0878654554411438,
+      "both": 1649,
+      "only_left": 13880,
+      "only_right": 6071,
+      "neither": 130778,
+      "jaccard": 0.07634259259259259
+    },
+    {
+      "arm": "stage_consistent",
+      "left": "mad",
+      "right": "one_class_svm",
+      "spearman": 0.21427257384638765,
+      "both": 2227,
+      "only_left": 13302,
+      "only_right": 6094,
+      "neither": 130755,
+      "jaccard": 0.10299218424825417
+    },
+    {
+      "arm": "stage_consistent",
+      "left": "isolation_forest",
+      "right": "lof",
+      "spearman": 0.3516925471664983,
+      "both": 2187,
+      "only_left": 5376,
+      "only_right": 5533,
+      "neither": 139282,
+      "jaccard": 0.1669975565058033
+    },
+    {
+      "arm": "stage_consistent",
+      "left": "isolation_forest",
+      "right": "one_class_svm",
+      "spearman": 0.15108379867097402,
+      "both": 4821,
+      "only_left": 2742,
+      "only_right": 3500,
+      "neither": 141315,
+      "jaccard": 0.4357769140377836
+    },
+    {
+      "arm": "stage_consistent",
+      "left": "lof",
+      "right": "one_class_svm",
+      "spearman": -0.16823438690460657,
+      "both": 2517,
+      "only_left": 5203,
+      "only_right": 5804,
+      "neither": 138854,
+      "jaccard": 0.18611357586512867
+    },
+    {
+      "arm": "ablation",
+      "left": "mad",
+      "right": "isolation_forest",
+      "spearman": 0.3587563513615856,
+      "both": 3000,
+      "only_left": 12529,
+      "only_right": 4619,
+      "neither": 132230,
+      "jaccard": 0.14889815366289458
+    },
+    {
+      "arm": "ablation",
+      "left": "mad",
+      "right": "lof",
+      "spearman": 0.10561208325237209,
+      "both": 930,
+      "only_left": 14599,
+      "only_right": 6880,
+      "neither": 129969,
+      "jaccard": 0.04150118256057834
+    },
+    {
+      "arm": "ablation",
+      "left": "mad",
+      "right": "one_class_svm",
+      "spearman": 0.28193670368636525,
+      "both": 2498,
+      "only_left": 13031,
+      "only_right": 32673,
+      "neither": 104176,
+      "jaccard": 0.05182357578523713
+    },
+    {
+      "arm": "ablation",
+      "left": "isolation_forest",
+      "right": "lof",
+      "spearman": 0.36484714369854987,
+      "both": 1339,
+      "only_left": 6280,
+      "only_right": 6471,
+      "neither": 138288,
+      "jaccard": 0.0950319375443577
+    },
+    {
+      "arm": "ablation",
+      "left": "isolation_forest",
+      "right": "one_class_svm",
+      "spearman": 0.2330526104813347,
+      "both": 4747,
+      "only_left": 2872,
+      "only_right": 30424,
+      "neither": 114335,
+      "jaccard": 0.12477985437531215
+    },
+    {
+      "arm": "ablation",
+      "left": "lof",
+      "right": "one_class_svm",
+      "spearman": -0.1044078402136016,
+      "both": 3786,
+      "only_left": 4024,
+      "only_right": 31385,
+      "neither": 113183,
+      "jaccard": 0.09659395331037123
+    }
+  ],
+  "seconds_total": 40.508
+}

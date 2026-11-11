@@ -1,0 +1,78 @@
+"""Eight procedures measured in MTA-0022. Snapshot values, not certificates."""
+
+from __future__ import annotations
+
+AUDIT_PACKAGES = [
+    {
+        "ocid": "ocds-b3wdp1-MD-1644854422949",
+        "pn_start": "2022-03-01T00:00:00Z",
+        "ev_start": "2022-02-24T09:00:00Z",
+        "ev_end": "2022-03-09T07:00:00Z",
+        "legacy_days": 8,
+        "evaluation_days": 12,
+        "features_days": 8.0,
+    },
+    {
+        "ocid": "ocds-b3wdp1-MD-1644995653154",
+        "pn_start": "2022-02-01T00:00:00Z",
+        "ev_start": "2022-02-26T13:00:00Z",
+        "ev_end": "2022-03-07T13:00:00Z",
+        "legacy_days": 34,
+        "evaluation_days": 9,
+        "features_days": 34.0,
+    },
+    {
+        "ocid": "ocds-b3wdp1-MD-1649084017389",
+        "pn_start": "2022-04-01T00:00:00Z",
+        "ev_start": "2022-04-16T05:00:00Z",
+        "ev_end": "2022-04-29T05:00:00Z",
+        "legacy_days": 28,
+        "evaluation_days": 13,
+        "features_days": 28.0,
+    },
+    {
+        "ocid": "ocds-b3wdp1-MD-1656940842812",
+        "pn_start": "2022-07-01T00:00:00Z",
+        "ev_start": "2022-07-11T13:30:00Z",
+        "ev_end": "2022-07-14T13:30:10Z",
+        "legacy_days": 13,
+        "evaluation_days": 3,
+        "features_days": 13.0,
+    },
+    {
+        "ocid": "ocds-b3wdp1-MD-1659961877383",
+        "pn_start": "2022-08-01T00:00:00Z",
+        "ev_start": "2022-08-19T07:00:00Z",
+        "ev_end": "2022-08-29T08:00:00Z",
+        "legacy_days": 28,
+        "evaluation_days": 10,
+        "features_days": 28.0,
+    },
+    {
+        "ocid": "ocds-b3wdp1-MD-1663056980047",
+        "pn_start": "2022-09-01T00:00:00Z",
+        "ev_start": "2022-09-26T06:00:00Z",
+        "ev_end": "2022-10-03T06:00:00Z",
+        "legacy_days": 32,
+        "evaluation_days": 7,
+        "features_days": 32.0,
+    },
+    {
+        "ocid": "ocds-b3wdp1-MD-1665058207960",
+        "pn_start": "2022-10-01T00:00:00Z",
+        "ev_start": "2022-10-17T11:30:00Z",
+        "ev_end": "2022-10-26T11:30:00Z",
+        "legacy_days": 25,
+        "evaluation_days": 9,
+        "features_days": 25.0,
+    },
+    {
+        "ocid": "ocds-b3wdp1-MD-1685970121601",
+        "pn_start": "2023-06-01T00:00:00Z",
+        "ev_start": "2023-06-10T13:30:00Z",
+        "ev_end": "2023-06-19T06:00:00Z",
+        "legacy_days": 18,
+        "evaluation_days": 8,
+        "features_days": 18.0,
+    },
+]

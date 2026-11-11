@@ -1,0 +1,18 @@
+{
+  "package_dir": "/Users/imustyk/Diplom/data/raw/ocds_packages",
+  "rows_written": 152378,
+  "read_errors": 0,
+  "legacy_cross_stage": 58759,
+  "both_windows_observed": 56144,
+  "legacy_longer_than_evaluation": 53621,
+  "legacy_shorter_than_evaluation": 2183,
+  "windows_equal": 340,
+  "submission_window_status": {
+    "no_evaluation_record": 93618,
+    "evaluation_complete": 58760
+  },
+  "historically_certified_rows": 0,
+  "replaces_features_csv": false,
+  "corruption_detection_claim": false,
+  "table": "/Users/imustyk/Library/Application Support/com.grokapp.grok-app/workspaces/general/mta_0024_0025/results/mta0024_stage_periods/stage_periods.csv"
+}

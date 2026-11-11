@@ -1,0 +1,6 @@
+# Pins exercised by the MTA-0024 / MTA-0025 workspace run.
+# Python 3.11. The Diplom virtualenv already contains these versions.
+pandas==2.2.3
+numpy==2.2.1
+scikit-learn==1.6.1
+pytest==9.1.1
