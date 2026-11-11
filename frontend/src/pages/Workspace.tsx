@@ -1,4 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { tenderDestination, savedViewDestination } from "../navigation";
+import { useRequest } from "../hooks";
+import { AsyncButton, AsyncForm, useAction } from "../components/AsyncAction";
+import { useEffect, useMemo, useState, createContext, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { intlLocale } from "../i18n";
 import { tr } from "../i18n/backendMap";
@@ -26,12 +30,9 @@ import {
   updateCase,
   updateView,
   updateWatchlist,
-  type ActivityRecord,
-  type AnnotationRecord,
+  updateWatchlistItem,
   type CaseRecord,
   type SavedView,
-  type WatchItem,
-  type Watchlist,
   type WorkspaceSummary,
 } from "../api";
 import {
@@ -49,6 +50,8 @@ import {
   TableWrap,
   Toast,
 } from "../ui";
+
+const Revision = createContext(0);
 
 type TabKey = "cases" | "annotations" | "watchlists" | "views";
 
@@ -72,29 +75,26 @@ function actionKey(action: string): string {
 export default function Workspace() {
   const { t } = useTranslation();
   const [tab, setTab] = useState<TabKey>("cases");
-  const [summary, setSummary] = useState<WorkspaceSummary | null>(null);
+  const [revision, setRevision] = useState(0);
+  const summaryReq = useRequest(`summary:${revision}`, signal => getWorkspaceSummary(signal));
+  const summary = !summaryReq.error && !summaryReq.stale ? summaryReq.data : null;
   const [toast, setToast] = useState<string | null>(null);
-
-  const refreshSummary = useCallback(() => {
-    getWorkspaceSummary().then(setSummary).catch(() => undefined);
-  }, []);
-
-  useEffect(refreshSummary, [refreshSummary]);
-
   const c = summary?.counts;
   const bump = (msg: string) => {
     setToast(msg);
-    refreshSummary();
+    setRevision(value => value + 1);
   };
 
   return (
-    <div>
+    <Revision.Provider value={revision}><div>
       <PageHead
         kicker={t("workspace.kicker")}
         title={t("workspace.title")}
         lede={t("workspace.lede")}
       />
 
+      {summaryReq.error && <ErrorNote error={summaryReq.error} onRetry={summaryReq.reload} />}
+      {summaryReq.loading && <Loading />}
       <div className="callout info">{t("workspace.ethics")}</div>
 
       {c && (
@@ -143,7 +143,7 @@ export default function Workspace() {
 
       <ActivityFeed />
       <Toast message={toast} onDone={() => setToast(null)} />
-    </div>
+    </div></Revision.Provider>
   );
 }
 
@@ -158,28 +158,23 @@ function CasesTab({
   notify: (m: string) => void;
 }) {
   const { t } = useTranslation();
-  const [items, setItems] = useState<CaseRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("all");
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<number | null>(null);
   const [form, setForm] = useState({ title: "", priority: "medium", owner: "", summary: "", ocids: "" });
 
-  const load = useCallback(() => {
-    setError(null);
-    getCases({ status, q })
-      .then((d) => setItems(d.items))
-      .catch((e: Error) => setError(e.message));
-  }, [status, q]);
-
-  useEffect(load, [load]);
-
+  const revision = useContext(Revision);
+  const request = useRequest(JSON.stringify([status, q, revision]), signal => getCases({status, q}, signal));
+  const items = !request.stale && !request.error ? request.data?.items ?? null : null;
+  const load = request.reload;
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.title.trim().length < 3) {
       setError(t("workspace.err_title_short"));
       return;
     }
+    setError(null);
     try {
       await createCase({ ...form, ocids: form.ocids });
       setForm({ title: "", priority: "medium", owner: "", summary: "", ocids: "" });
@@ -196,7 +191,7 @@ function CasesTab({
         title={t("workspace.new_case")}
         note={t("workspace.new_case_p")}
       >
-        <form onSubmit={submit}>
+        <AsyncForm onSubmit={submit}>
           <div className="form-grid">
             <Field label={t("workspace.f_title")} grow>
               <input
@@ -246,7 +241,7 @@ function CasesTab({
               <button type="submit">{t("workspace.btn_create_case")}</button>
             </div>
           </div>
-        </form>
+        </AsyncForm>
       </Panel>
 
       <Panel
@@ -273,9 +268,9 @@ function CasesTab({
           </div>
         }
       >
-        {error && <ErrorNote error={error} onRetry={load} />}
+        {(error || request.error) && <ErrorNote error={error || request.error!} onRetry={() => { setError(null); load(); }} />}
         {!items ? (
-          <Loading label={t("workspace.loading_cases")} />
+          request.error ? null : <Loading label={t("workspace.loading_cases")} />
         ) : items.length === 0 ? (
           <Empty title={t("workspace.empty_cases")} hint={t("workspace.empty_cases_hint")} />
         ) : (
@@ -357,34 +352,13 @@ function CasesTab({
   );
 }
 
-function StatusEditor({
-  value,
-  options,
-  onChange,
-}: {
-  value: string;
-  options: string[];
-  onChange: (v: string) => void | Promise<void>;
-}) {
-  const { t } = useTranslation();
-  const [v, setV] = useState(value);
-  return (
-    <select
-      className="small"
-      value={v}
-      aria-label={t("workspace.change_status")}
-      onChange={(e) => {
-        setV(e.target.value);
-        void onChange(e.target.value);
-      }}
-    >
-      {options.map((o) => (
-        <option key={o} value={o}>
-          {tr(o)}
-        </option>
-      ))}
-    </select>
-  );
+export function StatusEditor({ value, options, onChange, label, optionLabel }: { value: string; options: string[]; onChange: (v: string) => void | Promise<void>; label?: string; optionLabel?: (option: string) => string }) {
+  const { t } = useTranslation(); const [v, setV] = useState(value); const action = useAction();
+  useEffect(() => setV(value), [value]);
+  return <span><select className="small" value={v} disabled={action.pending} aria-busy={action.pending} aria-label={label ?? t("workspace.change_status")}
+    onChange={event => { const next = event.target.value; void action.run(async () => { await onChange(next); setV(next); }); }}>
+    {options.map(option => <option key={option} value={option}>{optionLabel ? optionLabel(option) : tr(option)}</option>)}
+  </select>{action.pending && <span role="status">{t("completion.pending")}</span>}{action.error && <span role="alert">{action.error}</span>}</span>;
 }
 
 function CaseDetail({
@@ -397,19 +371,18 @@ function CaseDetail({
   notify: (m: string) => void;
 }) {
   const { t } = useTranslation();
-  const [data, setData] = useState<{ case: CaseRecord; ocids: string[]; annotations: AnnotationRecord[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
 
-  useEffect(() => {
-    getCase(id).then(setData).catch((e: Error) => setError(e.message));
-  }, [id]);
-
-  if (error) return <ErrorNote error={error} />;
+  const revision = useContext(Revision);
+  const request = useRequest(`case:${id}:${revision}`, signal => getCase(id, signal));
+  const data = !request.stale && !request.error ? request.data : null;
+  if (request.error) return <ErrorNote error={request.error} onRetry={request.reload} />;
   if (!data) return <Loading label={t("workspace.loading_case")} />;
-
   return (
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--line-soft)" }}>
+      {error && <ErrorNote error={error} onRetry={() => setError(null)} />}
+      <CaseEditor record={data.case} onChanged={() => { request.reload(); onChanged(); notify(t("completion.updated")); }} />
       <h3>{data.case.ref} · {data.case.title}</h3>
       {data.case.summary && <p className="muted">{data.case.summary}</p>}
       <div className="grid row2">
@@ -430,7 +403,7 @@ function CaseDetail({
                   {data.ocids.map((o) => (
                     <tr key={o}>
                       <td className="mono" style={{ fontSize: 12 }}>
-                        {o}
+                        <Link to={tenderDestination(o)}>{o}</Link>
                       </td>
                       <td>
                         {data.annotations.filter((a) => a.ocid === o).length > 0 ? (
@@ -472,26 +445,26 @@ function CaseDetail({
                 </option>
               ))}
             </select>
-            <button
+            <AsyncButton
               className="small"
               disabled={!note.trim()}
               onClick={async () => {
                 const ocid = (document.getElementById(`ocid-${id}`) as HTMLSelectElement)?.value;
                 if (!ocid) return;
+                setError(null);
                 try {
                   await createAnnotation({ ocid, note, case_id: id });
                   setNote("");
                   notify(t("workspace.toast_note_added"));
                   onChanged();
-                  const fresh = await getCase(id);
-                  if (fresh) setData(fresh);
+                  request.reload();
                 } catch (e) {
                   setError((e as Error).message);
                 }
               }}
             >
               {t("workspace.btn_add_note")}
-            </button>
+            </AsyncButton>
           </div>
         </div>
       </div>
@@ -510,7 +483,6 @@ function AnnotationsTab({
   notify: (m: string) => void;
 }) {
   const { t } = useTranslation();
-  const [items, setItems] = useState<AnnotationRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState("all");
   const [q, setQ] = useState("");
@@ -518,21 +490,17 @@ function AnnotationsTab({
   const [editing, setEditing] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
 
-  const load = useCallback(() => {
-    setError(null);
-    getAnnotations({ category, q })
-      .then((d) => setItems(d.items))
-      .catch((e: Error) => setError(e.message));
-  }, [category, q]);
-
-  useEffect(load, [load]);
-
+  const revision = useContext(Revision);
+  const request = useRequest(JSON.stringify([category, q, revision]), signal => getAnnotations({category, q}, signal));
+  const items = !request.stale && !request.error ? request.data?.items ?? null : null;
+  const load = request.reload;
   return (
     <>
       <Panel title={t("workspace.new_annot")} note={t("workspace.new_annot_p")}>
-        <form
+        <AsyncForm
           onSubmit={async (e) => {
             e.preventDefault();
+            setError(null);
             try {
               await createAnnotation(draft);
               setDraft({ ocid: "", note: "", category: "observation", author: draft.author });
@@ -582,7 +550,7 @@ function AnnotationsTab({
               <button type="submit">{t("workspace.btn_add_note")}</button>
             </div>
           </div>
-        </form>
+        </AsyncForm>
       </Panel>
 
       <Panel
@@ -609,9 +577,9 @@ function AnnotationsTab({
           </div>
         }
       >
-        {error && <ErrorNote error={error} onRetry={load} />}
+        {(error || request.error) && <ErrorNote error={error || request.error!} onRetry={() => { setError(null); load(); }} />}
         {!items ? (
-          <Loading label={t("workspace.loading_annot")} />
+          request.error ? null : <Loading label={t("workspace.loading_annot")} />
         ) : items.length === 0 ? (
           <Empty
             title={t("workspace.empty_annot")}
@@ -635,7 +603,7 @@ function AnnotationsTab({
                 {items.map((r) => (
                   <tr key={r.id}>
                     <td className="mono" style={{ fontSize: 12 }}>
-                      {r.ocid}
+                      <Link to={tenderDestination(r.ocid)}>{r.ocid}</Link>
                     </td>
                     <td>
                       <Pill tone="info">{tr(r.category)}</Pill>
@@ -648,7 +616,7 @@ function AnnotationsTab({
                             onChange={(e) => setEditText(e.target.value)}
                             autoFocus
                           />
-                          <button
+                          <AsyncButton
                             className="small"
                             onClick={async () => {
                               await updateAnnotation(r.id, { note: editText });
@@ -658,7 +626,7 @@ function AnnotationsTab({
                             }}
                           >
                             {t("common.save")}
-                          </button>
+                          </AsyncButton>
                           <button className="ghost small" onClick={() => setEditing(null)}>
                             {t("common.cancel")}
                           </button>
@@ -715,42 +683,27 @@ function WatchlistsTab({
   notify: (m: string) => void;
 }) {
   const { t } = useTranslation();
-  const [lists, setLists] = useState<Watchlist[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
-  const [items, setItems] = useState<WatchItem[] | null>(null);
   const [draft, setDraft] = useState({ name: "", description: "", color: "navy" });
   const [ocids, setOcids] = useState("");
 
   const palette = colors ?? { navy: "#1e3a5f", gold: "#b8892a", red: "#b4232c", green: "#2a6b4a", teal: "#2a7f8f", plum: "#6b4a86" };
 
-  const load = useCallback(() => {
-    getWatchlists()
-      .then((d) => {
-        setLists(d.items);
-        setSelected((s) => s ?? d.items[0]?.id ?? null);
-      })
-      .catch((e: Error) => setError(e.message));
-  }, []);
-
-  useEffect(load, [load]);
-
-  useEffect(() => {
-    if (selected === null) {
-      setItems(null);
-      return;
-    }
-    getWatchlist(selected)
-      .then((d) => setItems(d.items))
-      .catch((e: Error) => setError(e.message));
-  }, [selected]);
-
+  const revision = useContext(Revision);
+  const request = useRequest(`watchlists:${revision}`, signal => getWatchlists(signal));
+  const lists = !request.error && !request.stale ? request.data?.items ?? null : null;
+  const load = request.reload;
+  useEffect(() => { if (lists) setSelected(old => lists.some(item => item.id === old) ? old : lists[0]?.id ?? null); }, [lists]);
+  const detail = useRequest(`watchlist:${selected}:${revision}`, signal => getWatchlist(selected!, signal), selected !== null);
+  const items = !detail.error && !detail.stale ? detail.data?.items ?? null : null;
   return (
     <>
       <Panel title={t("workspace.new_watch")} note={t("workspace.new_watch_p")}>
-        <form
+        <AsyncForm
           onSubmit={async (e) => {
             e.preventDefault();
+            setError(null);
             try {
               await createWatchlist(draft);
               setDraft({ name: "", description: "", color: "navy" });
@@ -792,14 +745,14 @@ function WatchlistsTab({
               <button type="submit">{t("common.create")}</button>
             </div>
           </div>
-        </form>
+        </AsyncForm>
       </Panel>
 
       <div className="grid row2">
         <Panel title={t("workspace.watch_h")}>
-          {error && <ErrorNote error={error} onRetry={load} />}
+          {(error || request.error) && <ErrorNote error={error || request.error!} onRetry={() => { setError(null); load(); }} />}
           {!lists ? (
-            <Loading />
+            request.error ? null : <Loading />
           ) : lists.length === 0 ? (
             <Empty title={t("workspace.empty_watch")} />
           ) : (
@@ -817,33 +770,18 @@ function WatchlistsTab({
                     <tr
                       key={w.id}
                       className="clickable"
-                      onClick={() => setSelected(w.id)}
-                      style={selected === w.id ? { background: "#f8f1e3" } : undefined}
+                      style={selected === w.id ? { background: "var(--info-bg)" } : undefined}
                     >
                       <td>
                         <span className="swatch" style={{ background: palette[w.color] ?? w.color }} />{" "}
-                        {w.name}
+                        <button className="ghost small" aria-pressed={selected === w.id} onClick={() => setSelected(w.id)}>{w.name}</button>
                         {w.description && <div className="muted" style={{ fontSize: 12 }}>{w.description}</div>}
                       </td>
                       <td className="mono">{int(w.n_items)}</td>
                       <td onClick={(e) => e.stopPropagation()}>
                         <span style={{ display: "flex", gap: 6 }}>
-                          <select
-                            className="small"
-                            aria-label={t("workspace.recolour", { name: w.name })}
-                            value={w.color}
-                            onChange={async (e) => {
-                              await updateWatchlist(w.id, { color: e.target.value });
-                              notify(t("workspace.toast_recoloured", { name: w.name }));
-                              load();
-                            }}
-                          >
-                            {Object.keys(palette).map((k) => (
-                              <option key={k} value={k}>
-                                {t(`workspace.color.${k}`)}
-                              </option>
-                            ))}
-                          </select>
+                          <StatusEditor optionLabel={key => t(`workspace.color.${key}`)} label={t("workspace.recolour", {name: w.name})} value={w.color} options={Object.keys(palette)} onChange={async color => { await updateWatchlist(w.id, {color}); notify(t("workspace.toast_recoloured", {name: w.name})); load(); }} />
+                          <RecordEditor title={t("completion.edit_watch")} initial={{name: w.name, description: w.description}} onSave={async fields => { await updateWatchlist(w.id, fields); notify(t("completion.updated")); load(); }} />
                           <ConfirmButton
                             confirmLabel={t("workspace.confirm_delete")}
                             onConfirm={async () => {
@@ -877,7 +815,7 @@ function WatchlistsTab({
                 style={{ minHeight: 64 }}
               />
               <div style={{ marginTop: 8 }}>
-                <button
+                <AsyncButton
                   className="small"
                   disabled={!ocids.trim()}
                   onClick={async () => {
@@ -889,7 +827,7 @@ function WatchlistsTab({
                           ? t("workspace.toast_nothing_added")
                           : t("workspace.toast_added", { count: r.added }),
                       );
-                      setItems(r.items);
+                      detail.reload();
                       load();
                     } catch (e) {
                       setError((e as Error).message);
@@ -897,11 +835,12 @@ function WatchlistsTab({
                   }}
                 >
                   {t("workspace.btn_add_ocids")}
-                </button>
+                </AsyncButton>
               </div>
+              {detail.error && <ErrorNote error={detail.error} onRetry={detail.reload} />}
               <div style={{ marginTop: 14 }}>
                 {!items ? (
-                  <Loading />
+                  detail.error ? null : <Loading />
                 ) : items.length === 0 ? (
                   <Empty title={t("workspace.empty_items")} hint={t("workspace.empty_items_hint")} />
                 ) : (
@@ -918,18 +857,17 @@ function WatchlistsTab({
                         {items.map((it) => (
                           <tr key={it.id}>
                             <td className="mono" style={{ fontSize: 12 }}>
-                              {it.ocid}
+                              <Link to={tenderDestination(it.ocid)}>{it.ocid}</Link>
                             </td>
                             <td className="muted mono">{when(it.added_at)}</td>
                             <td>
+                              <RecordEditor title={t("completion.edit_item")} initial={{note: it.note}} onSave={async fields => { await updateWatchlistItem(it.id, fields.note); notify(t("completion.updated")); detail.reload(); }} />
                               <ConfirmButton
                                 confirmLabel={t("workspace.confirm_remove")}
                                 onConfirm={async () => {
                                   await deleteWatchlistItem(it.id);
                                   notify(t("workspace.toast_removed"));
-                                  getWatchlist(selected)
-                                    .then((d) => setItems(d.items))
-                                    .catch(() => undefined);
+                                  detail.reload();
                                   load();
                                 }}
                               >
@@ -956,35 +894,40 @@ function WatchlistsTab({
    ========================================================================== */
 function ViewsTab({ notify }: { notify: (m: string) => void }) {
   const { t } = useTranslation();
-  const [items, setItems] = useState<SavedView[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState({ name: "", description: "", payload: "" });
   const [editing, setEditing] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
 
-  const load = useCallback(() => {
-    getViews()
-      .then((d) => setItems(d.items))
-      .catch((e: Error) => setError(e.message));
-  }, []);
-
-  useEffect(load, [load]);
-
+  const navigate = useNavigate();
+  const revision = useContext(Revision);
+  const request = useRequest(`views:${revision}`, signal => getViews(signal));
+  const items = !request.error && !request.stale ? request.data?.items ?? null : null;
+  const load = request.reload;
   const parsed = useMemo(() => {
     if (!draft.payload.trim()) return null;
     try {
-      return { ok: true as const, value: JSON.parse(draft.payload) as unknown };
+      const value: unknown = JSON.parse(draft.payload);
+      if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(t("completion.invalid_view"));
+      return { ok: true as const, value };
     } catch (e) {
       return { ok: false as const, error: (e as Error).message };
     }
-  }, [draft.payload]);
+  }, [draft.payload, t]);
 
   return (
     <>
       <Panel title={t("workspace.new_view")} note={t("workspace.new_view_p")}>
-        <form
+        <p className="microcopy">{t("completion.supported")}</p>
+        <div className="form-grid">{["q", "level", "procedure", "min", "offset"].map(key => <Field key={key} label={t(({q:"completion.query",level:"tenders.f_level",procedure:"tenders.f_proc",min:"completion.minimum",offset:"completion.offset"} as Record<string,string>)[key])}>
+          <input aria-label={`filter ${key}`} type={["min", "offset"].includes(key) ? "number" : "text"} min="0" max={key === "min" ? 95 : undefined} step={key === "min" ? 5 : key === "offset" ? 40 : undefined}
+          value={parsed?.ok ? String((parsed.value as Record<string, unknown>)[key] ?? "") : ""}
+          onChange={event => { const payload = parsed?.ok ? {...parsed.value as Record<string, unknown>} : {}; if (event.target.value) payload[key] = ["min", "offset"].includes(key) ? Number(event.target.value) : event.target.value; else delete payload[key]; setDraft({...draft, payload: JSON.stringify(payload, null, 2)}); }} />
+        </Field>)}</div>
+        <AsyncForm
           onSubmit={async (e) => {
             e.preventDefault();
+            setError(null);
             if (draft.payload.trim() && !parsed?.ok) {
               setError(t("api.bad_json", { err: parsed?.error }));
               return;
@@ -1032,7 +975,7 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
               <textarea
                 value={draft.payload}
                 onChange={(e) => setDraft({ ...draft, payload: e.target.value })}
-                placeholder='{"level": "critical", "min_value": 1000000}'
+                placeholder='{"level": "critical", "min": 80}'
                 style={{ minHeight: 60, fontFamily: "IBM Plex Mono, monospace", fontSize: 12.5 }}
               />
             </Field>
@@ -1040,13 +983,13 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
               <button type="submit">{t("workspace.btn_save_view")}</button>
             </div>
           </div>
-        </form>
+        </AsyncForm>
       </Panel>
 
       <Panel title={t("workspace.views_h")}>
-        {error && <ErrorNote error={error} onRetry={load} />}
+        {(error || request.error) && <ErrorNote error={error || request.error!} onRetry={() => { setError(null); load(); }} />}
         {!items ? (
-          <Loading />
+          request.error ? null : <Loading />
         ) : items.length === 0 ? (
           <Empty title={t("workspace.empty_views")} />
         ) : (
@@ -1074,11 +1017,12 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
                             onChange={(e) => setEditText(e.target.value)}
                             autoFocus
                           />
-                          <button
+                          <AsyncButton
                             className="small"
                             onClick={async () => {
                               try {
                                 const parsedEdit = JSON.parse(editText) as Record<string, unknown>;
+                                if (!parsedEdit || typeof parsedEdit !== "object" || Array.isArray(parsedEdit)) throw new Error(t("completion.invalid_view"));
                                 await updateView(v.id, { payload: parsedEdit });
                                 setEditing(null);
                                 notify(t("workspace.toast_view_updated"));
@@ -1089,7 +1033,7 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
                             }}
                           >
                             {t("common.save")}
-                          </button>
+                          </AsyncButton>
                           <button className="ghost small" onClick={() => setEditing(null)}>
                             {t("common.cancel")}
                           </button>
@@ -1110,6 +1054,8 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
                         >
                           {t("common.edit")}
                         </button>
+                        <RecordEditor title={t("common.edit")} initial={{name:v.name,description:v.description}} onSave={async fields => { await updateView(v.id,fields); notify(t("completion.updated")); load(); }} />
+                        <ApplyView view={v} onApply={navigate} />
                         <ConfirmButton
                           confirmLabel={t("workspace.confirm_delete")}
                           onConfirm={async () => {
@@ -1138,13 +1084,12 @@ function ViewsTab({ notify }: { notify: (m: string) => void }) {
    ========================================================================== */
 function ActivityFeed() {
   const { t } = useTranslation();
-  const [items, setItems] = useState<ActivityRecord[] | null>(null);
-  useEffect(() => {
-    getActivity(20)
-      .then((d) => setItems(d.items))
-      .catch(() => setItems([]));
-  }, []);
-  if (!items || items.length === 0) return null;
+  const revision = useContext(Revision);
+  const request = useRequest(`activity:${revision}`, signal => getActivity(20, signal));
+  const items = !request.error && !request.stale ? request.data?.items ?? null : null;
+  if (request.error) return <ErrorNote error={request.error} onRetry={request.reload} />;
+  if (!items) return <Loading />;
+  if (items.length === 0) return <Panel title={t("workspace.activity_h")}><Empty title={t("analysis.no_results")} /></Panel>;
   return (
     <Panel title={t("workspace.activity_h")} note={t("workspace.activity_p")}>
       <TableWrap>
@@ -1181,4 +1126,22 @@ function ActivityFeed() {
       </TableWrap>
     </Panel>
   );
+}
+
+function ApplyView({view, onApply}: {view: SavedView; onApply: (url: string) => void}) {
+  const {t} = useTranslation();
+  let parsed: unknown; try { parsed = JSON.parse(view.payload); } catch { parsed = null; }
+  const result = savedViewDestination(parsed);
+  const reason = result.unsupported.length ? t("completion.unsupported", {fields: result.unsupported.join(", ")}) : result.invalid ? t("completion.invalid_view") : null;
+  return <span><button className="small" disabled={!result.url} onClick={() => { if (result.url) onApply(result.url); }}>{t("completion.apply")}</button>{reason && <span className="microcopy" role="note">{reason}</span>}</span>;
+}
+function RecordEditor({title, initial, onSave}: {title: string; initial: Record<string, string>; onSave: (fields: Record<string, string>) => Promise<void>}) {
+ const {t} = useTranslation(); const [fields, setFields] = useState(initial); const [open, setOpen] = useState(false);
+ useEffect(() => { if (!open) setFields(initial); }, [initial, open]);
+ return <details onToggle={event => setOpen(event.currentTarget.open)}><summary>{title}</summary><AsyncForm onSubmit={async () => { await onSave(fields); }}><div className="form-grid">{Object.entries(fields).map(([key, value]) => <Field key={key} label={t(({title:"workspace.f_title", name:"workspace.f_name", description:"workspace.f_description", owner:"workspace.f_owner", summary:"workspace.f_summary", ocids:"workspace.f_ocids", note:"workspace.f_note"} as Record<string,string>)[key] ?? key)}><textarea required={["title","name","note"].includes(key)} value={value} onChange={event => setFields({...fields,[key]:event.target.value})} /></Field>)}<button type="submit">{t("common.save")}</button></div></AsyncForm></details>;
+}
+function CaseEditor({record, onChanged}: {record: CaseRecord; onChanged: () => void}) {
+ const {t} = useTranslation();
+ let ocids = record.ocids; try {const list: unknown = JSON.parse(ocids); if (Array.isArray(list)) ocids = list.join("\n");} catch { /* retain legacy text */ }
+ return <RecordEditor title={t("completion.edit_case")} initial={{title:record.title,owner:record.owner,summary:record.summary,ocids}} onSave={async fields => {await updateCase(record.id, fields); onChanged();}} />;
 }

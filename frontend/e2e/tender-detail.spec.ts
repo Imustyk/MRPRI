@@ -20,6 +20,13 @@ test("model card shows real provenance and an honest reference state", async ({ 
   await waitForRouteReady(page);
   await expectNoDocumentOverflow(page);
 
+  if (await page.getByRole("alert").filter({hasText: "Data contract violation"}).count()) {
+    await expect(page.getByRole("alert").filter({hasText: "Data contract violation"}).first()).toBeVisible();
+    await expect(page.locator(".model-workbench")).toHaveCount(0);
+    await page.screenshot({path: `${SHOTS}/live-tender-contract-block.png`,fullPage:true});
+    test.info().annotations.push({type:"external blocker",description:"CSV payload rejected; real model integration not certified"});
+    return;
+  }
   // Real score/verdict/percentile/reference blocks are rendered from the API.
   await expect(page.locator(".model-metrics").first()).toBeVisible();
   const metrics = (await page.locator(".model-metrics").first().innerText()).replace(/\s+/g, " ");

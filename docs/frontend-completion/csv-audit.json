@@ -1,0 +1,19 @@
+{
+  "source_sha256": "d698f71872db5bbcd56838b590e9604547ba8348a1e68af83e5f97fcce7d941d",
+  "checks": [
+    {
+      "quoting": 3,
+      "rows": 152378,
+      "extra_fields": 37200,
+      "max_score_outside_0_1": 30786,
+      "not_numeric": 700
+    },
+    {
+      "quoting": 0,
+      "rows": 152378,
+      "extra_fields": 0,
+      "max_score_outside_0_1": 0,
+      "not_numeric": 0
+    }
+  ]
+}

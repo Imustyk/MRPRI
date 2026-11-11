@@ -1,0 +1,6 @@
+
+Running 2 tests using 1 worker
+
+[1/2] [chromium] › e2e/completion.spec.ts:12:1 › visible back restores exact filters; research links preserve selection; safe fallback
+[2/2] [chromium] › e2e/completion.spec.ts:35:1 › Workspace cases: refusal retains draft, double submit, status rollback, edit, note, delete, Activity
+  2 passed (3.7s)

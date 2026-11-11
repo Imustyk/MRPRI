@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useAction } from "./components/AsyncAction";
+import { useEffect, useState, useId, cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { tr } from "./i18n/backendMap";
 import type { RiskLevel } from "./api";
@@ -333,10 +334,11 @@ export function Field({
   hint?: string;
   grow?: boolean;
 }) {
+  const labelId = useId();
   return (
     <label className={`field${grow ? " grow" : ""}`}>
-      <span>{label}</span>
-      {children}
+      <span id={labelId}>{label}</span>
+      {isValidElement(children) ? cloneElement(children as ReactElement<{"aria-labelledby"?: string}>, {"aria-labelledby": labelId}) : children}
       {hint && <em className="field-hint">{hint}</em>}
     </label>
   );
@@ -350,7 +352,7 @@ export function ConfirmButton({
   className = "ghost danger",
   disabled,
 }: {
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   children: ReactNode;
   confirmLabel?: string;
   className?: string;
@@ -358,25 +360,28 @@ export function ConfirmButton({
 }) {
   const { t } = useTranslation();
   const [armed, setArmed] = useState(false);
+  const action = useAction();
   useEffect(() => {
-    if (!armed) return;
+    if (!armed || action.pending || action.error) return;
     const t = setTimeout(() => setArmed(false), 4000);
     return () => clearTimeout(t);
-  }, [armed]);
+  }, [armed, action.pending, action.error]);
   if (armed) {
     return (
       <span className="confirm">
-        <button className="danger" onClick={onConfirm}>
-          {confirmLabel ?? t("common.confirm_delete")}
+        <button type="button" className="danger" disabled={disabled || action.pending} aria-busy={action.pending} onClick={() => void action.run(async () => { await onConfirm(); setArmed(false); })}>
+          {action.pending ? t("completion.pending") : confirmLabel ?? t("common.confirm_delete")}
         </button>
-        <button className="ghost" onClick={() => setArmed(false)}>
+        {action.error && <span role="alert">{action.error}</span>}
+        {action.pending && <span role="status" className="visually-hidden">{t("completion.pending")}</span>}
+        <button type="button" className="ghost" disabled={action.pending} onClick={() => setArmed(false)}>
           {t("common.cancel")}
         </button>
       </span>
     );
   }
   return (
-    <button className={className} onClick={() => setArmed(true)} disabled={disabled}>
+    <button type="button" className={className} onClick={() => setArmed(true)} disabled={disabled}>
       {children}
     </button>
   );

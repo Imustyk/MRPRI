@@ -1,5 +1,6 @@
+import { safeReturnTo, researchDestination } from "../navigation";
 import { Fragment } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { dateLabel, mdl, mtenderUrl } from "../api";
 import { tr } from "../i18n/backendMap";
@@ -13,10 +14,12 @@ const money = (value: number | null) => value === null ? "—" : mdl(value);
 export default function TenderDetail() {
   const { t } = useTranslation();
   const { id = "" } = useParams();
+  const [params] = useSearchParams();
+  const returnTo = safeReturnTo(params.get("returnTo"));
   const data = useProcedureData(id);
   const tender = data.tender;
   if (data.loading) return <div><h1>{t("tenderDetail.loading_title")}</h1><Skeleton rows={5} height={40} /></div>;
-  if (data.error || !tender) return <div><Link className="back-link" to="/tenders">← {t("tenderDetail.back")}</Link><h1>{t("tenderDetail.not_found_title")}</h1>{data.error && <ErrorNote error={data.error} onRetry={data.retry} />}</div>;
+  if (data.error || !tender) return <div><Link className="back-link" to={returnTo}>← {t("tenderDetail.back")}</Link><h1>{t(data.errorStatus === 404 ? "tenderDetail.not_found_title" : "completion.load_error")}</h1>{data.error && <ErrorNote error={data.error} onRetry={data.retry} />}</div>;
   const facts: [string, string][] = [
     [t("tenderDetail.cf_authority"), tender.buyer_name ?? "—"],
     ["OCID", tender.ocid ?? "—"],
@@ -30,10 +33,10 @@ export default function TenderDetail() {
     [t("tenderDetail.cf_winner"), tender.winner_name ?? "—"],
   ];
   return <div className="tender-analysis">
-    <Link className="back-link" to="/tenders">← {t("tenderDetail.back")}</Link>
+    <Link className="back-link" to={returnTo}>← {t("tenderDetail.back")}</Link>
     <PageHead kickerPlain kicker={tender.ocid ?? id} title={tender.title ?? t("tenderDetail.untitled")} lede={tender.buyer_name ?? undefined} actions={<>
       {tender.ocid && <a className="action-secondary" href={mtenderUrl(tender.ocid)} target="_blank" rel="noreferrer noopener">{t("common.open_mtender")} ↗</a>}
-      <Link className="action-secondary" to={`/models?tender=${encodeURIComponent(id)}`}>{t("analysis.models_title")} →</Link>
+      <Link className="action-secondary" to={researchDestination("/models", id, returnTo)}>{t("analysis.models_title")} →</Link>
     </>} />
     <nav className="case-section-nav" aria-label={t("analysis.case_sections")}><a href="#case-facts">{t("analysis.facts")}</a><a href="#case-models">{t("analysis.compare_models")}</a><a href="#case-indicators">{t("analysis.indicators_title")}</a><a href="#case-evidence">{t("analysis.evidence")}</a></nav>
     <section id="case-facts" className="surface case-facts">
@@ -50,7 +53,7 @@ export default function TenderDetail() {
       </dl><p className="microcopy">{t("analysis.raw_facts_limit")}</p></details>
     </section>
     <section id="case-models">
-      {data.analysisError && <ErrorNote error={data.analysisError} onRetry={data.retry} />}
+      {data.analysisError && <ErrorNote error={data.analysisError} onRetry={data.retryAnalysis} />}
       {!data.analysis && !data.analysisError && <Loading label={t("analysis.loading_models")} />}
       {data.analysis && <ModelWorkbench tender={tender} analysis={data.analysis} />}
     </section>
@@ -59,13 +62,15 @@ export default function TenderDetail() {
       <div className="section-heading"><div><span className="eyebrow">{t("analysis.traceability")}</span><h2>{t("analysis.evidence")}</h2></div></div>
       <p className="microcopy break-anywhere">{t("analysis.source")}: {data.analysis?.source ?? t("analysis.unavailable")} · {t("analysis.run")}: <code>{data.analysis?.run_id ?? "—"}</code></p>
       <p className="microcopy">{t("analysis.run_date")}: {dateLabel(data.analysis?.generated_at)} · {t("analysis.reference_size")}: {metric(data.analysis?.n_reference, 0)}</p>
+      {data.explanationError && <ErrorNote error={data.explanationError} onRetry={data.retryExplanation} />}
+      {data.explanationLoading && <Loading />}
       {data.explanation ? data.explanation.layers.map((layer) => <details className="research-disclosure" key={layer.id}><summary>{t(`tenderDetail.${({ facts: "explainLayerFacts", indicators: "explainLayerIndicators", detectors: "explainLayerDetectors", references: "explainLayerReferences", limitations: "explainLayerLimitations" })[layer.id]}`)}</summary>
-        {layer.id === "facts" ? <dl className="kv">{layer.items.map((item) => <Fragment key={item.field}><dt>{tr(item.label)}</dt><dd>{item.value === null ? "—" : String(item.value)}{item.percentile != null && <span className="microcopy" title={t("tenderDetail.explain_pct_hint")}> · {t("tenderDetail.explain_pct", { v: metric(item.percentile, 1) })}</span>}</dd></Fragment>)}</dl>
+        {layer.id === "facts" ? <dl className="kv">{layer.items.map((item) => <Fragment key={item.field}><dt>{tr(item.label)}</dt><dd>{item.value === null ? "—" : String(item.value)}{item.percentile != null && tender.score_provenance?.run_id && tender.score_provenance.run_id === data.explanation?.scoring_run_id && <span className="microcopy" title={t("tenderDetail.explain_pct_hint")}> · {t("tenderDetail.explain_pct", { v: metric(item.percentile, 1) })}</span>}</dd></Fragment>)}</dl>
         : layer.id === "references" ? <ul className="evidence-list">{layer.items.map((item) => <li key={item.path}><strong>{tr(item.label)}</strong><code>{item.path}</code><Pill tone={item.available ? "info" : "muted"}>{t(item.available ? "analysis.reference_present" : "analysis.unavailable")}</Pill></li>)}</ul>
         : layer.id === "limitations" ? <ul>{layer.items.map((item, i) => <li key={i}>{tr(item.text)}</li>)}</ul>
         : layer.id === "detectors" ? <TableWrap><table><thead><tr><th scope="col">{t("analysis.model")}</th><th scope="col">{t("analysis.raw_score")}</th><th scope="col">{t("analysis.verdict")}</th></tr></thead><tbody>{layer.items.map((item) => <tr key={item.key}><th scope="row">{item.label}</th><td>{metric(item.score, 6)}</td><td>{t(item.verdict === "unscored" ? "analysis.unavailable" : `analysis.${item.verdict}`)}</td></tr>)}</tbody></table></TableWrap>
         : <ul>{layer.items.map((item) => <li key={item.key}>{tr(item.label)}: {t(item.triggered ? "analysis.recorded_signal" : "analysis.not_recorded")} · {t("analysis.corpus_frequency")}: {item.corpus_rate === null ? "—" : `${metric(item.corpus_rate * 100, 2)}%`} (n = {metric(item.corpus_n, 0)})</li>)}</ul>}
-      </details>) : <p className="muted">{t("analysis.explanation_unavailable")}</p>}
+      </details>) : !data.explanationLoading && !data.explanationError ? <p className="muted">{t("analysis.explanation_unavailable")}</p> : null}
       <p className="microcopy">{t("analysis.peer_limit")}</p>
     </section>
     <aside className="methodology-notice">{t("analysis.disclaimer")}</aside>

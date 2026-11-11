@@ -114,7 +114,7 @@ export default function Distributions() {
   const [tab, setTab] = useState<TabKey>("corr");
   // One request for the feature catalogue; failure retries in place instead of
   // reloading the whole page.
-  const catalogReq = useRequest<FeatureCatalog>("features", () => getFeatures());
+  const catalogReq = useRequest<FeatureCatalog>("features", (signal) => getFeatures(signal));
   const catalog = catalogReq.data;
 
   if (catalogReq.error && !catalog) {
@@ -198,7 +198,7 @@ function CorrelationsTab({ features }: { features: FeatureCatalog["features"] })
   const key = JSON.stringify({ method, features: picked });
   const req = useRequest<Correlations>(
     key,
-    () => getCorrelations({ features: picked, method, top: 40 }),
+    (signal) => getCorrelations({ features: picked, method, top: 40 }, signal),
     enabled,
   );
 
@@ -410,8 +410,8 @@ function DistributionsTab({
   const [scale, setScale] = useState("auto");
   const [group, setGroup] = useState("");
   const key = JSON.stringify({ column, scale, group });
-  const req = useRequest<Distribution>(key, () =>
-    getDistribution({ column, bins: 44, group: group || undefined, scale }),
+  const req = useRequest<Distribution>(key, (signal) =>
+    getDistribution({ column, bins: 44, group: group || undefined, scale }, signal),
   );
 
   const describe = (raw: string) => {
@@ -664,12 +664,12 @@ function RelationshipsTab({
   const [spreadScale, setSpreadScale] = useState<ScaleRequest>("auto");
 
   const scatterKey = JSON.stringify({ x, y, group, logAxes });
-  const scatterReq = useRequest<ScatterData>(scatterKey, () =>
-    getScatter({ x, y, group: group || undefined, limit: 3500, log_x: logAxes, log_y: logAxes }),
+  const scatterReq = useRequest<ScatterData>(scatterKey, (signal) =>
+    getScatter({ x, y, group: group || undefined, limit: 3500, log_x: logAxes, log_y: logAxes }, signal),
   );
   const cmpKey = JSON.stringify({ value, group });
-  const cmpReq = useRequest<GroupCompare>(cmpKey, () =>
-    getGroupCompare({ value, group: group || "procedure", limit: 12 }),
+  const cmpReq = useRequest<GroupCompare>(cmpKey, (signal) =>
+    getGroupCompare({ value, group: group || "procedure", limit: 12 }, signal),
   );
 
   const featLabel = (key: string) =>
@@ -996,8 +996,8 @@ function CompositionTab({
   const [b, setB] = useState("risk_level");
   const [value, setValue] = useState("");
   const key = JSON.stringify({ a, b, value });
-  const req = useRequest<Crosstab>(key, () =>
-    getCrosstab({ a, b, value: value || undefined, limit: 16 }),
+  const req = useRequest<Crosstab>(key, (signal) =>
+    getCrosstab({ a, b, value: value || undefined, limit: 16 }, signal),
   );
 
   const describe = (raw: string) => {

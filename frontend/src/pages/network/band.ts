@@ -18,17 +18,17 @@
  * label), so colour is always a redundancy, never the only channel.
  */
 export const EDGE_FILL = {
-  high: "#c2661f", // percentile >= 80
-  mid: "#8aa0b8", // 50-79
-  low: "#e4e8ed", // < 50
-  unscored: "#e4e8ed", // no detector ever produced output (same fill, dashed edge)
+  high: "var(--band-high)", // percentile >= 80
+  mid: "var(--chart-muted)", // 50-79
+  low: "var(--line)", // < 50
+  unscored: "var(--line)", // no detector ever produced output (same fill, dashed edge)
 } as const;
 
 export type EdgeBand = keyof typeof EDGE_FILL;
 
 /** Anomaly percentile 0-100 (or its absence) -> the band it belongs to. */
 export function edgeBand(risk: number | null | undefined): EdgeBand {
-  if (risk === null || risk === undefined || Number.isNaN(risk)) return "unscored";
+  if (risk === null || risk === undefined || !Number.isFinite(risk) || risk < 0 || risk > 100) return "unscored";
   if (risk >= 80) return "high";
   if (risk >= 50) return "mid";
   return "low";

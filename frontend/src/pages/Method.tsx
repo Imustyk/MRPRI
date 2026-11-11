@@ -1,17 +1,14 @@
 import { Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import { getJson, type Meta } from "../api";
-import { useEffect, useState } from "react";
-import { PageHead } from "../ui";
+import { useRequest } from "../hooks";
+import { PageHead, ErrorNote, Loading } from "../ui";
 import { tr } from "../i18n/backendMap";
 
 export default function Method() {
   const { t } = useTranslation();
-  const [meta, setMeta] = useState<Meta | null>(null);
-  useEffect(() => {
-    getJson<Meta>("/api/meta").then(setMeta).catch(() => undefined);
-  }, []);
-
+  const request = useRequest("meta", signal => getJson<Meta>("/api/meta", signal));
+  const meta = request.error ? null : request.data;
   return (
     <div>
       <PageHead
@@ -28,6 +25,8 @@ export default function Method() {
         }
       />
 
+      {request.error && <ErrorNote error={request.error} onRetry={request.reload} />}
+      {request.loading && <Loading />}
       <div className="stack">
       <div className="card">
         <h2>{t("method.pipeline_h")}</h2>

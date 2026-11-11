@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useRequest } from "../hooks";
 import { Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -7,12 +7,9 @@ import {
   getModelKpis,
   int,
   val,
-  type Evaluation,
-  type Explainability,
   type KpiCheck,
   type KpiDetector,
   type KpiStatus,
-  type ModelKpis,
 } from "../api";
 import { ErrorNote, MiniStats, PageHead, Pill, Skeleton, TableWrap } from "../ui";
 import { tr } from "../i18n/backendMap";
@@ -52,56 +49,15 @@ function fig(v: number | string | null | undefined): number | null {
 
 export default function Kpis() {
   const { t } = useTranslation();
-  const [data, setData] = useState<ModelKpis | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
-  const [evalErr, setEvalErr] = useState<string | null>(null);
-  const [evalLoading, setEvalLoading] = useState(true);
-  const [xai, setXai] = useState<Explainability | null>(null);
-  const [xaiErr, setXaiErr] = useState<string | null>(null);
-  const [xaiLoading, setXaiLoading] = useState(true);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    getModelKpis()
-      .then((d) => {
-        setData(d);
-        setLoading(false);
-      })
-      .catch((e: Error) => {
-        setError(e.message);
-        setLoading(false);
-      });
-    // The research panels are advisory: each carries its own loading/error
-    // state so a missing artefact degrades to a note, not a blank page.
-    setEvalLoading(true);
-    setEvalErr(null);
-    getEvaluation()
-      .then((d) => {
-        setEvaluation(d);
-        setEvalLoading(false);
-      })
-      .catch((e: Error) => {
-        setEvalErr(e.message);
-        setEvalLoading(false);
-      });
-    setXaiLoading(true);
-    setXaiErr(null);
-    getExplainability()
-      .then((d) => {
-        setXai(d);
-        setXaiLoading(false);
-      })
-      .catch((e: Error) => {
-        setXaiErr(e.message);
-        setXaiLoading(false);
-      });
-  }, []);
-
-  useEffect(load, [load]);
-
+  const request = useRequest("model-kpis", signal => getModelKpis(signal));
+  const evalReq = useRequest("evaluation", signal => getEvaluation(signal));
+  const xaiReq = useRequest("explainability", signal => getExplainability(signal));
+  const data = request.error ? null : request.data;
+  const error = request.error; const loading = request.loading; const load = request.reload;
+  const evaluation = evalReq.error ? null : evalReq.data;
+  const evalErr = evalReq.error; const evalLoading = evalReq.loading;
+  const xai = xaiReq.error ? null : xaiReq.data;
+  const xaiErr = xaiReq.error; const xaiLoading = xaiReq.loading;
   const statusLabel = (s: KpiStatus) =>
     s === "pass" ? t("kpis.status_pass") : s === "fail" ? t("kpis.status_fail") : t("kpis.status_skip");
 
@@ -318,7 +274,7 @@ export default function Kpis() {
         {evalLoading ? (
           <Skeleton rows={6} />
         ) : evalErr ? (
-          <ErrorNote error={evalErr} onRetry={load} />
+          <ErrorNote error={evalErr} onRetry={evalReq.reload} />
         ) : !evaluation ? (
           <p className="muted">{t("kpis.ext_na")}</p>
         ) : (
@@ -551,7 +507,7 @@ export default function Kpis() {
         {xaiLoading ? (
           <Skeleton rows={5} />
         ) : xaiErr ? (
-          <ErrorNote error={xaiErr} onRetry={load} />
+          <ErrorNote error={xaiErr} onRetry={xaiReq.reload} />
         ) : !xai ? (
           <p className="muted">{t("kpis.xai_na")}</p>
         ) : !xai.xai_consistency.available ? (

@@ -1,0 +1,36 @@
+{
+  "head": "9b8167d4320d3c305d8fd3de0933e7781a53f58d",
+  "protected": {
+    "backend": {
+      "files": 20,
+      "sha256": "6e1713e4819b73607568042894e27cfb3dcea0e92d993deca9d7522ef027323a"
+    },
+    "data": {
+      "files": 152443,
+      "sha256": "088296928f53a8e5164fdbac64819254a09433f9fb5ddfc437bf8157416c3646"
+    },
+    "results": {
+      "files": 315,
+      "sha256": "700f66dad86100c0f701a3870c3ab8d24c23a5819b3b94cd8f19c9919ed5bb41"
+    },
+    "src": {
+      "files": 18,
+      "sha256": "23dfd677b5b5e896d336157626c03726e83f4bdd0757765883c662dc3952b03b"
+    },
+    "scripts": {
+      "files": 59,
+      "sha256": "f588fad83979414e7bb631d78af6ad8b556ca555cb77707737af09a1627dd5b4"
+    }
+  },
+  "unchanged": {
+    "backend": true,
+    "data": true,
+    "results": true,
+    "src": true,
+    "scripts": true,
+    "frontend/src/styles.css": true,
+    "package-lock.json": true,
+    "HEAD": true
+  },
+  "status": " M frontend/e2e/distributions.spec.ts\n M frontend/e2e/helpers.ts\n M frontend/e2e/network.spec.ts\n M frontend/e2e/routes.spec.ts\n M frontend/e2e/tender-detail.spec.ts\n M frontend/e2e/tenders.spec.ts\n D frontend/public/_lang-bootstrap.html\n M frontend/src/App.tsx\n M frontend/src/api.ts\n M frontend/src/components/ProcedurePicker.tsx\n M frontend/src/components/QuartileRangeChart.tsx\n M frontend/src/components/useProcedureData.ts\n M frontend/src/hooks.ts\n M frontend/src/i18n/locales/en/index.ts\n M frontend/src/i18n/locales/ro/index.ts\n M frontend/src/i18n/locales/ru/index.ts\n M frontend/src/pages/Distributions.tsx\n M frontend/src/pages/Kpis.tsx\n M frontend/src/pages/Method.tsx\n M frontend/src/pages/Network.tsx\n M frontend/src/pages/Overview.tsx\n M frontend/src/pages/ResearchAnalysis.tsx\n M frontend/src/pages/TenderDetail.tsx\n M frontend/src/pages/Tenders.tsx\n M frontend/src/pages/Workspace.tsx\n M frontend/src/pages/network/band.ts\n M frontend/src/product.css\n M frontend/src/styles.css\n M frontend/src/ui.tsx\n?? docs/frontend-completion/\n?? docs/network-view/\n?? frontend/e2e/completion-fixtures.ts\n?? frontend/e2e/completion-live.spec.ts\n?? frontend/e2e/completion.spec.ts\n?? frontend/playwright.completion-mobile.config.ts\n?? frontend/src/components/AsyncAction.test.tsx\n?? frontend/src/components/AsyncAction.tsx\n?? frontend/src/contracts.test.ts\n?? frontend/src/contracts.ts\n?? frontend/src/i18n/locales/en/completion.ts\n?? frontend/src/i18n/locales/ro/completion.ts\n?? frontend/src/i18n/locales/ru/completion.ts\n?? frontend/src/navigation.ts\n?? frontend/src/pages/network/presentation.ts\n?? notebooks/\n?? package-lock.json\n"
+}

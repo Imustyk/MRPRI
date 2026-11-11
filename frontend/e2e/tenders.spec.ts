@@ -1,5 +1,9 @@
+import {fixtureApi, id as fixtureId} from "./completion-fixtures";
 import { expect, test } from "@playwright/test";
 import { SHOTS, waitForRouteReady } from "./helpers";
+
+// Isolated mocked API: these tests verify UI interactions, not live scoring correctness.
+test.beforeEach(async ({page})=>fixtureApi(page));
 
 /**
  * The URL is the state of /tenders: search + filters + page survive opening a
@@ -7,15 +11,9 @@ import { SHOTS, waitForRouteReady } from "./helpers";
  * parameter normalisation.
  */
 
-async function firstTenderId(request: import("@playwright/test").APIRequestContext) {
-  const res = await request.get("/api/tenders?limit=1&sort=risk");
-  expect(res.ok()).toBeTruthy();
-  const body = (await res.json()) as { items: { tender_id: string }[] };
-  expect(body.items.length).toBeGreaterThan(0);
-  return body.items[0].tender_id;
-}
+async function firstTenderId(_request: import("@playwright/test").APIRequestContext) { return fixtureId; }
 
-test("filters and page survive open → back, and a reload keeps them too", async ({
+test("MOCKED | filters and page survive open → back, and a reload keeps them too", async ({
   page,
   request,
 }) => {
@@ -72,7 +70,7 @@ test("filters and page survive open → back, and a reload keeps them too", asyn
   await expect(page.locator("h1")).toBeVisible();
 });
 
-test("Back steps a page push; a filter edit resets the page", async ({ page }) => {
+test("MOCKED | Back steps a page push; a filter edit resets the page", async ({ page }) => {
   await page.goto("/tenders");
   await waitForRouteReady(page);
   await page.waitForSelector("table tbody tr");
@@ -100,7 +98,7 @@ test("Back steps a page push; a filter edit resets the page", async ({ page }) =
   });
 });
 
-test("invalid URL parameters are normalised without a history stop", async ({ page }) => {
+test("MOCKED | invalid URL parameters are normalised without a history stop", async ({ page }) => {
   await page.goto("/tenders?level=xyz&min=abc&offset=12");
   await page.waitForFunction(() => {
     const s = location.search;

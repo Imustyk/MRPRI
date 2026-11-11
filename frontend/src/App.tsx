@@ -114,7 +114,7 @@ export default function App() {
     try { selectedProcedure = decodeURIComponent(location.pathname.slice("/tenders/".length)); } catch { selectedProcedure = null; }
   }
   const destination = (path: string) => selectedProcedure && ["/models", "/indicators"].includes(path)
-    ? `${path}?${new URLSearchParams({ tender: selectedProcedure })}` : path;
+    ? `${path}?${new URLSearchParams({ tender: selectedProcedure, returnTo: new URLSearchParams(location.search).get("returnTo") ?? "/tenders" })}` : path;
   const current = nav.flatMap((group) => group.items).find((item) => item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to));
   return <div className="shell product-shell">
     <a className="skip" href="#main">{t("brand.skip")}</a>

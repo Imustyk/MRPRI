@@ -1,3 +1,5 @@
+import { useRequest } from "../hooks";
+import { readDrillHash, resolvedColor } from "./network/presentation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -34,8 +36,8 @@ const AXIS_H = 124;
 const CELL_MIN = 8;
 const CELL_MAX = 18;
 
-const NAVY = "#1e3a5f";
-const GOLD = "#b8892a";
+const NAVY = "var(--chart-heat)";
+const GOLD = "var(--chart-gold)";
 
 const pairKey = (l: GraphLink) => `${l.source}||${l.target}`;
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
@@ -597,6 +599,9 @@ function DrillCanvas({
   const [hover, setHover] = useState<string | null>(null);
   const [tip, setTip] = useState<{ x: number; y: number } | null>(null);
   const H = 340;
+  const [themeRevision, setThemeRevision] = useState(0);
+  useEffect(() => { const observer = new MutationObserver(() => setThemeRevision(value => value + 1)); observer.observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme", "class", "style"]}); return () => observer.disconnect(); }, []);
+
 
   useEffect(() => {
     const el = hostRef.current;
@@ -632,7 +637,7 @@ function DrillCanvas({
       const b = placed.get(l.target);
       if (!a || !b) continue;
       const band = edgeBand(l.max_risk);
-      ctx.strokeStyle = EDGE_FILL[band];
+      ctx.strokeStyle = resolvedColor(EDGE_FILL[band]);
       ctx.lineWidth = 1 + Math.min(4, l.weight * 0.4);
       ctx.setLineDash(isUnscored(band) ? [4, 3] : []);
       ctx.beginPath();
@@ -650,22 +655,22 @@ function DrillCanvas({
       const isCenter = n.id === centerId;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = n.kind === "buyer" ? NAVY : GOLD;
+      ctx.fillStyle = resolvedColor(n.kind === "buyer" ? NAVY : GOLD);
       ctx.fill();
       ctx.lineWidth = hover === n.id ? 3 : 1.5;
-      ctx.strokeStyle = hover === n.id ? "#1b2430" : "#ffffff";
+      ctx.strokeStyle = resolvedColor(hover === n.id ? "var(--ink)" : "var(--card)");
       ctx.stroke();
 
       const label = clip(n.name, isCenter ? 26 : 14);
       ctx.font = `${isCenter ? "600 " : ""}10px "IBM Plex Sans", system-ui, sans-serif`;
       const ly = p.y + p.r + 4;
       ctx.lineWidth = 3;
-      ctx.strokeStyle = "rgba(255,255,255,0.92)";
+      ctx.strokeStyle = resolvedColor("var(--card)");
       ctx.strokeText(label, p.x, ly);
-      ctx.fillStyle = "#1b2430";
+      ctx.fillStyle = resolvedColor("var(--ink)");
       ctx.fillText(label, p.x, ly);
     }
-  }, [placed, hover, nodes, links, centerId, w, H]);
+  }, [placed, hover, nodes, links, centerId, w, H, themeRevision]);
 
   const nodeAt = (x: number, y: number): string | null => {
     for (const n of nodes) {
@@ -732,14 +737,12 @@ function DrillCanvas({
 
 export default function Network() {
   const { t } = useTranslation();
-  const [slice, setSlice] = useState<{
-    links: GraphLink[];
-    nodes: Map<string, GraphNode>;
-    stats: GraphData["stats"];
-  } | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  const request = useRequest("graph-slices", async signal => {
+    const [byAwards, byRisk] = await Promise.all([getGraph({limit: SLICE_LIMIT, sort: "awards"}, signal), getGraph({limit: SLICE_LIMIT, sort: "risk"}, signal)]);
+    return mergeSlices(byAwards, byRisk);
+  });
+  const slice = request.error ? null : request.data;
+  const error = request.error; const loading = request.loading; const load = request.reload;
   // View state (filters do not touch the API or the percentile maths).
   const [minAwards, setMinAwards] = useState(2);
   const [minPct, setMinPct] = useState(0);
@@ -748,37 +751,18 @@ export default function Network() {
   const [selKey, setSelKey] = useState<string | null>(null);
   // #drill=<party id> opens that party's local network on load, so a drill-down
   // view is shareable (and the state survives a reload).
-  const [drill, setDrill] = useState<string | null>(() => {
-    const hit = /#drill=([^&]+)/.exec(window.location.hash);
-    return hit ? decodeURIComponent(hit[1]) : null;
-  });
+  const [hashInvalid, setHashInvalid] = useState(() => readDrillHash(window.location.hash).invalid);
+  const [drill, setDrillState] = useState<string | null>(() => readDrillHash(window.location.hash).id);
+  const setDrill = useCallback((id: string | null) => { setHashInvalid(false); setDrillState(id); }, []);
   const matrixRef = useRef<HTMLDivElement>(null);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    Promise.all([
-      getGraph({ limit: SLICE_LIMIT, sort: "awards" }),
-      getGraph({ limit: SLICE_LIMIT, sort: "risk" }),
-    ])
-      .then(([byAwards, byRisk]) => {
-        setSlice(mergeSlices(byAwards, byRisk));
-        setLoading(false);
-      })
-      .catch((e: Error) => {
-        setError(e.message);
-        setLoading(false);
-      });
-  }, []);
-
-  useEffect(load, [load]);
+  useEffect(() => { const read = () => { const next = readDrillHash(window.location.hash); setHashInvalid(next.invalid); setDrillState(next.id); }; window.addEventListener("hashchange", read); return () => window.removeEventListener("hashchange", read); }, []);
 
   // Keep the address bar in step with the opened drill-down (replaceState: a
   // drill-down click is navigation *within* the view, not a history entry).
   useEffect(() => {
     const base = `${window.location.pathname}${window.location.search}`;
     window.history.replaceState(
-      null,
+      window.history.state,
       "",
       drill ? `${base}#drill=${encodeURIComponent(drill)}` : base,
     );
@@ -914,6 +898,7 @@ export default function Network() {
 
   return (
     <div>
+      {hashInvalid && <p role="alert">{t("completion.hash_error")}</p>}
       <PageHead kicker={t("network.kicker")} title={t("network.title")} lede={t("network.lede")} />
 
       <ul className="legend">

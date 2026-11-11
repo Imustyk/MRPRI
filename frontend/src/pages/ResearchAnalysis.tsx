@@ -11,11 +11,9 @@ export default function ResearchAnalysis({ mode = "models" }: { mode?: "models" 
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const id = params.get("tender") ?? "";
-  // replace: picking a procedure narrows the current view, it is not a step in
-  // history — Back leaves the page instead of replaying every selection. Other
-  // query parameters (e.g. a carried-over search) are kept intact.
+  // Automatic defaults replace; explicit choices are browser history entries.
   const select = useCallback(
-    (value: string) => {
+    (value: string, replace = false) => {
       setParams(
         (prev) => {
           const next = new URLSearchParams(prev);
@@ -23,7 +21,7 @@ export default function ResearchAnalysis({ mode = "models" }: { mode?: "models" 
           else next.delete("tender");
           return next;
         },
-        { replace: true },
+        { replace },
       );
     },
     [setParams],
@@ -37,7 +35,7 @@ export default function ResearchAnalysis({ mode = "models" }: { mode?: "models" 
     {data.tender && <>
       <div className="selected-procedure"><span className="eyebrow">{t("analysis.selected_procedure")}</span><h2>{data.tender.title ?? id}</h2><code>{id}</code></div>
       {mode === "models" ? <>
-        {data.analysisError && <ErrorNote error={data.analysisError} onRetry={data.retry} />}
+        {data.analysisError && <ErrorNote error={data.analysisError} onRetry={data.retryAnalysis} />}
         {!data.analysis && !data.analysisError && <Loading />}
         {data.analysis && <ModelWorkbench tender={data.tender} analysis={data.analysis} />}
       </> : <IndicatorPanel tender={data.tender} />}

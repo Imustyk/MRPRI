@@ -1506,7 +1506,9 @@ button.small,
 
 @media (min-width: 1280px) {
   .net-grid {
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    /* 1.4 rather than 1.5: the pairs card needs ~320px for its four columns at
+       1280px, and the matrix gives that up without changing its cell pitch. */
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     align-items: start;
   }
 }
@@ -1674,13 +1676,9 @@ table.sortable td {
 
 table.sortable th {
   white-space: normal;
-}
-
-/* The last header is the relief valve for the narrow card: should the three
-   named columns already eat the width, its long word breaks in place instead
-   of the whole column being clipped off the right edge. */
-table.sortable th:last-child {
-  overflow-wrap: anywhere;
+  /* Headers sit a step below the cells: the widest header word
+     ("процентиль", "percentile") is what a narrow card runs out of first. */
+  font-size: 12px;
 }
 
 /* Long proper names ("LUKOIL-Moldova", "MONSTERAX - GSG SRL") set the column's

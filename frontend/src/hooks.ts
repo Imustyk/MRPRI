@@ -57,6 +57,7 @@ export type RequestState<T> = {
   key: string;
   loading: boolean;
   error: string | null;
+  errorStatus?: number;
   /** True while ``key`` changed but only older data is on hand — must be labelled. */
   stale: boolean;
   /** Re-run the in-flight request after an error, without a page reload. */
@@ -87,6 +88,7 @@ export function useRequest<T>(
     dataKey: string | null;
     error: string | null;
     loading: boolean;
+    errorStatus?: number;
   }>({ data: null, dataKey: null, error: null, loading: enabled });
   const [attempt, setAttempt] = useState(0);
   const runRef = useRef(run);
@@ -111,6 +113,7 @@ export function useRequest<T>(
         setState((prev) => ({
           ...prev,
           error: reason instanceof Error ? reason.message : String(reason),
+          errorStatus: reason instanceof Error && "status" in reason ? Number(reason.status) : undefined,
           loading: false,
         }));
       });

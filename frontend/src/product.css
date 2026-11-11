@@ -274,3 +274,14 @@ caption { text-align: left; color: var(--muted); padding: 12px 14px; font-size: 
 .score-histogram .recharts-reference-line { pointer-events: none; }
 .recorded-rules { display: grid; gap: 18px; }
 .recorded-rule { border-top: 1px solid var(--line); padding-top: 16px; min-width: 0; }
+
+/* Completion flows: contained editors and action errors. */
+.async-action { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.async-action [role="alert"], .confirm [role="alert"] { color: var(--red); overflow-wrap: anywhere; max-width: 30rem; }
+.confirm { flex-wrap: wrap; }
+#workspace-panel details { max-width: 100%; min-width: 0; }
+#workspace-panel details textarea { width: 100%; min-width: 8rem; max-width: 100%; }
+#workspace-panel .form-grid { min-width: 0; }
+#workspace-panel fieldset { min-inline-size: 0; }
+
+.net-drill-canvas, .net-drill-canvas canvas { background: var(--card); border-color: var(--line); }

@@ -1,0 +1,12 @@
+[
+  {
+    "browser": "firefox",
+    "available": false,
+    "reason": "browserType.launch: Executable doesn't exist at /Users/imustyk/Library/Caches/ms-playwright/firefox-1572/firefox/Nightly.app/Contents/MacOS/firefox"
+  },
+  {
+    "browser": "webkit",
+    "available": false,
+    "reason": "browserType.launch: Executable doesn't exist at /Users/imustyk/Library/Caches/ms-playwright/webkit-2388/pw_run.sh"
+  }
+]

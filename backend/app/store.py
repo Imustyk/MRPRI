@@ -160,9 +160,11 @@ def _csv_scores() -> dict[str, dict]:
 
     out: dict[str, dict] = {}
     with path.open(encoding="utf-8", newline="") as fh:
-        # Raw '"' characters occur inside unquoted party names in this export,
-        # so quoting is disabled to keep them as literal data.
-        for row in _csv.DictReader(fh, quoting=_csv.QUOTE_NONE):
+        # Honor CSV quoting: quoted party names/titles can contain commas.
+        # Quotes inside an unquoted field remain literal with the standard reader.
+        for row in _csv.DictReader(fh):
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError("Malformed score CSV: field count differs from header")
             ocid = (row.get("ocid") or "").strip()
             if not ocid:
                 continue

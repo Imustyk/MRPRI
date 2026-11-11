@@ -1,28 +1,17 @@
-import { useEffect, useState } from "react";
-import { getJson, getModelAnalysis, getTenderExplanation, type ModelAnalysis, type Tender, type TenderExplanation } from "../api";
-
-/** Keep late responses for the previous selection out of the new case file. */
+import { ApiContractError } from "../contracts";
+import { getJson, getModelAnalysis, getTenderExplanation, type Tender } from "../api";
+import { useRequest, type RequestState } from "../hooks";
+function current<T>(request: RequestState<T>) { return !request.error && !request.stale ? request.data : null; }
+/** Each resource owns its cancellation, error and retry; old selections are hidden. */
 export function useProcedureData(id: string) {
-  const [tender, setTender] = useState<Tender | null>(null);
-  const [analysis, setAnalysis] = useState<ModelAnalysis | null>(null);
-  const [explanation, setExplanation] = useState<TenderExplanation | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(Boolean(id));
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    let live = true;
-    const controller = new AbortController();
-    setTender(null); setAnalysis(null); setExplanation(null); setError(null); setAnalysisError(null);
-    if (!id) { setLoading(false); return; }
-    setLoading(true);
-    getJson<Tender>(`/api/tenders/${encodeURIComponent(id)}`, controller.signal).then((row) => {
-      if (live) { setTender(row); setLoading(false); }
-    }).catch((reason: Error) => { if (live) { setError(reason.message); setLoading(false); } });
-    getModelAnalysis(id, controller.signal).then((value) => { if (live) setAnalysis(value); })
-      .catch((reason: Error) => { if (live) setAnalysisError(reason.message); });
-    getTenderExplanation(id, controller.signal).then((value) => { if (live) setExplanation(value); }).catch(() => undefined);
-    return () => { live = false; controller.abort(); };
-  }, [id, attempt]);
-  return { tender, analysis, explanation, error, analysisError, loading, retry: () => setAttempt((n) => n + 1) };
+  const row = useRequest(id, signal => getJson<Tender>(`/api/tenders/${encodeURIComponent(id)}`, signal), Boolean(id));
+  const model = useRequest(id, signal => getModelAnalysis(id, signal), Boolean(id));
+  const explanation = useRequest(id, signal => getTenderExplanation(id, signal), Boolean(id));
+  const tender = current(row); const analysis = current(model);
+  const mismatch = tender && analysis && (analysis.tender_id !== tender.tender_id || Boolean(analysis.run_id && analysis.run_id !== tender.score_provenance?.run_id));
+  const associationError = mismatch ? new ApiContractError("model-analysis.run_id/tender_id", "provenance").message : null;
+  return { tender, analysis: associationError ? null : analysis, explanation: current(explanation),
+    error: row.error, errorStatus: row.errorStatus, loading: Boolean(id) && (row.loading || row.stale), retry: row.reload,
+    analysisError: associationError ?? model.error, analysisLoading: model.loading || model.stale, retryAnalysis: model.reload,
+    explanationError: explanation.error, explanationLoading: explanation.loading || explanation.stale, retryExplanation: explanation.reload };
 }

@@ -147,9 +147,10 @@ export function QuartileRangeChart({
                 aria-label={describeRow(info.row)}
                 data-row={info.row.key}
                 onMouseEnter={() => setActive(info.row.key)}
-                onMouseLeave={() => setActive(null)}
+                // Keep the last inspected row: collapsing the details here
+                // moved the raw-table summary between pointer down and up.
                 onFocus={() => setActive(info.row.key)}
-                onBlur={() => setActive(null)}
+
               >
                 <rect
                   x={0}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useRequest } from "../hooks";
 import { Link } from "react-router-dom";
 import {
   Bar,
@@ -24,10 +24,8 @@ import {
   num1,
   pct,
   val,
-  type DatasetReport,
   type Health,
   type Meta,
-  type MongoStatus,
   type RiskLevel,
   type Stats,
 } from "../api";
@@ -45,54 +43,27 @@ const BAND_FILL: Record<string, string> = {
 
 export default function Overview() {
   const { t } = useTranslation();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [meta, setMeta] = useState<Meta | null>(null);
-  const [mongo, setMongo] = useState<MongoStatus | null>(null);
-  const [dataset, setDataset] = useState<DatasetReport | null>(null);
-  const [datasetErr, setDatasetErr] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const load = () => {
-    setError(null);
-    setLoading(true);
-    // stats is the only blocking request; the panels below fill in after it.
-    getJson<Stats>("/api/stats")
-      .then((d) => {
-        setStats(d);
-        setLoading(false);
-      })
-      .catch((e: Error) => {
-        setError(e.message);
-        setLoading(false);
-      });
-    getJson<Meta>("/api/meta").then(setMeta).catch(() => undefined);
-    getJson<Health>("/api/health")
-      .then((h) => setMongo(h.mongodb))
-      .catch(() => undefined);
-    // Provenance is advisory: a failure here degrades to an inline note, the
-    // way the MongoDB source panel does, and never blocks the overview.
-    // verify_hash recomputes SHA-256 once per server run (cached afterwards);
-    // the provenance card can then show the verified state instead of
-    // "verification not requested".
-    getDataset(true)
-      .then(setDataset)
-      .catch((e: Error) => setDatasetErr(e.message));
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
+  const statsReq = useRequest("stats", signal => getJson<Stats>("/api/stats", signal));
+  const metaReq = useRequest("meta", signal => getJson<Meta>("/api/meta", signal));
+  const healthReq = useRequest("health", signal => getJson<Health>("/api/health", signal));
+  const datasetReq = useRequest("dataset", signal => getDataset(true, signal));
+  const stats = statsReq.error ? null : statsReq.data;
+  const meta = metaReq.error ? null : metaReq.data;
+  const mongo = healthReq.error ? null : healthReq.data?.mongodb;
+  const dataset = datasetReq.error ? null : datasetReq.data;
+  const datasetErr = datasetReq.error;
+  const error = statsReq.error;
+  const loading = statsReq.loading;
+  const load = statsReq.reload;
   if (error && !stats) {
     return (
       <div>
         <div className="kicker">{t("overview.err_kicker")}</div>
         <h1>{t("overview.err_title")}</h1>
         <p className="lede">
-          <Trans i18nKey="overview.err_lede" components={{ code: <code /> }} />
+          {t("completion.results_error")}
         </p>
-        <pre className="cmd">./scripts/run_pipeline.sh</pre>
+
         <div style={{ marginTop: 16 }}>
           <ErrorNote error={error} onRetry={load} />
         </div>
@@ -137,6 +108,8 @@ export default function Overview() {
         </>}
       />
 
+      {metaReq.error && <ErrorNote error={metaReq.error} onRetry={metaReq.reload} />}
+      {healthReq.error && <ErrorNote error={healthReq.error} onRetry={healthReq.reload} />}
       {unscoredRows > 0 && (
         <div className="callout warn">
           <Trans
@@ -189,9 +162,7 @@ export default function Overview() {
         <summary>{t("overview.prov_h")}</summary>
         <p className="muted">{t("overview.prov_p")}</p>
         {datasetErr ? (
-          <p className="muted">
-            {t("overview.prov_error")} <span className="mono">{datasetErr}</span>
-          </p>
+          <ErrorNote error={datasetErr} onRetry={datasetReq.reload} />
         ) : !dataset ? (
           <Skeleton rows={3} />
         ) : (
@@ -434,7 +405,7 @@ export default function Overview() {
                   : t("overview.kv_tx_no")}
               </dd>
               <dt>{t("overview.kv_scored")}</dt>
-              <dd className="mono">{int(meta?.scored ?? 0)}</dd>
+              <dd className="mono">{int(meta?.scored)}</dd>
             </dl>
           ) : (
             <p className="muted">

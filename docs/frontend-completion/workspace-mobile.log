@@ -1,0 +1,12 @@
+
+Running 8 tests using 1 worker
+
+[1/8] [chromium] › e2e/completion.spec.ts:35:1 › Workspace cases: refusal retains draft, double submit, status rollback, edit, note, delete, Activity
+[2/8] [chromium] › e2e/completion.spec.ts:45:1 › Workspace annotations: create, edit, confirmed delete
+[3/8] [chromium] › e2e/completion.spec.ts:48:1 › Workspace watchlists: keyboard select, create/edit items, remove and delete
+[4/8] [chromium] › e2e/completion.spec.ts:52:1 › Saved views: object validation, legacy unsupported fields, create/apply/reload/edit/delete
+[5/8] [chromium-mobile] › e2e/completion.spec.ts:35:1 › Workspace cases: refusal retains draft, double submit, status rollback, edit, note, delete, Activity
+[6/8] [chromium-mobile] › e2e/completion.spec.ts:45:1 › Workspace annotations: create, edit, confirmed delete
+[7/8] [chromium-mobile] › e2e/completion.spec.ts:48:1 › Workspace watchlists: keyboard select, create/edit items, remove and delete
+[8/8] [chromium-mobile] › e2e/completion.spec.ts:52:1 › Saved views: object validation, legacy unsupported fields, create/apply/reload/edit/delete
+  8 passed (10.4s)

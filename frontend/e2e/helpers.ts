@@ -2,7 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 
-export const SHOTS = resolve(process.cwd(), "../docs/frontend-verification");
+export const SHOTS = resolve(process.cwd(), "../docs/frontend-completion");
 mkdirSync(SHOTS, { recursive: true });
 
 export const ROUTES = [
@@ -31,7 +31,9 @@ export async function expectNoDocumentOverflow(page: Page) {
 }
 
 /** Every rendered chart must have a non-zero size after load/resize. */
-export async function expectChartsHaveSize(page: Page) {
+export async function expectChartsHaveSize(page: Page, expectedMinimum = 1) {
+  const count = await page.locator(".recharts-wrapper, .quartile-chart, .net-svg").count();
+  expect(count, "expected chart must exist").toBeGreaterThanOrEqual(expectedMinimum);
   const bad = await page.evaluate(() => {
     const nodes = [
       ...document.querySelectorAll(".recharts-wrapper"),

@@ -1,0 +1,19 @@
+{
+  "mean_risk": 76.59,
+  "n_tenders": 152378,
+  "checks": [
+    {
+      "route": "/",
+      "alerts": [],
+      "charts": 3,
+      "table_rows": 77
+    },
+    {
+      "route": "/tenders",
+      "alerts": [],
+      "charts": 0,
+      "table_rows": 40
+    }
+  ],
+  "page_errors": []
+}

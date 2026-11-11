@@ -1,5 +1,9 @@
+import {fixtureApi} from "./completion-fixtures";
 import { expect, test } from "@playwright/test";
 import { SHOTS, expectNoDocumentOverflow, waitForRouteReady } from "./helpers";
+
+// Isolated mocked API: these tests verify UI interactions, not live scoring correctness.
+test.beforeEach(async ({page})=>fixtureApi(page));
 
 /**
  * Distributions: the spread chart shows the real p25 → p75 interval with a
@@ -7,7 +11,7 @@ import { SHOTS, expectNoDocumentOverflow, waitForRouteReady } from "./helpers";
  * tooltips, and the raw table is available underneath.
  */
 
-test("spread chart: interval geometry, focusable rows, raw quartile table", async ({
+test("MOCKED | spread chart: interval geometry, focusable rows, raw quartile table", async ({
   page,
 }) => {
   await page.goto("/distributions");
@@ -55,7 +59,7 @@ test("spread chart: interval geometry, focusable rows, raw quartile table", asyn
 
   // Raw values table is present under the chart.
   await page.locator("details summary", { hasText: /Raw quartile values/i }).click();
-  const table = page.locator(".quartile-chart-wrap").locator("xpath=following::table[1]");
+  const table = page.locator("details").filter({has: page.locator("summary", {hasText: /Raw quartile values/i})}).locator("table");
   await expect(table).toBeVisible();
   const headers = await table.locator("thead th").allInnerTexts();
   expect(headers.join(" ")).toMatch(/p25/);
@@ -64,7 +68,7 @@ test("spread chart: interval geometry, focusable rows, raw quartile table", asyn
   await page.screenshot({ path: `${SHOTS}/distributions-spread-quartiles.png`, fullPage: true });
 });
 
-test("request states: tabs announce loading and settle to a result or an explicit empty", async ({
+test("MOCKED | request states: tabs announce loading and settle to a result or an explicit empty", async ({
   page,
 }) => {
   await page.goto("/distributions");

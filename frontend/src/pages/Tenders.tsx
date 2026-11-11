@@ -1,9 +1,10 @@
+import { tenderDestination } from "../navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { getJson, int, mdl, mtenderUrl, num, pctile, type Stats, type Tender } from "../api";
 import { useRequest } from "../hooks";
-import { BandBadge, PageHead, RequestPanel, Skeleton, TableWrap } from "../ui";
+import { BandBadge, PageHead, RequestPanel, ErrorNote, Skeleton, TableWrap } from "../ui";
 
 const PAGE = 40;
 const LEVELS = new Set(["critical", "high", "medium", "low", "unscored"]);
@@ -29,7 +30,7 @@ export function readTenderFilters(params: URLSearchParams) {
   const rawOffset = params.get("offset");
   const parsedOffset = rawOffset === null ? 0 : Number(rawOffset);
   const offset =
-    rawOffset === null || !Number.isFinite(parsedOffset) || parsedOffset <= 0
+    rawOffset === null || !Number.isSafeInteger(parsedOffset) || parsedOffset <= 0
       ? 0
       : Math.floor(parsedOffset / PAGE) * PAGE;
   return { q, level, procedure, minRisk, offset };
@@ -50,17 +51,10 @@ export default function Tenders() {
   const [procedureOptions, setProcedureOptions] = useState<string[]>([]);
   const filtered = Boolean(filters.q || filters.level || filters.procedure || filters.minRisk > 0);
 
-  useEffect(() => {
-    let live = true;
-    getJson<Stats>("/api/stats")
-      .then((stats) => {
-        if (live) setProcedureOptions(Object.keys(stats.procedure_counts).sort());
-      })
-      .catch(() => undefined);
-    return () => {
-      live = false;
-    };
-  }, []);
+  const options = useRequest("procedure-options", signal => getJson<Stats>("/api/stats", signal));
+  const location = useLocation();
+  const destination = (id: string) => tenderDestination(id, location.pathname + location.search);
+  useEffect(() => { if (options.data && !options.error) setProcedureOptions(Object.keys(options.data.procedure_counts).sort()); }, [options.data, options.error]);
 
   /** Filter edits replace the current entry (no history spam per keystroke);
    *  paging pushes, so Back steps through pages exactly as visited. */
@@ -121,7 +115,7 @@ export default function Tenders() {
   }, [q, filters.q, update]);
 
   const requestKey = JSON.stringify(filters);
-  const req = useRequest<{ total: number; items: Tender[] }>(requestKey, () => {
+  const req = useRequest<{ total: number; items: Tender[] }>(requestKey, (signal) => {
     const params = new URLSearchParams({
       sort: "risk",
       limit: String(PAGE),
@@ -131,7 +125,7 @@ export default function Tenders() {
     if (filters.q) params.set("q", filters.q);
     if (filters.level) params.set("level", filters.level);
     if (filters.procedure) params.set("procedure", filters.procedure);
-    return getJson<{ total: number; items: Tender[] }>(`/api/tenders?${params}`);
+    return getJson<{ total: number; items: Tender[] }>(`/api/tenders?${params}`, signal);
   });
 
   const describe = (raw: string) => {
@@ -162,6 +156,7 @@ export default function Tenders() {
 
   return (
     <div>
+      {options.error && <ErrorNote error={options.error} onRetry={options.reload} />}
       <PageHead
         kicker={t("tenders.kicker")}
         title={t("tenders.title")}
@@ -274,7 +269,7 @@ export default function Tenders() {
                       // is not put in the tab order.
                       onClick={(e) => {
                         if ((e.target as HTMLElement).closest("a, button")) return;
-                        nav(`/tenders/${row.tender_id}`);
+                        nav(destination(row.tender_id));
                       }}
                     >
                       <td>
@@ -284,7 +279,7 @@ export default function Tenders() {
                         </div>
                       </td>
                       <td>
-                        <Link to={`/tenders/${row.tender_id}`}>
+                        <Link to={destination(row.tender_id)}>
                           {row.title ?? t("tenders.untitled")}
                         </Link>
                         {/* External source of record; the row click handler above
@@ -321,7 +316,7 @@ export default function Tenders() {
               {t("tenders.open_directly")}{" "}
               {result.items.slice(0, 6).map((row) => (
                 <span key={row.tender_id}>
-                  <Link to={`/tenders/${row.tender_id}`} className="mono" style={{ marginRight: 10 }}>
+                  <Link to={destination(row.tender_id)} className="mono" style={{ marginRight: 10 }}>
                     {row.tender_id}
                   </Link>
                 </span>

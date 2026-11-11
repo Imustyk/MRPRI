@@ -1,3 +1,4 @@
+import completion from "./completion";
 import common from "./common";
 import analysis from "./analysis";
 import backend from "./backend";
@@ -19,6 +20,7 @@ import raci from "./raci";
 const en = {
   ...common,
   analysis,
+  completion,
   backend,
   overview,
   tenders,

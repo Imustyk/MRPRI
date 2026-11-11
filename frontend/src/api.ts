@@ -4,6 +4,7 @@
  * procedures were examined and cleared.
  */
 import i18n, { intlLocale } from "./i18n";
+import { assertApiData, ApiHttpError } from "./contracts";
 import { tr } from "./i18n/backendMap";
 
 export type RiskLevel = "unscored" | "low" | "medium" | "high" | "critical";
@@ -220,15 +221,24 @@ export type GraphData = {
 
 /** Renders a value that may legitimately be absent, without faking a zero. */
 export function val(n: number | null | undefined, digits = 2): string {
-  if (n === null || n === undefined || Number.isNaN(n)) return "\u2014";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "\u2014";
   return n.toLocaleString(intlLocale(), {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
 }
 
+/** Keep cancellation distinct; localize network failures without inventing a result. */
+async function transport(url: string, options?: RequestInit): Promise<Response> {
+  try { return await fetch(url, options); }
+  catch (reason) {
+    if (options?.signal?.aborted || reason instanceof DOMException && reason.name === "AbortError") throw reason;
+    throw new Error(i18n.t("completion.network_error", {url}));
+  }
+}
+
 export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(url, { signal });
+  const res = await transport(url, { signal });
   return readJson<T>(res, url);
 }
 
@@ -236,7 +246,7 @@ export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> 
 async function readJson<T>(res: Response, url: string): Promise<T> {
   const raw = await res.text();
   if (!res.ok) {
-    throw new Error(
+    throw new ApiHttpError(res.status,
       extractError(raw) ||
         i18n.t("api.http_error", { status: res.status, statusText: res.statusText, url }),
     );
@@ -247,11 +257,12 @@ async function readJson<T>(res: Response, url: string): Promise<T> {
     // "Unexpected end of JSON input" in the UI.
     throw new Error(i18n.t("api.empty_body", { url, status: res.status }));
   }
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
+  let data: unknown;
+  try { data = JSON.parse(raw); } catch {
     throw new Error(i18n.t("api.malformed_body", { url }));
   }
+  assertApiData(url, data);
+  return data as T;
 }
 
 export function mdl(n: number) {
@@ -267,13 +278,13 @@ export function pct(n: number) {
 }
 
 export function int(n: number | null | undefined): string {
-  if (n === null || n === undefined || Number.isNaN(n)) return "\u2014";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "\u2014";
   return Math.round(n).toLocaleString(intlLocale());
 }
 
 /** Anomaly percentile: 0-100, one decimal, never a fabricated precision. */
 export function pctile(n: number | null | undefined): string {
-  if (n === null || n === undefined || Number.isNaN(n)) return "\u2014";
+  if (n === null || n === undefined || !Number.isFinite(n) || n < 0 || n > 100) return "\u2014";
   return n.toFixed(1);
 }
 
@@ -478,7 +489,7 @@ function qs(params: Record<string, string | number | boolean | undefined | null>
   return s ? `?${s}` : "";
 }
 
-export const getFeatures = () => getJson<FeatureCatalog>("/api/analytics/features");
+export const getFeatures = (signal?: AbortSignal) => getJson<FeatureCatalog>("/api/analytics/features", signal);
 
 /** The bounded relational slice; see GraphStats for what the limit clipped. */
 export const getGraph = (p: {
@@ -486,30 +497,28 @@ export const getGraph = (p: {
   min_awards?: number;
   min_risk?: number | null;
   sort?: GraphSort;
-} = {}) =>
+} = {}, signal?: AbortSignal) =>
   getJson<GraphData>(
     `/api/graph${qs({
       limit: p.limit,
       min_awards: p.min_awards,
       min_risk: p.min_risk,
       sort: p.sort,
-    })}`,
-  );
+    })}`, signal);
 
 export const getCorrelations = (p: {
   features?: string[];
   method?: string;
   min_abs?: number;
   top?: number;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<Correlations>(
     `/api/analytics/correlations${qs({
       features: p.features?.join(","),
       method: p.method,
       min_abs: p.min_abs,
       top: p.top,
-    })}`,
-  );
+    })}`, signal);
 
 export const getDistribution = (p: {
   column: string;
@@ -517,7 +526,7 @@ export const getDistribution = (p: {
   group?: string;
   log_x?: boolean;
   scale?: string;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<Distribution>(
     `/api/analytics/distribution${qs({
       column: p.column,
@@ -525,8 +534,7 @@ export const getDistribution = (p: {
       group: p.group,
       log_x: p.log_x,
       scale: p.scale,
-    })}`,
-  );
+    })}`, signal);
 
 export const getScatter = (p: {
   x: string;
@@ -535,7 +543,7 @@ export const getScatter = (p: {
   limit?: number;
   log_x?: boolean;
   log_y?: boolean;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<ScatterData>(
     `/api/analytics/scatter${qs({
       x: p.x,
@@ -544,42 +552,38 @@ export const getScatter = (p: {
       limit: p.limit,
       log_x: p.log_x,
       log_y: p.log_y,
-    })}`,
-  );
+    })}`, signal);
 
 export const getGroupCompare = (p: {
   value: string;
   group: string;
   limit?: number;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<GroupCompare>(
-    `/api/analytics/group-compare${qs({ value: p.value, group: p.group, limit: p.limit })}`,
-  );
+    `/api/analytics/group-compare${qs({ value: p.value, group: p.group, limit: p.limit })}`, signal);
 
 export const getCrosstab = (p: {
   a: string;
   b: string;
   value?: string;
   limit?: number;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<Crosstab>(
-    `/api/analytics/crosstab${qs({ a: p.a, b: p.b, value: p.value, limit: p.limit })}`,
-  );
+    `/api/analytics/crosstab${qs({ a: p.a, b: p.b, value: p.value, limit: p.limit })}`, signal);
 
 export const getTimeSeries = (p: {
   date_field?: string;
   grain?: string;
   group?: string;
   value?: string;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<TimeSeries>(
     `/api/analytics/timeseries${qs({
       date_field: p.date_field,
       grain: p.grain,
       group: p.group,
       value: p.value,
-    })}`,
-  );
+    })}`, signal);
 
 /* ==========================================================================
    Model KPI: catalogue + live checks for the four detectors
@@ -655,7 +659,7 @@ export type ModelKpis = {
   metrics: { available: boolean; reason: string };
 };
 
-export const getModelKpis = () => getJson<ModelKpis>("/api/model-kpis");
+export const getModelKpis = (signal?: AbortSignal) => getJson<ModelKpis>("/api/model-kpis", signal);
 
 /* ==========================================================================
    Workspace CRUD
@@ -742,19 +746,22 @@ export async function send<T>(
   url: string,
   body?: unknown,
 ): Promise<T> {
-  const res = await fetch(url, {
+  const res = await transport(url, {
     method,
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const raw = await res.text();
   if (!res.ok) {
-    throw new Error(
+    throw new ApiHttpError(res.status,
       extractError(raw) || i18n.t("api.http_error", { status: res.status, statusText: res.statusText, url }),
     );
   }
-  if (!raw.trim()) return undefined as T;
-  return JSON.parse(raw) as T;
+  if (!raw.trim()) { if (res.status === 204) return undefined as T; throw new Error(i18n.t("api.empty_body", {url,status:res.status})); }
+  let data: unknown;
+  try { data = JSON.parse(raw); } catch { throw new Error(i18n.t("api.malformed_body", { url })); }
+  assertApiData(url, data);
+  return data as T;
 }
 
 /** FastAPI validation errors are a list of {loc, msg}; flatten to one line. */
@@ -778,17 +785,15 @@ function extractError(raw: string): string {
   return raw.slice(0, 300);
 }
 
-export const getWorkspaceSummary = () => getJson<WorkspaceSummary>("/api/workspace/summary");
+export const getWorkspaceSummary = (signal?: AbortSignal) => getJson<WorkspaceSummary>("/api/workspace/summary", signal);
 
-export const getCases = (p: { status?: string; q?: string } = {}) =>
+export const getCases = (p: { status?: string; q?: string } = {}, signal?: AbortSignal) =>
   getJson<{ items: CaseRecord[]; vocab: { status: string[]; priority: string[] } }>(
-    `/api/workspace/cases${qs(p)}`,
-  );
+    `/api/workspace/cases${qs(p)}`, signal);
 
-export const getCase = (id: number) =>
+export const getCase = (id: number, signal?: AbortSignal) =>
   getJson<{ case: CaseRecord; ocids: string[]; annotations: AnnotationRecord[] }>(
-    `/api/workspace/cases/${id}`,
-  );
+    `/api/workspace/cases/${id}`, signal);
 
 export const createCase = (body: {
   title: string;
@@ -805,10 +810,9 @@ export const updateCase = (id: number, body: Record<string, unknown>) =>
 export const deleteCase = (id: number) =>
   send<{ deleted: number }>("DELETE", `/api/workspace/cases/${id}`);
 
-export const getAnnotations = (p: { ocid?: string; case_id?: number; category?: string; q?: string } = {}) =>
+export const getAnnotations = (p: { ocid?: string; case_id?: number; category?: string; q?: string } = {}, signal?: AbortSignal) =>
   getJson<{ items: AnnotationRecord[]; vocab: { category: string[] } }>(
-    `/api/workspace/annotations${qs(p)}`,
-  );
+    `/api/workspace/annotations${qs(p)}`, signal);
 
 export const createAnnotation = (body: {
   ocid: string;
@@ -824,11 +828,11 @@ export const updateAnnotation = (id: number, body: Record<string, unknown>) =>
 export const deleteAnnotation = (id: number) =>
   send<{ deleted: number }>("DELETE", `/api/workspace/annotations/${id}`);
 
-export const getWatchlists = () =>
-  getJson<{ items: Watchlist[]; colors: Record<string, string> }>("/api/workspace/watchlists");
+export const getWatchlists = (signal?: AbortSignal) =>
+  getJson<{ items: Watchlist[]; colors: Record<string, string> }>("/api/workspace/watchlists", signal);
 
-export const getWatchlist = (id: number) =>
-  getJson<{ watchlist: Watchlist; items: WatchItem[] }>(`/api/workspace/watchlists/${id}`);
+export const getWatchlist = (id: number, signal?: AbortSignal) =>
+  getJson<{ watchlist: Watchlist; items: WatchItem[] }>(`/api/workspace/watchlists/${id}`, signal);
 
 export const createWatchlist = (body: { name: string; description?: string; color?: string }) =>
   send<Watchlist>("POST", "/api/workspace/watchlists", body);
@@ -851,7 +855,7 @@ export const updateWatchlistItem = (itemId: number, note: string) =>
 export const deleteWatchlistItem = (itemId: number) =>
   send<{ deleted: number }>("DELETE", `/api/workspace/watchlists/items/${itemId}`);
 
-export const getViews = () => getJson<{ items: SavedView[] }>("/api/workspace/views");
+export const getViews = (signal?: AbortSignal) => getJson<{ items: SavedView[] }>("/api/workspace/views", signal);
 
 export const createView = (body: { name: string; description?: string; payload?: Record<string, unknown> }) =>
   send<SavedView>("POST", "/api/workspace/views", body);
@@ -861,8 +865,8 @@ export const updateView = (id: number, body: Record<string, unknown>) =>
 
 export const deleteView = (id: number) => send<{ deleted: number }>("DELETE", `/api/workspace/views/${id}`);
 
-export const getActivity = (limit = 25) =>
-  getJson<{ items: ActivityRecord[] }>(`/api/workspace/activity${qs({ limit })}`);
+export const getActivity = (limit = 25, signal?: AbortSignal) =>
+  getJson<{ items: ActivityRecord[] }>(`/api/workspace/activity${qs({ limit })}`, signal);
 
 export const resetWorkspace = () => send<WorkspaceSummary>("POST", "/api/workspace/reset?confirm=true");
 
@@ -1160,12 +1164,12 @@ export type TenderExplanation = {
  * `verify_hash` recomputes SHA-256 server-side; it is off by default so the
  * overview card never pays for hashing on every page load.
  */
-export const getDataset = (verifyHash = false) =>
-  getJson<DatasetReport>(`/api/dataset${qs({ verify_hash: verifyHash ? true : undefined })}`);
+export const getDataset = (verifyHash = false, signal?: AbortSignal) =>
+  getJson<DatasetReport>(`/api/dataset${qs({ verify_hash: verifyHash ? true : undefined })}`, signal);
 
-export const getEvaluation = () => getJson<Evaluation>("/api/evaluation");
+export const getEvaluation = (signal?: AbortSignal) => getJson<Evaluation>("/api/evaluation", signal);
 
-export const getExplainability = () => getJson<Explainability>("/api/explainability");
+export const getExplainability = (signal?: AbortSignal) => getJson<Explainability>("/api/explainability", signal);
 
 /**
  * Layered explanation for one procedure. The endpoint 404s for identifiers it
@@ -1175,7 +1179,7 @@ export const getExplainability = () => getJson<Explainability>("/api/explainabil
  */
 export async function getTenderExplanation(id: string, signal?: AbortSignal): Promise<TenderExplanation | null> {
   const url = `/api/tenders/${encodeURIComponent(id)}/explanation`;
-  const res = await fetch(url, { signal });
+  const res = await transport(url, { signal });
   if (res.status === 404) return null;
   return readJson<TenderExplanation>(res, url);
 }
