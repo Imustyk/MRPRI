@@ -28,9 +28,9 @@ const en = {
     primary: "Primary",
   },
   brand: {
-    name_a: "MTender",
+    name_a: "AchiziLens",
     name_b: "Risk",
-    doc_title: "MTender Risk Intelligence",
+    doc_title: "AchiziLens Risk Intelligence",
     doc_desc:
       "Anomaly detection over real Moldova public procurement data from the MTender OCDS feed.",
     tagline: "Anomaly detection for Moldova public procurement",

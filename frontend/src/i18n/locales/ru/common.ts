@@ -21,9 +21,9 @@ const ru: typeof en = {
     primary: "Основная навигация",
   },
   brand: {
-    name_a: "MTender",
+    name_a: "AchiziLens",
     name_b: "Risk",
-    doc_title: "MTender Risk Intelligence — аномалии в закупках",
+    doc_title: "AchiziLens Risk Intelligence — аномалии в закупках",
     doc_desc:
       "Поиск аномалий в реальных данных государственных закупок Молдовы из OCDS-файда MTender.",
     tagline: "Поиск аномалий в государственных закупках Молдовы",

@@ -21,9 +21,9 @@ const ro: typeof en = {
     primary: "Navigare principală",
   },
   brand: {
-    name_a: "MTender",
+    name_a: "AchiziLens",
     name_b: "Risk",
-    doc_title: "MTender Risk Intelligence — anomalii în achiziții",
+    doc_title: "AchiziLens Risk Intelligence — anomalii în achiziții",
     doc_desc:
       "Detectarea anomaliilor pe date reale de achiziții publice din Moldova, din fluxul OCDS MTender.",
     tagline: "Detectarea anomaliilor în achizițiile publice din Moldova",
