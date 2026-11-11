@@ -14,6 +14,7 @@ export default function Method() {
       <PageHead
         title={t("product.how")}
         lede={t("product.steps")}
+        actions={<Link className="action-primary" to="/research-results">{t("researchEvidence.nav")}</Link>}
       />
       <div className="card"><p>{t("analysis.disclaimer")}</p><Link to="/tenders">{t("product.browse")}</Link></div>
       <details className="card research-disclosure">

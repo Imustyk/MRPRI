@@ -1,3 +1,4 @@
+import researchEvidence from "./researchEvidence";
 import product from "./product";
 import completion from "./completion";
 import common from "./common";
@@ -23,6 +24,7 @@ const en = {
   analysis,
   completion,
   product,
+  researchEvidence,
   backend,
   overview,
   tenders,

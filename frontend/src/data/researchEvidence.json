@@ -1,0 +1,70 @@
+{
+  "corpus": 152378,
+  "flags": [
+    {
+      "method": "mad",
+      "legacy": 15529,
+      "stage": 15529
+    },
+    {
+      "method": "isolation_forest",
+      "legacy": 7618,
+      "stage": 7563
+    },
+    {
+      "method": "lof",
+      "legacy": 7606,
+      "stage": 7720
+    },
+    {
+      "method": "one_class_svm",
+      "legacy": 7740,
+      "stage": 8321
+    },
+    {
+      "method": "ensemble",
+      "legacy": 3031,
+      "stage": 2873
+    }
+  ],
+  "spearman": 0.9428350585582388,
+  "jaccard": 0.5185185185185185,
+  "overlap": [
+    {
+      "k": 100,
+      "intersection": 49
+    },
+    {
+      "k": 1000,
+      "intersection": 760
+    }
+  ],
+  "external": [
+    {
+      "target": "aap",
+      "rank": [
+        0.5302,
+        0.4829,
+        0.5901
+      ],
+      "amount": [
+        0.7342,
+        0.6783,
+        0.8217
+      ]
+    },
+    {
+      "target": "ansc",
+      "rank": [
+        0.5112,
+        0.4895,
+        0.5593
+      ],
+      "amount": [
+        0.5112,
+        0.4497,
+        0.6215
+      ]
+    }
+  ]
+}

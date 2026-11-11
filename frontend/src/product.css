@@ -414,3 +414,43 @@ caption { text-align: left; color: var(--muted); padding: 12px 14px; font-size: 
 @media (max-width: 900px) {
   .overview-page .cohort-charts { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
+
+.research-evidence > .surface { margin-bottom: 20px; }
+.research-evidence .evidence-figure { margin: 0 0 20px; }
+.evidence-process { padding-inline-start: 24px; }
+.evidence-process li + li { margin-top: 8px; }
+.evidence-methods, .evidence-comparisons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+}
+.evidence-methods > div, .evidence-comparison {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.evidence-methods dt { font-weight: 650; }
+.evidence-methods dd { margin: 5px 0 0; color: var(--muted); }
+.evidence-comparison h3 { font-size: 16px; }
+.evidence-bar { margin: 0 0 12px; }
+.evidence-bar-label {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 10px;
+  font-size: 13px;
+}
+.evidence-bar-label strong { font-variant-numeric: tabular-nums; }
+.evidence-bar-track {
+  position: relative;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  overflow: hidden;
+}
+.evidence-bar-track > span { display: block; height: 100%; background: var(--chart-blue); }
+.evidence-bar-secondary .evidence-bar-track > span { background: var(--chart-highlight); }
+.evidence-bar-reference { position: absolute; inset: 0 auto 0 50%; border-left: 2px solid var(--ink); }
+.evidence-source-list { padding-inline-start: 22px; }

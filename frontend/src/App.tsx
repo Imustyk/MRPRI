@@ -11,6 +11,7 @@ const ResearchAnalysis = lazy(() => import("./pages/ResearchAnalysis"));
 const Network = lazy(() => import("./pages/Network"));
 const Distributions = lazy(() => import("./pages/Distributions"));
 const Workspace = lazy(() => import("./pages/Workspace"));
+const ResearchEvidence = lazy(() => import("./pages/ResearchEvidence"));
 const Method = lazy(() => import("./pages/Method"));
 const Kpis = lazy(() => import("./pages/Kpis"));
 const Raci = lazy(() => import("./pages/Raci"));
@@ -29,6 +30,7 @@ const ICONS: Record<string, string> = {
   "/network": "M9 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0 M21 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0 M9 19a3 3 0 1 1-6 0 3 3 0 0 1 6 0 M9 6l6 4 M9 18l6-4",
   "/workspace": "M3 6h7l2 2h9v12H3z",
   "/method": "M12 5C8 2 4 3 2 4v16c4-2 7-1 10 1 3-2 6-3 10-1V4c-2-1-6-2-10 1v16",
+  "/research-results": "M4 4h16v16H4z M8 16v-3 M12 16V9 M16 16V7",
   "/kpis": "M4 20V4 M4 20h17 M7 15l5-5 4 2 5-7",
   "/raci": "M3 4h18v16H3z M3 9h18 M9 4v16 M15 9v11",
 };
@@ -107,7 +109,7 @@ export default function App() {
       { to: "/models", label: t("analysis.models_title") }, { to: "/network", label: t("nav.network") }, { to: "/workspace", label: t("nav.workspace") },
       { to: "/method", label: t("product.how") },
     ] },
-    { label: t("analysis.research"), items: [{ to: "/indicators", label: t("analysis.indicators_title") }, { to: "/distributions", label: t("nav.distributions") }, { to: "/kpis", label: t("nav.kpis") }, { to: "/raci", label: t("nav.raci") }] },
+    { label: t("analysis.research"), items: [{ to: "/research-results", label: t("researchEvidence.nav") }, { to: "/indicators", label: t("analysis.indicators_title") }, { to: "/distributions", label: t("nav.distributions") }, { to: "/kpis", label: t("nav.kpis") }, { to: "/raci", label: t("nav.raci") }] },
   ];
   let selectedProcedure = new URLSearchParams(location.search).get("tender");
   if (!selectedProcedure && location.pathname.startsWith("/tenders/")) {
@@ -131,6 +133,7 @@ export default function App() {
         <Route path="/" element={<Overview />} /><Route path="/tenders" element={<Tenders />} /><Route path="/tenders/:id" element={<TenderDetail />} />
         <Route path="/models" element={<ResearchAnalysis />} /><Route path="/indicators" element={<ResearchAnalysis mode="indicators" />} />
         <Route path="/distributions" element={<Distributions />} /><Route path="/network" element={<Network />} /><Route path="/workspace" element={<Workspace />} />
+        <Route path="/research-results" element={<ResearchEvidence />} />
         <Route path="/method" element={<Method />} /><Route path="/kpis" element={<Kpis />} /><Route path="/raci" element={<Raci />} />
         {ModelCardFixture && <Route path="/__fixture/model-card" element={<ModelCardFixture />} />}
         <Route path="*" element={<NotFound />} />

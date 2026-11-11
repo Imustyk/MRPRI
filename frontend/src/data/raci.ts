@@ -1,0 +1,540 @@
+export const RACI_LETTERS = ["R", "A", "C", "I", "A/R"] as const;
+export type RaciLetter = (typeof RACI_LETTERS)[number] | "";
+
+export type RoleCode = "SD" | "SS" | "DE" | "TR" | "DP" | "AI";
+
+export type RaciRole = {
+  code: RoleCode;
+  name: string;
+  short: string;
+  basis: string;
+  external?: boolean;
+};
+
+export const ROLES: RaciRole[] = [
+  {
+    code: "SD",
+    name: "Data Analyst / Author",
+    short: "Analyst",
+    basis: "Runs the pipeline, computes the indicators, reads the anomalies. Sole implementer.",
+  },
+  {
+    code: "SS",
+    name: "Scientific Supervisor",
+    short: "Supervisor",
+    basis: "Approves the methodology and the claims drawn from the analysis.",
+  },
+  {
+    code: "DE",
+    name: "Domain Expert",
+    short: "Expert",
+    basis: "Decides whether a flagged pattern is meaningful in Moldovan procurement.",
+  },
+  {
+    code: "TR",
+    name: "Thesis Committee",
+    short: "Committee",
+    basis: "Examines the analysis and its claims at review and defence.",
+  },
+  {
+    code: "DP",
+    name: "Data Provider",
+    short: "Provider",
+    basis: "MTender / MoF / AAP. External — C or I only. Publishes the data being analysed.",
+    external: true,
+  },
+  {
+    code: "AI",
+    name: "AI Coding Agent",
+    short: "Tooling",
+    basis: "Assisted-by role in the repo; never accountable.",
+  },
+];
+
+export type PhaseId = "A" | "B" | "C" | "D" | "E" | "F";
+
+export type Phase = {
+  id: PhaseId;
+  title: string;
+};
+
+export const PHASES: Phase[] = [
+  { id: "A", title: "Corpus integrity" },
+  { id: "B", title: "Indicators" },
+  { id: "C", title: "Anomaly detection" },
+  { id: "D", title: "Interpretation & validation" },
+  { id: "E", title: "Analyst-facing analysis" },
+  { id: "F", title: "Reproducibility & result" },
+];
+
+export type RaciTask = {
+  id: string;
+  phase: PhaseId;
+  task: string;
+  artefact: string;
+  SD: RaciLetter;
+  SS: RaciLetter;
+  DE: RaciLetter;
+  TR: RaciLetter;
+  DP: RaciLetter;
+  AI: RaciLetter;
+};
+
+export const TASKS: RaciTask[] = [
+  {
+    id: "A1",
+    phase: "A",
+    task: "Verify source endpoints: empty HTTP 200 bodies, date-cursor pagination",
+    artefact: "scripts/00_check_api.py; docs/API_INVESTIGATION_REPORT.md",
+    SD: "A/R",
+    SS: "I",
+    DE: "",
+    TR: "",
+    DP: "C",
+    AI: "",
+  },
+  {
+    id: "A2",
+    phase: "A",
+    task: "Build the corpus: OCID inventory + immutable fetch of every package",
+    artefact: "scripts/01a_scan_ocids.py; 01b_fetch_records.py",
+    SD: "A/R",
+    SS: "I",
+    DE: "",
+    TR: "",
+    DP: "C",
+    AI: "",
+  },
+  {
+    id: "A3",
+    phase: "A",
+    task: "Normalise to analysis-ready documents (merge compiled releases, parties, lots)",
+    artefact: "scripts/02_normalize_mongo.py; src/mtender/normalize.py, ocds.py",
+    SD: "A/R",
+    SS: "I",
+    DE: "C",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "A4",
+    phase: "A",
+    task: "Resolve supplier identity: IDNO extraction, 491 whitespace-padded IDs",
+    artefact: "src/mtender/ocds.py, normalize.py (_IDNO_IN_ID, _idno_from)",
+    SD: "A/R",
+    SS: "I",
+    DE: "C",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "A5",
+    phase: "A",
+    task: "Detect and quarantine corrupt values (award total inflated ~10 orders of magnitude)",
+    artefact: "src/mtender/normalize.py (plausible_award_total, AWARD_AMOUNT_VS_ESTIMATE_MAX)",
+    SD: "A/R",
+    SS: "I",
+    DE: "C",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "A6",
+    phase: "A",
+    task: "Measure coverage and non-response: 31.3% bid data, 77.3% award data, 2,617 inverted periods",
+    artefact: "scripts/02 (validation report); src/mtender/features.py",
+    SD: "A/R",
+    SS: "C",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "A7",
+    phase: "A",
+    task: "Independent cross-checks: MoF monthly extract, AAP blacklist load",
+    artefact: "scripts/10_load_mof_opendata.py; 11_load_blacklist.py",
+    SD: "A/R",
+    SS: "",
+    DE: "I",
+    TR: "",
+    DP: "C",
+    AI: "",
+  },
+  {
+    id: "B1",
+    phase: "B",
+    task: "The 22 computable indicators, grouped by what they measure",
+    artefact: "scripts/03_features_mongo.py; src/mtender/features.py",
+    SD: "A/R",
+    SS: "I",
+    DE: "C",
+    TR: "",
+    DP: "",
+    AI: "C",
+  },
+  {
+    id: "B2",
+    phase: "B",
+    task: "The 6 indicators deliberately NOT built, each with its reason",
+    artefact: "src/mtender/features.py (UNAVAILABLE register)",
+    SD: "A/R",
+    SS: "C",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "B3",
+    phase: "B",
+    task: "Behavioural concentration indicators (repeat share, winner share of buyer awards)",
+    artefact: "src/mtender/features.py",
+    SD: "A/R",
+    SS: "I",
+    DE: "C",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "B4",
+    phase: "B",
+    task: "Denominator discipline: single_bidder over published participant lists only",
+    artefact: "src/mtender/features.py; tests/test_pipeline.py",
+    SD: "A/R",
+    SS: "C",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "B5",
+    phase: "B",
+    task: "Correlation methodology on a 9-orders-of-magnitude distribution (Spearman default, Pearson shown, per-pair n)",
+    artefact: "backend/app/analytics.py",
+    SD: "A/R",
+    SS: "C",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "C1",
+    phase: "C",
+    task: "Four detectors on identical preprocessing (MAD z-score, Isolation Forest, LOF, One-Class SVM)",
+    artefact: "scripts/06_detect_anomalies.py; backend/ml/detect.py",
+    SD: "A/R",
+    SS: "C",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "C2",
+    phase: "C",
+    task: "Sampling design for O(n²) models: seeded random 20,000 rows, novelty=True scoring",
+    artefact: "scripts/06_detect_anomalies.py",
+    SD: "A/R",
+    SS: "C",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "C3",
+    phase: "C",
+    task: "State contamination=0.05 in advance as an assumption, not a finding",
+    artefact: "scripts/06_detect_anomalies.py; README.md section 11",
+    SD: "R",
+    SS: "A",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "C4",
+    phase: "C",
+    task: "Consensus risk banding: agreement count, not a score threshold (incl. unscored)",
+    artefact: "backend/app/adapter.py; src/mtender/",
+    SD: "R",
+    SS: "A",
+    DE: "C",
+    TR: "I",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "C5",
+    phase: "C",
+    task: "Handle the absent ground truth: metrics.available=false rather than a fabricated accuracy",
+    artefact: "backend/ml/pipeline.py; backend/app/adapter.py",
+    SD: "A/R",
+    SS: "C",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "D1",
+    phase: "D",
+    task: "Feature importance: permutation importance + univariate ANOVA as primary evidence",
+    artefact: "scripts/07_explainability.py; results/figures/",
+    SD: "R",
+    SS: "A",
+    DE: "C",
+    TR: "I",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "D2",
+    phase: "D",
+    task: "Attribution on Isolation Forest only; no SHAP claim for LOF / One-Class SVM",
+    artefact: "scripts/07_explainability.py",
+    SD: "A/R",
+    SS: "C",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "D3",
+    phase: "D",
+    task: "Blacklist matching: normalisation rules, exact vs ambiguous, never counting ambiguous as a hit",
+    artefact: "scripts/09_external_validation.py; src/mtender/names.py",
+    SD: "A/R",
+    SS: "I",
+    DE: "C",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "D4",
+    phase: "D",
+    task: "Precision@K protocol as the substitute for precision/recall without labels",
+    artefact: "thesis/ (Chapter 3); README.md section 12",
+    SD: "R",
+    SS: "A",
+    DE: "C",
+    TR: "I",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "E1",
+    phase: "E",
+    task: "Ranked procedures by percentile with risk bands and honest empty/unscored states",
+    artefact: "frontend/src/pages/Tenders.tsx; TenderDetail.tsx",
+    SD: "A/R",
+    SS: "I",
+    DE: "C",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "E2",
+    phase: "E",
+    task: "Distribution and correlation views: medians, quantiles, ECDF, automatic log bins",
+    artefact: "frontend/src/pages/Distributions.tsx",
+    SD: "A/R",
+    SS: "C",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "E3",
+    phase: "E",
+    task: "Buyer–winner concentration network over the repeated-pair subgraph",
+    artefact: "frontend/src/pages/Network.tsx; pages/network/",
+    SD: "A/R",
+    SS: "I",
+    DE: "C",
+    TR: "",
+    DP: "",
+    AI: "C",
+  },
+  {
+    id: "E4",
+    phase: "E",
+    task: "5–10 case studies: flagged procedures reviewed by a human, not by the score alone",
+    artefact: "frontend/src/pages/Tenders.tsx; thesis/STATUS.md",
+    SD: "R",
+    SS: "A",
+    DE: "C",
+    TR: "I",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "E5",
+    phase: "E",
+    task: "Analyst workspace for recording expert review, annotations and watchlists",
+    artefact: "src/mtender/workspace.py; backend/app/workspace_api.py; Workspace.tsx",
+    SD: "A/R",
+    SS: "I",
+    DE: "C",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "E6",
+    phase: "E",
+    task: "Ethics framing in every view: a risk band is a screening signal, not an allegation",
+    artefact: "frontend/src/pages/Method.tsx",
+    SD: "R",
+    SS: "A",
+    DE: "C",
+    TR: "I",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "F1",
+    phase: "F",
+    task: "Snapshot export with checksum manifest so the analysis runs from files alone",
+    artefact: "scripts/04_export_snapshot.py; data/processed/tenders.json",
+    SD: "A/R",
+    SS: "I",
+    DE: "",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "F2",
+    phase: "F",
+    task: "Recompute aggregations in two independent toolchains as a cross-check",
+    artefact: "scripts/05_aggregations.py; results/tables/",
+    SD: "A/R",
+    SS: "C",
+    DE: "I",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "F3",
+    phase: "F",
+    task: "Regression suite locking in the verified data behaviours (77 tests)",
+    artefact: "tests/test_pipeline.py; tests/test_backend_adapter.py",
+    SD: "A/R",
+    SS: "C",
+    DE: "",
+    TR: "",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "F4",
+    phase: "F",
+    task: "Chapter 1: domain, Law 131/2015, red flags, limitations of the data",
+    artefact: "thesis/",
+    SD: "R",
+    SS: "A",
+    DE: "C",
+    TR: "I",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "F5",
+    phase: "F",
+    task: "Chapter 2: indicators, architecture, detectors, consensus methodology",
+    artefact: "thesis/",
+    SD: "R",
+    SS: "A",
+    DE: "C",
+    TR: "I",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "F6",
+    phase: "F",
+    task: "Chapter 3: results, Precision@K, case studies, honest limitations",
+    artefact: "thesis/",
+    SD: "R",
+    SS: "A",
+    DE: "C",
+    TR: "I",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "F7",
+    phase: "F",
+    task: "Supervisor review rounds and written notes on the analysis",
+    artefact: "thesis/STATUS.md",
+    SD: "C",
+    SS: "A/R",
+    DE: "",
+    TR: "I",
+    DP: "",
+    AI: "",
+  },
+  {
+    id: "F8",
+    phase: "F",
+    task: "Final defence of the analysis and its claims",
+    artefact: "—",
+    SD: "R",
+    SS: "A",
+    DE: "C",
+    TR: "I",
+    DP: "",
+    AI: "",
+  },
+];
+
+export type WorkloadRow = {
+  code: RoleCode;
+  r: number;
+  a: number;
+  c: number;
+  i: number;
+  total: number;
+};
+
+export const WORKLOAD: WorkloadRow[] = [
+  { code: "SD", r: 34, a: 24, c: 1, i: 0, total: 59 },
+  { code: "SS", r: 1, a: 11, c: 11, i: 12, total: 35 },
+  { code: "DE", r: 0, a: 0, c: 18, i: 12, total: 30 },
+  { code: "TR", r: 0, a: 0, c: 0, i: 10, total: 10 },
+  { code: "DP", r: 0, a: 0, c: 3, i: 0, total: 3 },
+  { code: "AI", r: 0, a: 0, c: 2, i: 0, total: 2 },
+];
+
+export const LETTER_MEANING: Record<Exclude<RaciLetter, "">, string> = {
+  R: "Responsible — does the work",
+  A: "Accountable — owns the result (exactly one per task)",
+  C: "Consulted before — two-way",
+  I: "Informed after — one-way",
+  "A/R": "Same person both owns and performs",
+};
+
+export function lettersOf(task: RaciTask, code: RoleCode): RaciLetter {
+  return task[code];
+}
+
+export function hasLetter(cell: RaciLetter, letter: "R" | "A" | "C" | "I"): boolean {
+  if (!cell) return false;
+  if (cell === "A/R") return letter === "A" || letter === "R";
+  return cell === letter;
+}
