@@ -15,6 +15,13 @@ const distributions = {
   none_group: "(none)",
   na: "n/a",
 
+  // Human descriptions of the request parameters (loading / stale announcements).
+  params_corr: "{{method}} · {{n}} features",
+  params_dist: "{{feature}} · bins {{scale}} · split {{split}}",
+  params_rel: "{{x}} × {{y}} · colour {{group}} · {{scale}}",
+  params_spread: "{{measure}} by {{group}}",
+  params_mix: "rows {{a}} · columns {{b}} · {{measure}}",
+
   corr_h: "Correlation matrix",
   corr_p:
     "Cells are the correlation coefficient; colour is teal for negative, gold for positive, and opacity follows magnitude. Computed on rows where both features are present.",
@@ -26,6 +33,8 @@ const distributions = {
   computing: "Computing matrix…",
   pick_two: "Pick at least two features",
   pick_two_hint: "Ctrl/Cmd-click in the list to select several.",
+  corr_empty: "No correlation matrix for this selection",
+  corr_empty_hint: "Fewer than two selected features have paired data under these settings.",
   cell_title: "{{a}} × {{b}}: r = {{r}}",
   legend: "{{method}} · {{n}} rows · minimum {{min}} paired observations",
   pairs_h: "Strongest pairs",
@@ -71,6 +80,7 @@ const distributions = {
   log_far: "far",
   log_times: "{{n}}×",
   tooltip_procedures: "procedures",
+  tooltip_interval: "Interval: {{from}} – {{to}}",
   tooltip_value: "value ≈ {{v}}",
   ecdf_h: "Empirical cumulative distribution",
   ecdf_p:
@@ -85,6 +95,10 @@ const distributions = {
   th_n: "n",
   th_p25: "p25",
   th_p75: "p75",
+  dist_empty: "No distribution for this selection",
+  dist_empty_hint: "The chosen feature returned no bins for these parameters.",
+  median_by_empty: "No groups for this split",
+  median_by_empty_hint: "Groups under 20 observations are excluded, and none qualified here.",
 
   rel_h: "Paired relationship",
   rel_p:
@@ -108,7 +122,36 @@ const distributions = {
     "Interquartile range per group. A box plot is used rather than a mean bar because the mean of a right-skewed money column is set by its largest value.",
   f_measure: "Measure",
   f_groupby: "Group by",
-  spread_note: "The bar spans p25 → p75 with the median at the colour change.",
+  f_spread_scale: "Axis scale",
+  spread_note:
+    "Each row spans the real p25 → p75; the diamond marks the median. The values are never summed or stacked.",
+  spread_legend_interval: "p25 → p75 interval",
+  spread_legend_median: "median",
+  spread_chart_label: "Interquartile interval from p25 to p75 with a median marker — {{measure}}",
+  spread_value_axis: "Value · {{measure}}",
+  spread_tip_hint: "Hover or focus a row to see its raw quartiles, units and n.",
+  spread_row_missing: "no quartiles · n={{n}}",
+  spread_row_invalid: "invalid quartiles (p25 > p75)",
+  spread_row_nonpos: "kept off the log axis: zero or negative quartiles",
+  spread_row_summary:
+    "{{name}} — {{measure}}: p25 {{p25}}, median {{median}}, p75 {{p75}}, n={{n}}",
+  spread_empty: "No groups with quartiles for this selection",
+  spread_empty_hint: "The chosen grouping returned no group with enough observations.",
+  spread_log_note_one:
+    "Logarithmic axis: {{names}} is left off the scale because its quartiles are zero or negative; its row stays visible as a placeholder.",
+  spread_log_note_few:
+    "Logarithmic axis: {{names}} — {{count}} groups are left off the scale because their quartiles are zero or negative; their rows stay visible as placeholders.",
+  spread_log_note_many:
+    "Logarithmic axis: {{names}} — {{count}} groups are left off the scale because their quartiles are zero or negative; their rows stay visible as placeholders.",
+  spread_log_note_other:
+    "Logarithmic axis: {{names}} — {{count}} groups are left off the scale because their quartiles are zero or negative; their rows stay visible as placeholders.",
+  spread_log_fallback:
+    "A logarithmic axis was requested, but {{names}} contain zero or negative quartiles, so the linear axis is shown for all groups instead.",
+  spread_undrawable_one: "{{count}} group has no usable quartiles (missing or inverted) and is shown as a placeholder.",
+  spread_undrawable_few: "{{count}} groups have no usable quartiles (missing or inverted) and are shown as placeholders.",
+  spread_undrawable_many: "{{count}} groups have no usable quartiles (missing or inverted) and are shown as placeholders.",
+  spread_undrawable_other: "{{count}} groups have no usable quartiles (missing or inverted) and are shown as placeholders.",
+  spread_raw_table: "Raw quartile values",
   dropped_groups_one: "{{count}} smaller group was dropped for having too few observations.",
   dropped_groups_few: "{{count}} smaller groups were dropped for having too few observations.",
   dropped_groups_many: "{{count}} smaller groups were dropped for having too few observations.",
@@ -127,6 +170,8 @@ const distributions = {
   th_total: "total",
   cells_sum: "Cells are the sum of {{label}}.",
   cells_count: "Cells are procedure counts.",
+  mix_intensity:
+    "Cell shading uses one semantic colour and saturates at 55%, so the numbers stay readable in both light and dark themes.",
   dropped_levels_one: "{{count}} low-frequency level was omitted to keep the matrix legible.",
   dropped_levels_few: "{{count}} low-frequency levels were omitted to keep the matrix legible.",
   dropped_levels_many: "{{count}} low-frequency levels were omitted to keep the matrix legible.",

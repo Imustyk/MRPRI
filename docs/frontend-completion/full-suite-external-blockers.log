@@ -1,0 +1,388 @@
+
+Running 43 tests using 1 worker
+
+[1/43] [chromium] › e2e/completion-live.spec.ts:3:1 › LIVE read-only route inventory, terminal states, unknown procedure vs route
+[2/43] [chromium] › e2e/completion.spec.ts:6:1 › contract violations hide dependent results; a failed options request is explicit
+[3/43] [chromium] › e2e/completion.spec.ts:12:1 › visible back restores exact filters; research links preserve selection; safe fallback
+[4/43] [chromium] › e2e/completion.spec.ts:20:1 › explanation failure is independent, retry does not reload tender/model; 404 is unavailable
+[5/43] [chromium] › e2e/completion.spec.ts:29:1 › rapid manual selection uses newest result and browser Back restores previous selection
+[6/43] [chromium] › e2e/completion.spec.ts:35:1 › Workspace cases: refusal retains draft, double submit, status rollback, edit, note, delete, Activity
+[7/43] [chromium] › e2e/completion.spec.ts:45:1 › Workspace annotations: create, edit, confirmed delete
+[8/43] [chromium] › e2e/completion.spec.ts:48:1 › Workspace watchlists: keyboard select, create/edit items, remove and delete
+[9/43] [chromium] › e2e/completion.spec.ts:52:1 › Saved views: object validation, legacy unsupported fields, create/apply/reload/edit/delete
+[10/43] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix en/light
+[11/43] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix en/dark
+[12/43] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix ru/light
+[13/43] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix ru/dark
+[14/43] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix ro/light
+[15/43] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix ro/dark
+[16/43] [chromium] › e2e/completion.spec.ts:62:1 › invalid drill hash is recoverable; theme repaints canvas from CSS tokens
+[17/43] [chromium] › e2e/distributions.spec.ts:10:1 › spread chart: interval geometry, focusable rows, raw quartile table
+  1) [chromium] › e2e/distributions.spec.ts:10:1 › spread chart: interval geometry, focusable rows, raw quartile table 
+
+    Test timeout of 15000ms exceeded.
+
+    Error: locator.click: Test timeout of 15000ms exceeded.
+    Call log:
+      - waiting for getByRole('tab', { name: 'Relationships' })
+
+
+      15 |
+      16 |   // Relationships tab holds the scatter and the spread chart.
+    > 17 |   await page.getByRole("tab", { name: "Relationships" }).click();
+         |                                                          ^
+      18 |   const chart = page.locator(".quartile-chart");
+      19 |   await expect(chart).toBeVisible({ timeout: 30_000 });
+      20 |   await expectNoDocumentOverflow(page);
+        at /Users/imustyk/Diplom/frontend/e2e/distributions.spec.ts:17:58
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/distributions-spread-chart-342a6-ble-rows-raw-quartile-table-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/distributions-spread-chart-342a6-ble-rows-raw-quartile-table-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/distributions-spread-chart-342a6-ble-rows-raw-quartile-table-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/distributions-spread-chart-342a6-ble-rows-raw-quartile-table-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[18/43] [chromium] › e2e/distributions.spec.ts:67:1 › request states: tabs announce loading and settle to a result or an explicit empty
+  2) [chromium] › e2e/distributions.spec.ts:67:1 › request states: tabs announce loading and settle to a result or an explicit empty 
+
+    Test timeout of 15000ms exceeded.
+
+    Error: locator.click: Test timeout of 15000ms exceeded.
+    Call log:
+      - waiting for getByRole('tab', { name: 'Correlations' })
+
+
+      74 |   // terminal state (no infinite skeleton).
+      75 |   for (const tab of ["Correlations", "Distributions", "Relationships", "Composition"]) {
+    > 76 |     await page.getByRole("tab", { name: tab }).click();
+         |                                                ^
+      77 |     const panel = page.locator("#distribution-panel");
+      78 |     // Terminal state: either content, an explicit empty, or an error note.
+      79 |     await expect(panel).toBeVisible();
+        at /Users/imustyk/Diplom/frontend/e2e/distributions.spec.ts:76:48
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/distributions-request-stat-dc0fb-result-or-an-explicit-empty-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/distributions-request-stat-dc0fb-result-or-an-explicit-empty-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/distributions-request-stat-dc0fb-result-or-an-explicit-empty-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/distributions-request-stat-dc0fb-result-or-an-explicit-empty-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[19/43] [chromium] › e2e/i18n.spec.ts:19:5 › en / light: routes render translated and themed
+[20/43] [chromium] › e2e/i18n.spec.ts:19:5 › en / dark: routes render translated and themed
+[21/43] [chromium] › e2e/i18n.spec.ts:19:5 › ru / light: routes render translated and themed
+[22/43] [chromium] › e2e/i18n.spec.ts:19:5 › ru / dark: routes render translated and themed
+[23/43] [chromium] › e2e/i18n.spec.ts:19:5 › ro / light: routes render translated and themed
+[24/43] [chromium] › e2e/i18n.spec.ts:19:5 › ro / dark: routes render translated and themed
+[25/43] [chromium] › e2e/menu.spec.ts:7:3 › mobile menu › Tab/Shift+Tab stay inside the drawer, Escape closes and returns focus
+[26/43] [chromium] › e2e/model-fixture.spec.ts:11:1 › histogram: score marker, hatched threshold marker, same-interval coincidence
+[27/43] [chromium] › e2e/model-fixture.spec.ts:52:1 › histogram: all-zero counts and a missing score stay honest
+[28/43] [chromium] › e2e/network.spec.ts:10:1 › keyboard reaches the same selection as the mouse via the accessible table
+  3) [chromium] › e2e/network.spec.ts:10:1 › keyboard reaches the same selection as the mouse via the accessible table 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('table.sortable tbody tr').first()
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" locator('table.sortable tbody tr').first() with timeout 5000ms
+      - waiting for locator('table.sortable tbody tr').first()
+
+
+      16 |
+      17 |   const rows = page.locator("table.sortable tbody tr");
+    > 18 |   await expect(rows.first()).toBeVisible();
+         |                              ^
+      19 |   const rowCount = await rows.count();
+      20 |   // A bounded number of tab stops — not one per node of the graph.
+      21 |   expect(rowCount).toBeLessThanOrEqual(100);
+        at /Users/imustyk/Diplom/frontend/e2e/network.spec.ts:18:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/network-keyboard-reaches-t-cd352-se-via-the-accessible-table-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/network-keyboard-reaches-t-cd352-se-via-the-accessible-table-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/network-keyboard-reaches-t-cd352-se-via-the-accessible-table-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/network-keyboard-reaches-t-cd352-se-via-the-accessible-table-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[29/43] [chromium] › e2e/network.spec.ts:60:1 › touch-equivalent path: tapping a row selects it too
+  4) [chromium] › e2e/network.spec.ts:60:1 › touch-equivalent path: tapping a row selects it too ───
+
+    Test timeout of 15000ms exceeded.
+
+    Error: locator.tap: Test timeout of 15000ms exceeded.
+    Call log:
+      - waiting for locator('table.sortable tbody tr').nth(1)
+
+
+      62 |   await waitForRouteReady(page);
+      63 |   const rows = page.locator("table.sortable tbody tr");
+    > 64 |   await rows.nth(1).tap();
+         |                     ^
+      65 |   await expect(rows.nth(1)).toHaveAttribute("aria-current", "true");
+      66 | });
+      67 |
+        at /Users/imustyk/Diplom/frontend/e2e/network.spec.ts:64:21
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/network-touch-equivalent-path-tapping-a-row-selects-it-too-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/network-touch-equivalent-path-tapping-a-row-selects-it-too-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/network-touch-equivalent-path-tapping-a-row-selects-it-too-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/network-touch-equivalent-path-tapping-a-row-selects-it-too-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[30/43] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /
+  5) [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — / ─────────────────────
+
+    Error: expected chart must exist
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 1
+    Received:    0
+
+       at helpers.ts:36
+
+      34 | export async function expectChartsHaveSize(page: Page, expectedMinimum = 1) {
+      35 |   const count = await page.locator(".recharts-wrapper, .quartile-chart, .net-svg").count();
+    > 36 |   expect(count, "expected chart must exist").toBeGreaterThanOrEqual(expectedMinimum);
+         |                                              ^
+      37 |   const bad = await page.evaluate(() => {
+      38 |     const nodes = [
+      39 |       ...document.querySelectorAll(".recharts-wrapper"),
+        at expectChartsHaveSize (/Users/imustyk/Diplom/frontend/e2e/helpers.ts:36:46)
+        at /Users/imustyk/Diplom/frontend/e2e/routes.spec.ts:30:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/routes-no-overflow-at-required-widths-—--chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/routes-no-overflow-at-required-widths-—--chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/routes-no-overflow-at-required-widths-—--chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/routes-no-overflow-at-required-widths-—--chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[31/43] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /tenders
+[32/43] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /models
+[33/43] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /indicators
+[34/43] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /distributions
+  6) [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /distributions ────────
+
+    Error: expected chart must exist
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 1
+    Received:    0
+
+       at helpers.ts:36
+
+      34 | export async function expectChartsHaveSize(page: Page, expectedMinimum = 1) {
+      35 |   const count = await page.locator(".recharts-wrapper, .quartile-chart, .net-svg").count();
+    > 36 |   expect(count, "expected chart must exist").toBeGreaterThanOrEqual(expectedMinimum);
+         |                                              ^
+      37 |   const bad = await page.evaluate(() => {
+      38 |     const nodes = [
+      39 |       ...document.querySelectorAll(".recharts-wrapper"),
+        at expectChartsHaveSize (/Users/imustyk/Diplom/frontend/e2e/helpers.ts:36:46)
+        at /Users/imustyk/Diplom/frontend/e2e/routes.spec.ts:30:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/routes-no-overflow-at-required-widths-—-distributions-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/routes-no-overflow-at-required-widths-—-distributions-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/routes-no-overflow-at-required-widths-—-distributions-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/routes-no-overflow-at-required-widths-—-distributions-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[35/43] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /network
+  7) [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /network ──────────────
+
+    Error: expected chart must exist
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 1
+    Received:    0
+
+       at helpers.ts:36
+
+      34 | export async function expectChartsHaveSize(page: Page, expectedMinimum = 1) {
+      35 |   const count = await page.locator(".recharts-wrapper, .quartile-chart, .net-svg").count();
+    > 36 |   expect(count, "expected chart must exist").toBeGreaterThanOrEqual(expectedMinimum);
+         |                                              ^
+      37 |   const bad = await page.evaluate(() => {
+      38 |     const nodes = [
+      39 |       ...document.querySelectorAll(".recharts-wrapper"),
+        at expectChartsHaveSize (/Users/imustyk/Diplom/frontend/e2e/helpers.ts:36:46)
+        at /Users/imustyk/Diplom/frontend/e2e/routes.spec.ts:30:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/routes-no-overflow-at-required-widths-—-network-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/routes-no-overflow-at-required-widths-—-network-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/routes-no-overflow-at-required-widths-—-network-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/routes-no-overflow-at-required-widths-—-network-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[36/43] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /workspace
+[37/43] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /method
+[38/43] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /kpis
+[39/43] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /raci
+[40/43] [chromium] › e2e/tender-detail.spec.ts:14:1 › model card shows real provenance and an honest reference state
+[41/43] [chromium] › e2e/tenders.spec.ts:18:1 › filters and page survive open → back, and a reload keeps them too
+  8) [chromium] › e2e/tenders.spec.ts:18:1 › filters and page survive open → back, and a reload keeps them too 
+
+    Test timeout of 15000ms exceeded.
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/tenders-filters-and-page-s-5bd16-and-a-reload-keeps-them-too-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/tenders-filters-and-page-s-5bd16-and-a-reload-keeps-them-too-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/tenders-filters-and-page-s-5bd16-and-a-reload-keeps-them-too-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/tenders-filters-and-page-s-5bd16-and-a-reload-keeps-them-too-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[42/43] [chromium] › e2e/tenders.spec.ts:75:1 › Back steps a page push; a filter edit resets the page
+  9) [chromium] › e2e/tenders.spec.ts:75:1 › Back steps a page push; a filter edit resets the page ─
+
+    Test timeout of 15000ms exceeded.
+
+    Error: page.waitForSelector: Test timeout of 15000ms exceeded.
+    Call log:
+      - waiting for locator('table tbody tr') to be visible
+
+
+      76 |   await page.goto("/tenders");
+      77 |   await waitForRouteReady(page);
+    > 78 |   await page.waitForSelector("table tbody tr");
+         |              ^
+      79 |
+      80 |   await page.locator("#f-level").selectOption("medium");
+      81 |   await page.waitForURL(/level=medium/);
+        at /Users/imustyk/Diplom/frontend/e2e/tenders.spec.ts:78:14
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/tenders-Back-steps-a-page-push-a-filter-edit-resets-the-page-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/tenders-Back-steps-a-page-push-a-filter-edit-resets-the-page-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/tenders-Back-steps-a-page-push-a-filter-edit-resets-the-page-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/tenders-Back-steps-a-page-push-a-filter-edit-resets-the-page-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[43/43] [chromium] › e2e/tenders.spec.ts:103:1 › invalid URL parameters are normalised without a history stop
+  10) [chromium] › e2e/tenders.spec.ts:103:1 › invalid URL parameters are normalised without a history stop 
+
+    Test timeout of 15000ms exceeded.
+
+    Error: page.waitForSelector: Test timeout of 15000ms exceeded.
+    Call log:
+      - waiting for locator('table tbody tr') to be visible
+
+
+      109 |   // Everything was invalid → the URL is clean and no error is shown.
+      110 |   expect(new URL(page.url()).search).toBe("");
+    > 111 |   await page.waitForSelector("table tbody tr");
+          |              ^
+      112 |   await expect(page.locator(".error-note, [role=alert]")).toHaveCount(0);
+      113 | });
+      114 |
+        at /Users/imustyk/Diplom/frontend/e2e/tenders.spec.ts:111:14
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/tenders-invalid-URL-parame-9343d-ised-without-a-history-stop-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/tenders-invalid-URL-parame-9343d-ised-without-a-history-stop-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/tenders-invalid-URL-parame-9343d-ised-without-a-history-stop-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/tenders-invalid-URL-parame-9343d-ised-without-a-history-stop-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+  10 failed
+    [chromium] › e2e/distributions.spec.ts:10:1 › spread chart: interval geometry, focusable rows, raw quartile table 
+    [chromium] › e2e/distributions.spec.ts:67:1 › request states: tabs announce loading and settle to a result or an explicit empty 
+    [chromium] › e2e/network.spec.ts:10:1 › keyboard reaches the same selection as the mouse via the accessible table 
+    [chromium] › e2e/network.spec.ts:60:1 › touch-equivalent path: tapping a row selects it too ────
+    [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — / ──────────────────────
+    [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /distributions ─────────
+    [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /network ───────────────
+    [chromium] › e2e/tenders.spec.ts:18:1 › filters and page survive open → back, and a reload keeps them too 
+    [chromium] › e2e/tenders.spec.ts:75:1 › Back steps a page push; a filter edit resets the page ──
+    [chromium] › e2e/tenders.spec.ts:103:1 › invalid URL parameters are normalised without a history stop 
+  33 passed (3.7m)

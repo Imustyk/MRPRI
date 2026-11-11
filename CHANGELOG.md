@@ -4,6 +4,303 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions are dated tags of the form
 `MTA-YYYYMMDD`.
 
+## [MTA-0019] — 2026-11-08
+
+Independent-validation preparation for the ANSC outcome extraction —
+**measurement only** (production v0, frontend, ETL 00-11 and existing
+models untouched; no training, no scientific model comparison; no PDF
+re-download; the MTA-0018 automatic outcomes and the 50-doc sample are
+unchanged). **The manual review has NOT started: 0 of 50 documents
+verified by a human, so no quality metric was computed and no label was
+created.**
+
+* `scripts/46_ansc_review_package.py` (new): BLIND review package -
+  `data/external/ansc_manual_review_50.csv` (50 rows) and
+  `data/external/ansc_manual_review_pilot10.csv` (deterministic pilot:
+  5 classified outcomes, text-layer+scan, all confidence levels,
+  2018-2022) with reference columns (decision number, OCID, source URL,
+  local PDF path, expected resolutory page, evidence quote) and EMPTY
+  `reviewer_*` columns; the machine prediction is absent from the files
+  (blindness); `validate` exits 0/5/6/4 and `build` refuses to overwrite
+  filled reviewer data.
+* `scripts/45_ansc_review_metrics.py` (extended): merges the blind review
+  file with the machine sample by URL; required enums key on the columns
+  present (legacy sample contract preserved - its 7 tests pass unchanged);
+  outcome metrics run on rows confirmed as ANSC decisions only, with
+  document-type detection metrics (all rows), link-verification counts,
+  mislink frequency via `reviewer_link_verified` or `mislink:` notes, a
+  link-confirmed subset, a multi-complaint counter and an explicit
+  "stratified sample is NOT necessarily representative" note. Still
+  refuses until every label exists (exit 5, `metrics: null`).
+* `scripts/47_ansc_upheld_labels.py` (new): external label with a hard
+  gate - incomplete review -> exit 5 progress JSON and NO label file;
+  invalid values -> exit 6; 1 = admitted/partially, 0 = rejected on the
+  merits, NULL = unknown outcomes, non-decision documents, unconfirmed
+  links and `multiple:` rows; several complaints/documents of one
+  procedure keep their own labels (conflicts reported, never collapsed);
+  decision dates summarised with future-date leakage flags; feature-pipeline
+  leakage scan (scripts 00-15 + backend) runs first - a leak blocks
+  labeling (exit 7).
+* `docs/ANSC_REVIEW_GUIDE.md` (new): reviewer instructions with ready
+  links for the pilot, enums, workflow and note markers;
+  `docs/ANSC_MANUAL_REVIEW_PROTOCOL.md` updated to the blind package.
+* Tests: `tests/test_ansc_review_package.py` (13, new),
+  `tests/test_ansc_upheld_labels.py` (17, new), +11 in
+  `tests/test_ansc_metrics.py` - full suite **451 passed**.
+* `reports/MTA-0019_REVIEW.md`: prepared 50 (pilot 10), human-verified 0,
+  metrics NOT computed, limitations, NOT ready for MTA-0020 until the
+  human review is done.
+
+Deliberately NOT done: filling any `reviewer_*` cell (algorithms, OCR, LLMs
+and classifiers are forbidden there), any quality metric, the
+`ansc_upheld` label itself, and any conclusion about extraction quality -
+MTA-0019 stays INCOMPLETE until a human reviews all 50 documents.
+
+## [MTA-0018] — 2026-11-08
+
+ANSC document inventory, outcome extraction and the manual-review sample —
+**measurement only** (production stays v0, model features untouched,
+`data/raw/**` read-only, no model evaluation, no scientific claims). One
+networked run of `scripts/42` (`--allow-network --resume`, 7 750/7 750 URLs,
+no re-download); everything else is offline on the local sandbox.
+
+* `scripts/42_ansc_decision_inventory.py`: full probe of the 7 750 strong
+  candidate URLs — 7 722 HTTP 200 (7 295 PDFs saved to the sandbox, 249
+  non-PDF bodies, 178 bodies not downloaded, 0 not probed), 28 HTTP 400;
+  6 208 text-layer PDFs, 1 087 scans; 290 documents with an extracted ANSC
+  decision number (105 procedures, 123 distinct numbers). Two fixes with
+  regression tests: a transient exception of a retried attempt no longer
+  leaks into the `error` field of a fully fetched document, and the report
+  now separates procedure-level linkage (2 183 unambiguous / 0 ambiguous)
+  and body-download failures from non-PDF formats.
+* `scripts/43_ansc_outcome_extract.py`: two-stage extraction over all
+  documents — 138 classified (admitted 100, partially_admitted 21,
+  rejected 10, withdrawn 7, inadmissible 0, terminated 0) and 7 157
+  `unknown` of 7 295 present documents (98.1%, an abstention, never a
+  negative label) with per-reason counts. Fix: the evidence is now written
+  to the documented `evidence_quote` column (the first full run silently
+  dropped every quote through `extrasaction="ignore"`); two round-trip
+  regression tests.
+* `scripts/44_ansc_review_sample.py` (new): deterministic stratified sample
+  of 50 documents (min 3 per available outcome + proportional allocation,
+  presence sweeps over year / PDF type / confidence, deduplicated by URL)
+  with `reviewer_outcome`/`reviewer_notes` EMPTY — the manual review is
+  never imitated — plus step-7 verification that every sampled quote/page
+  opens in the source PDF: 50/50 pass (11 text-layer, 2 fresh-OCR, 37
+  no-quote-expected), exit 0; a re-run is byte-identical.
+* `scripts/45_ansc_review_metrics.py` (new): REFUSES to compute Accuracy /
+  Precision / Recall / F1 / the confusion matrix while any reviewer label
+  is missing (exit 5, `metrics: null`, progress only; invalid labels →
+  exit 6); full agreement metrics only after a complete manual review.
+* `docs/ANSC_MANUAL_REVIEW_PROTOCOL.md` (new): independent-review protocol —
+  blind decision before looking at `extracted_outcome`, the seven outcome
+  rules with Romanian formulations, multiple-complaint handling (different
+  outcomes → `unknown` + enumeration), `mislink:`/`quote page N`/`quote not
+  found` note markers, page/quote verification.
+* Tests: `tests/test_ansc_inventory.py` (9, new), `tests/test_ansc_sample.py`
+  (21, new), `tests/test_ansc_metrics.py` (7, new), `tests/test_ansc_outcomes.py`
+  (+2 CSV round-trip) — full suite **410 passed**.
+* Reports: `reports/ansc_decision_inventory.md`,
+  `reports/ansc_outcome_extraction.md`,
+  `reports/MTA-0018_FINAL.md` (counts, distributions, limitations,
+  reproduction commands); sample committed as
+  `data/external/ansc_review_sample_50.csv` (gitignore exception).
+
+Deliberately NOT done: the manual review itself, any quality metrics
+(`scripts/45` exits 5 until the 50 labels exist), the external
+`ansc_upheld` label, and any conclusion about model superiority.
+
+## [MTA-0017] — 2026-10-30
+
+Third external label, episode-level linking — **measurement only**
+(production stays v0, nothing retrained, `data/raw/**`, `backend/`,
+`frontend/` and `scripts/00..11` untouched, no network use). The source
+list comes from the author; nothing is invented or fetched.
+
+* `data/external/case_sources.csv`, `data/external/case_episodes_raw.csv`
+  (new committed templates): the author's source list (URL + type +
+  publication date) and the extracted episodes (source, page/point, buyer,
+  supplier, procedure/contract number if named, procedure date, essence,
+  quote **≤25 words**); `data/external/case_unmatched.csv` (new) holds the
+  episodes that could not be linked, each with a reason (`вне корпуса` /
+  `нет идентификатора` / `неоднозначно`). All four CSVs are excepted from
+  the `data/` ignore — they ARE the audit trail of the label.
+* `scripts/41_case_registry_ingest.py` (new): validates sources + episodes
+  (long quotes, both identifiers at once, unknown enums and missing
+  sources are rejected to the REPORT, not to the unmatched table), derives
+  `link_basis` (`procedure_ref` → `procedure_id_in_source`,
+  `contract_number` → `contract_number`, else `buyer_period_only`), runs
+  the `scripts/38` matcher, UPSERTS matched episodes into the registry
+  (never deletes; hand-written rows never overwritten; `verified_by_human`
+  and other human columns preserved; every new row starts `false`) and
+  unmatched ones into `case_unmatched.csv`. Report
+  `reports/case_registry_ingest.md`; artefact
+  `results/methodology/case_registry_ingest.json`.
+* `scripts/38_case_registry_match.py` extended: registry schema now 26
+  columns (`procedure_date`, `source_publication_date`, `link_basis`,
+  `procedure_ref_in_source`); resolution order = human `manual` →
+  identifier links (`ocid_exact` via exact ocid/tender_id/numeric tender
+  suffix, `contract_number` via a read-only `data/raw/ocds_packages` scan
+  cached in `results/methodology/contract_index.json` when `--raw-scan`,
+  else the declared `procedure_ids`) → entity ladder (IDNO → name → fuzzy
+  candidate, `buyer_period_only` additionally windowed by the episode's
+  period ±30 days); unmatched rows carry a reason from the three-value
+  enum, declared-IDNO contradictions downgrade high→medium with a note.
+  **Label rule:** `link_basis ∈ {procedure_id_in_source, contract_number}`
+  AND evidence A–C AND confidence high/medium — `buyer_period_only` and
+  empty `link_basis` rows enter the registry but NEVER the label.
+* `scripts/39_case_registry_check.py`: metrics in TWO versions — all A–C
+  (the MTA-0016 headline, top level) and only `verified_by_human=true`
+  (`summary["verified_only"]`); each version is gated independently (≥30
+  positives, ≥10 clusters → else descriptive table, no verdict); report
+  section «Версия только verified_by_human=true»; `--raw-scan` accepted so
+  both artefacts resolve contract numbers identically.
+* `scripts/19_final_verification.py` section 8 (MTA-0017): re-derives the
+  ingest counts (episodes accepted/rejected, `link_basis` split) from the
+  CSVs against the `scripts/41` artefact, cross-checks `by_link_basis`,
+  unmatched-by-reason and `verified_by_human` against the `scripts/38`
+  artefact, the `verified_only` block against `scripts/39`, and enforces
+  the `case_unmatched.csv` invariants (reason inside the enum, no empty or
+  duplicate `episode_id`, no episode in BOTH registry and unmatched).
+* `docs/case_registry_schema.md`: 26-column registry, the three new input
+  tables, `link_basis`/label rule, the three unmatched reasons, dates
+  stored separately (`procedure_date` / `source_publication_date` /
+  `first_publication_date`), two-version metrics, workflow **41 → 38 → 39
+  → 40** (19 as the control).
+* `tests/test_case_registry.py`: 54 tests — everything from MTA-0016
+  reworked for the new label rule (entity-ladder rows are matched but
+  never label-grade; temporal tests now use `procedure_ref` links) plus
+  `link_basis` enum/derivation, procedure-ref resolve/ambiguous/not-found,
+  contract-number via declared ids and via the index (build + cache),
+  `buyer_period_only` window/no-anchor/empty-window reasons, the
+  three-value unmatched enum, verified-only population exclusion,
+  ingest validation (quote >25 words, both identifiers, unknown source),
+  41 end-to-end idempotency + human-mark preservation + hand-row collision
+  protection, no network imports and `python -I` standalone for 38/39/40/41.
+* Verified: all 341 tests pass; `scripts/41 → 38 → 39 → 40` run clean on
+  the empty templates; `scripts/19` prints «all headline numbers
+  reproduce» with the extended section 8.
+
+## [MTA-0016] — 2026-10-30
+
+Third external label: a case registry from open sources — **measurement
+only** (production stays v0, nothing is retrained or retuned,
+`data/raw/**`, `backend/`, `frontend/` and `scripts/00..11` untouched, no
+network use). The two weak labels (AAP, ANSC) showed no superiority over
+size; the registry is an independent check used **only for validation**.
+
+* `data/external/case_registry.csv` (new, committed as an EMPTY template —
+  the only path excepted from the `data/` ignore; cases are added by a
+  human from open sources, never fabricated) + `docs/case_registry_schema.md`
+  (columns, evidence A–D, risk types, acceptance rules: no source →
+  rejected; D never enters the label; low-confidence matches counted
+  separately).
+* `scripts/38_case_registry_match.py`: matching ladder IDNO → exact
+  normalised name → `name_fuzzy` candidate that is ALWAYS `low` and never
+  label-grade; human `manual` matches require `verified_by_human=true`;
+  declared `match_*` cells are cross-checked, discrepancies reported;
+  report `reports/case_registry_match.md` (no network: `--allow-network`
+  is reserved and opens nothing).
+* `scripts/39_case_registry_check.py`: label = evidence A–C AND confidence
+  high/medium, with the TEMPORAL GUARD (procedures published strictly
+  before the case's `first_publication_date`; post-date rows leave the
+  population; features/scores never recomputed from post-date data). v0
+  metrics ROC-AUC / precision@100/200/500 / lift; supplier- and
+  buyer-cluster bootstrap (1000 reps, seed 42); required comparisons
+  «size only», «bidders only», random ranking (1000 reps, q97.5), random
+  5%-within-group flags (scripts/28 control (a), 200 reps); descriptive
+  cuts A vs B/C and high vs medium; power gate (<30 positives or <10
+  clusters → descriptive table + «выборка мала», NO verdict); verdict by
+  the SAME а/б/в rule as the ANSC check (`scripts/31`, minus the leakage
+  branch — nothing is refitted here). With the registry empty the script
+  reports `status=no_label` and issues no verdict.
+* `scripts/40_case_registry_studies.py`: case studies for A/B records with
+  ≥5 matched procedures → `reports/case_studies.md` (detector percentile
+  ranks + votes, SHAP/LIME top-3 around the same explained function, RAG
+  quotes from the frozen local legal corpus; wording «упоминается в
+  источнике», never «нарушитель»; per-case truncation stated).
+* `scripts/19_final_verification.py` section 8 re-validates, re-matches
+  and re-labels the registry from source data and compares every count
+  with the stored `scripts/38/39` artefacts — any drift fails the script.
+* `tests/test_case_registry.py`: 28 tests — schema/template, no-source and
+  enum rejection, evidence D excluded, IDNO→name→fuzzy ladder (fuzzy never
+  auto-promoted), buyer-side matching, manual verification, TEMPORAL GUARD
+  (pre-publication positives, same-day excluded, post-date rows dropped),
+  power gate, а/б/в verdict rule, deterministic random-5% control,
+  empty-registry end-to-end runs (no fabrication, no verdict), no network
+  imports + `python -I` standalone for 38/39/40.
+* Verified: all 28 new tests pass; `scripts/19` prints «all headline
+  numbers reproduce» including the new section 8; every report carries the
+  five limitations (label biased to loud cases ⇒ size comparison
+  mandatory; journalism ≠ evidence; prioritisation ≠ corruption;
+  population-level temporal protection; indicator of potential risk, not
+  evidence of corruption — competent-authority check required).
+
+**Registry status at the commit: 0 records (empty template) → nothing is
+matched, no metric and no verdict is produced — by design.**
+
+## [IMPROVEMENT-2026-10-20] — Iterative improvement protocol, branch `feature/risk-specific-detection` (8 phases, measurement)
+
+Framed per the author's brief as **measurement, not a cycle**: budget stays
+6 of 10, production stays **v0**, no v7, no retraining of the production
+model, votes/bands/thresholds untouched, holdout 2022–2024 never used for
+selection, no fabricated labels/metrics, `data/raw/**` read-only,
+`scripts/00..11` untouched, `results/` stays gitignored.
+
+* `5535ab9` `docs/IMPROVEMENT_PLAN.md` (new): the 8 phases with guard rails,
+  files, verifications and acceptance mapping.
+* Phase 2 — real-data integration (`ddb2f8b` backend, `f395361` frontend):
+  provenance/evaluation/explainability endpoints (`/api/dataset`,
+  `/api/evaluation`, `/api/explainability`,
+  `/api/tenders/{id}/explanation`), real model identity in `/api/meta`,
+  422-instead-of-500/empty-page bug fixes, search/sort performance, 20
+  `TestClient` tests (`tests/test_api_real_data.py`); frontend provenance
+  card, research-evaluation section (negatives visible), layered per-tender
+  explanation panel + MTender links, i18n en/ro/ru. See
+  `docs/REAL_DATA_INTEGRATION_REPORT.md`.
+* Phase 3 — temporal leakage (`9d363b5`): feature-availability matrix +
+  stage-aware column sets (`src/mtender/stage_features.py`), 13 tests,
+  `docs/TEMPORAL_LEAKAGE_AUDIT.md`.
+* Phase 4 — risk-specific detection (`fd693f7`): modules A–D (competition,
+  splitting, buyer–supplier pair recurrence, value outliers; hit semantics
+  documented, anomaly ≠ overpricing), direct-award matched-control track
+  (`src/mtender/risk_modules.py`, `scripts/34_risk_modules.py`), 24 tests,
+  `docs/RISK_SPECIFIC_FEATURES.md`.
+* Phase 5 — external validation + expert review (`10d35bd`):
+  `scripts/35_external_validation.py` — external-label registry with uniform
+  schema and honest blocked/pending statuses, pre-registered baselines,
+  supplier/buyer cluster bootstrap (B=1000, seed 42) with paired vs-v0 CIs,
+  ANSC PN-ocid alias rebuild reproducing MTA-0013 exactly (1 222 positives,
+  v0 AUC 0.5112), AAP leave-one-supplier-out robustness, temporal guard;
+  `scripts/36_export_expert_review.py` — blinded 3×100 expert-review export
+  (fact-only columns behind a deny-list check, key separated, header-only
+  template, deterministic); 9 tests; `docs/EXTERNAL_VALIDATION_REPORT.md`,
+  `docs/EXPERT_REVIEW_PROTOCOL.md`.
+* Phases 6–8 — docs + verification (this commit):
+  `docs/EXPERIMENTAL_MODEL_COMPARISON.md` — **H1 rejected, experimental
+  module ranking NOT adopted** (paired ΔCI vs v0 excludes 0 against it on
+  both external labels: AAP +0.0463 [0.0032, 0.0998], ANSC +0.0274
+  [0.0046, 0.0551]) + a candidates-considered table (IF/LOF/baselines/
+  graph/autoencoders) with per-candidate reasons for deferral;
+  `docs/IMPLEMENTATION_SUMMARY.md` — the per-phase problem/change/test/
+  improvement/unresolved record, a before/after comparison table and the
+  full verification table.
+* Follow-up for brief §8–§13 compliance: `scripts/37_external_validation_chart.py`
+  (new) renders `docs/figures/external_validation_baselines.png` and
+  `external_validation_paired_vs_v0.png` strictly from the scripts/35
+  artefacts (missing artefacts abort the render); README research-endpoint
+  documentation; `docs/EXPERT_REVIEW_PROTOCOL.md` questionnaire corrected to
+  the actual answer-form columns (five brief questions: `reviewable`,
+  `indicators_observed`, `documents_sufficient`, `explainable`,
+  `false_alarm`); RAG audit recorded in `docs/REAL_DATA_INTEGRATION_REPORT.md`
+  (citation preservation, provenance, refusal, injection defence, guilt-wording
+  guard — all backed by the existing `tests/test_rag.py`); cycle_log entry.
+* Verification: `scripts/19_final_verification.py` — all headline numbers
+  reproduce; full pytest **287 passed**; `tsc --noEmit` clean; `npm run
+  build` success; uvicorn smoke on real data (152 378 records,
+  `hash_verified: true`, origin `real-ocds`, external AUCs 0.493453 /
+  0.511196 served, 5-layer explanations).
+
 ## [AUDIT-2026-10-19] — Comprehensive repository audit + noise/input-perturbation sensitivity of v0 (scripts/32)
 
 No MTA number was assigned by the author; framed as a **measurement, not a

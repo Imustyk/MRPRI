@@ -11,9 +11,41 @@ __pycache__/
 data/workspace/
 
 # --- generated / heavy artifacts (ignored so source-only commits stay small) ---
-data/
+# `data/*` (not `data/`) so the empty registry TEMPLATE below can be
+# re-included; a trailing-slash pattern excludes the directory itself and
+# git then never descends into it to honour negations.
+data/*
+# ...except the case-registry files (schema + the human-curated source,
+# episode and unmatched tables of MTA-0016/0017 - small text CSVs whose
+# content IS the audit trail of the third external label):
+!data/external/
+data/external/*
+!data/external/case_registry.csv
+!data/external/case_sources.csv
+!data/external/case_episodes_raw.csv
+!data/external/case_unmatched.csv
+# MTA-0018 step 4: the 50-document manual-review sample (reviewer fields
+# are empty until the author's independent review - the CSV IS the audit
+# trail of that review):
+!data/external/ansc_review_sample_50.csv
+# MTA-0019: the BLIND review package (machine predictions are absent by
+# design; reviewer columns empty until the human review):
+!data/external/ansc_manual_review_50.csv
+!data/external/ansc_manual_review_pilot10.csv
+# MTA-0019 §4: complaint-level observation table (one row per complaint;
+# human-confirmed outcomes appear only after reviewer confirmation):
+!data/external/ansc_complaint_level_review.csv
+# MTA-0019 §6: external label - exists ONLY after the complete human review
+# (scripts/47 refuses to write it earlier):
+!data/external/ansc_upheld_labels.csv
+# the previous blanket `data/` also caught nested data/ dirs (e.g. the
+# frontend source folder) - keep them ignored explicitly:
+frontend/src/data/
 results/
 .pytest_cache/
 frontend/dist/
 frontend/node_modules/
 *.egg-info/
+
+# Playwright run artifacts (screenshots live in docs/frontend-verification/)
+frontend/test-results/

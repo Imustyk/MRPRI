@@ -1,0 +1,155 @@
+{
+  "method": "Native chrome.tabs.setZoom(tabId,2), isolated unpacked extension and profile; not CSS zoom, device-scale emulation or pinch zoom",
+  "evidence": [
+    {
+      "scope": "live read-only terminal state",
+      "route": "/",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "live read-only terminal state",
+      "route": "/tenders",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "live read-only terminal state",
+      "route": "/models",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "live read-only terminal state",
+      "route": "/indicators",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "live read-only terminal state",
+      "route": "/distributions",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "live read-only terminal state",
+      "route": "/network",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "live read-only terminal state",
+      "route": "/workspace",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "live read-only terminal state",
+      "route": "/method",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "live read-only terminal state",
+      "route": "/kpis",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "live read-only terminal state",
+      "route": "/raci",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "live read-only terminal state",
+      "route": "/unknown-route",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "isolated mock; populated charts/forms",
+      "route": "/tenders/ocds-test-001",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "isolated mock; populated charts/forms",
+      "route": "/models?tender=ocds-test-001",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "isolated mock; populated charts/forms",
+      "route": "/network#drill=b1",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    },
+    {
+      "scope": "isolated mock; populated charts/forms",
+      "route": "/workspace",
+      "inner": 720,
+      "outer": 1440,
+      "dpr": 2,
+      "scale": 1,
+      "scroll": 720,
+      "client": 720
+    }
+  ]
+}

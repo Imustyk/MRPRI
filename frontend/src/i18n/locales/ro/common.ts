@@ -3,13 +3,19 @@ import type en from "../en/common";
 /** Română. Regula de plural: one / other. */
 const ro: typeof en = {
   nav: {
+    not_found: "Pagina nu a fost găsită",
+    not_found_hint: "Verifică adresa sau revino la prezentarea generală.",
+    search: "Caută proceduri",
+    search_placeholder: "Titlu, cumpărător sau OCID",
+    open_menu: "Deschide meniul",
+    close_menu: "Închide meniul",
     group_analysis: "Analiză",
     group_thesis: "Teză",
     overview: "Prezentare",
-    procedures: "Proceduri",
+    procedures: "Achiziții",
     distributions: "Distribuții",
-    network: "Rețea cumpărător–câștigător",
-    workspace: "Spațiu de lucru",
+    network: "Graful relațiilor",
+    workspace: "Dosare de lucru",
     methodology: "Metodologie",
     kpis: "KPI model",
     raci: "Matrice RACI",
@@ -22,7 +28,7 @@ const ro: typeof en = {
     doc_desc:
       "Detectarea anomaliilor pe date reale de achiziții publice din Moldova, din fluxul OCDS MTender.",
     tagline: "Detectarea anomaliilor în achizițiile publice din Moldova",
-    foot_1: "Aplicație de master · Legea 131/2015 · Isolation Forest + steaguri roșii",
+    foot_1: "Aplicație de cercetare · date deschise MTender",
     foot_2: "Scorurile sunt indicatori de risc, nu constatări juridice.",
     skip: "Sari la conținut",
   },
@@ -51,6 +57,12 @@ const ro: typeof en = {
     and: "și",
     table_scrollable: "Tabel de date, derulabil",
     empty_value: "—",
+    open_mtender: "Deschide pe MTender",
+    // Screen-reader announcements for the shared request panel.
+    results_loading: "Se încarcă rezultatele pentru {{params}}.",
+    results_updating: "Se actualizează. Sunt afișate rezultatele pentru {{shown}}, se așteaptă {{waiting}}.",
+    results_ready: "Rezultate gata pentru {{params}}.",
+    stale_marker: "Se actualizează — valorile afișate sunt încă pentru {{shown}}; se așteaptă {{waiting}}.",
   },
   risk: {
     unscored: "neevaluat",
@@ -89,6 +101,13 @@ const ro: typeof en = {
     empty_body: "API-ul a returnat un corp gol pentru {{url}} (HTTP {{status}}).",
     malformed_body: "API-ul a returnat un corp incorect pentru {{url}}.",
     bad_json: "Conținutul nu este JSON valid: {{err}}",
+  },
+  fixture: {
+    title: "Fixture ale cardului de model (date de test izolate)",
+    lede:
+      "Detectoare sintetice pentru verificarea stărilor histogramului: marcajul scorului, marcajul pragului hașurat, ambele în același interval, numărătoare zero și scor lipsă.",
+    notice:
+      "Această rută există doar în build-ul de dezvoltare și nu este legată din navigarea produsului. Cifrele de mai jos nu sunt măsurători din datasetul servit.",
   },
 };
 

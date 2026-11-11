@@ -3,13 +3,19 @@ import type en from "../en/common";
 /** Русский. Формы _one/_few/_many/_other для счётных строк. */
 const ru: typeof en = {
   nav: {
+    not_found: "Страница не найдена",
+    not_found_hint: "Проверьте адрес или вернитесь к обзору.",
+    search: "Поиск закупок",
+    search_placeholder: "Название, заказчик или OCID",
+    open_menu: "Открыть меню",
+    close_menu: "Закрыть меню",
     group_analysis: "Анализ",
     group_thesis: "Диплом",
     overview: "Обзор",
-    procedures: "Процедуры",
+    procedures: "Закупки",
     distributions: "Распределения",
-    network: "Сеть «Заказчик — победитель»",
-    workspace: "Рабочая область",
+    network: "Граф связей",
+    workspace: "Рабочие дела",
     methodology: "Методология",
     kpis: "KPI модели",
     raci: "Матрица RACI",
@@ -22,7 +28,7 @@ const ru: typeof en = {
     doc_desc:
       "Поиск аномалий в реальных данных государственных закупок Молдовы из OCDS-файда MTender.",
     tagline: "Поиск аномалий в государственных закупках Молдовы",
-    foot_1: "Магистерское приложение · Закон 131/2015 · Isolation Forest + красные флаги",
+    foot_1: "Исследовательское приложение · открытые данные MTender",
     foot_2: "Оценки — индикаторы риска, а не правовые выводы.",
     skip: "Перейти к содержанию",
   },
@@ -51,6 +57,12 @@ const ru: typeof en = {
     and: "и",
     table_scrollable: "Таблица данных, прокручиваемая",
     empty_value: "—",
+    open_mtender: "Открыть на MTender",
+    // Screen-reader announcements for the shared request panel.
+    results_loading: "Загрузка результатов: {{params}}.",
+    results_updating: "Обновление. Показаны результаты за {{shown}}, ожидание {{waiting}}.",
+    results_ready: "Результаты готовы: {{params}}.",
+    stale_marker: "Обновление — показанные значения ещё относятся к {{shown}}; ожидание {{waiting}}.",
   },
   risk: {
     unscored: "не оценено",
@@ -89,6 +101,13 @@ const ru: typeof en = {
     empty_body: "API вернуло пустое тело для {{url}} (HTTP {{status}}).",
     malformed_body: "API вернуло некорректное тело для {{url}}.",
     bad_json: "Payload не является корректным JSON: {{err}}",
+  },
+  fixture: {
+    title: "Фикстуры карточки модели (изолированные тестовые данные)",
+    lede:
+      "Синтетические детекторы для проверки состояний гистограммы: отметка score, штрихованная отметка границы, обе в одном интервале, нулевые счётчики и отсутствующий score.",
+    notice:
+      "Маршрут существует только в dev-сборке и не связан из навигации продукта. Приведённые числа — не измерения из обслуживаемого датасета.",
   },
 };
 

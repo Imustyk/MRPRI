@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Actual model distributions: same-run identity, conserved counts, score and flags",
+    "status": "PASS"
+  },
+  {
+    "name": "Model workbench: all four real model cards, keyboard tabs, log toggle, histogram table",
+    "status": "PASS"
+  },
+  {
+    "name": "Indicator groups, formulas, imputation and recorded flags",
+    "status": "PASS"
+  },
+  {
+    "name": "Tender detail: facts first, one model chart, evidence collapsed and source preserved",
+    "status": "PASS"
+  },
+  {
+    "name": "Theme persistence, languages and reduced motion",
+    "status": "PASS"
+  },
+  {
+    "name": "Every route at 375 / 768 / 1024 / 1440 / 1920, light and dark",
+    "status": "PASS"
+  },
+  {
+    "name": "Mobile drawer: focus trap, backdrop, Escape and navigation",
+    "status": "PASS"
+  },
+  {
+    "name": "Selection search, direct URL, reload and stale response protection",
+    "status": "PASS"
+  },
+  {
+    "name": "Partial model API failure leaves case facts usable; retry restores",
+    "status": "PASS"
+  },
+  {
+    "name": "Missing data fixtures: unavailable stays distinct from zero; unverified run has no chart",
+    "status": "PASS"
+  },
+  {
+    "name": "Uncaught JavaScript errors",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "name": "Unexpected server 5xx",
+    "status": "PASS",
+    "errors": []
+  }
+]

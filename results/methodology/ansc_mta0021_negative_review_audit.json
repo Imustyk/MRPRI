@@ -1,0 +1,49 @@
+{
+  "candidate_pool": 26,
+  "documents_reviewed": 6,
+  "human_complaints": 8,
+  "sha256_verified": 6,
+  "dates_verified": 6,
+  "OCID_confirmed": 8,
+  "confirmed_OCID_procedures": 6,
+  "new_negative_procedures": 6,
+  "new_exact_join": 6,
+  "publication_features_certified": 0,
+  "temporal_test_eligible": 0,
+  "combined_document_labels": {
+    "0": 9,
+    "1": 6
+  },
+  "combined_strict_labels": {
+    "1": 5,
+    "0": 8
+  },
+  "combined_exact_join_labels": {
+    "0": 8,
+    "1": 6
+  },
+  "TEST_metadata_classes": {
+    "1": 2,
+    "0": 6
+  },
+  "TEST_buyers": 8,
+  "TEST_years": {
+    "2022": {
+      "1": 2,
+      "0": 5
+    },
+    "2023": {
+      "0": 1
+    },
+    "2024": {}
+  },
+  "TEST_after_publication_certification": {
+    "positive": 0,
+    "negative": 0
+  },
+  "decision": "NO-GO",
+  "review_type": "targeted_assisted_review",
+  "blocked_procedures": 0,
+  "overlap_with_MTA0019": false,
+  "scope_limit": "Only six authorized documents and their local procedure records; no other positive candidates or 546-PDF backlog processed."
+}

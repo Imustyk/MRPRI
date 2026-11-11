@@ -1,0 +1,23 @@
+feature,prediction_stage,earliest_stage,stage_eligible,corpus_point_in_time_safe,inputs,required_evidence,current_historical_certification
+log_award_value,publication,award_decision,0,1,award_value,excluded at publication; award decision published,NOT_CERTIFIED
+value_vs_cpv_median,publication,award_decision,0,0,award_value|cpv_primary|all award values in corpus,excluded at publication; award decision published,NOT_CERTIFIED
+value_zscore_cpv,publication,award_decision,0,0,award_value|cpv_primary|award value distribution per CPV,excluded at publication; award decision published,NOT_CERTIFIED
+estimate_to_award_ratio,publication,award_decision,0,1,estimated_value|award_total,excluded at publication; award decision published (estimate itself is known at publication),NOT_CERTIFIED
+log_award_total,publication,award_decision,0,1,award_total|award_value,excluded at publication; award decision published,NOT_CERTIFIED
+multi_award_tender,publication,award_decision,0,1,n_awards_with_value,excluded at publication; award decision published,NOT_CERTIFIED
+n_bidders_log,publication,bid_submission,0,1,n_bidders (from tender.bids.details),excluded at publication; bid submission closes (bids published),NOT_CERTIFIED
+single_bidder,publication,bid_submission,0,1,n_bidders,excluded at publication; bid submission closes,NOT_CERTIFIED
+no_bid_data,publication,bid_submission,0,1,n_bidders,excluded at publication; bid submission closes,NOT_CERTIFIED
+multi_supplier_award,publication,award_decision,0,1,n_suppliers (award parties),excluded at publication; award decision published,NOT_CERTIFIED
+bid_window_days,publication,publication,1,1,tender_start|tender_end,"timestamped original notice at t0, no later amendments; pre-registered missing policy",NOT_CERTIFIED
+short_deadline,publication,publication,1,1,tender_start|tender_end,"timestamped original notice at t0, no later amendments; pre-registered missing policy",NOT_CERTIFIED
+long_deadline,publication,publication,1,1,tender_start|tender_end,"timestamped original notice at t0, no later amendments; pre-registered missing policy",NOT_CERTIFIED
+n_amendments,publication,post_award,0,1,n_amendments,excluded at publication; grows from the first amendment until the procedure ends,NOT_CERTIFIED
+amended,publication,post_award,0,1,n_amendments,excluded at publication; same as n_amendments (value can flip after publication),NOT_CERTIFIED
+accelerated_like,publication,publication,1,1,procurement_method_details,"timestamped original notice at t0, no later amendments; pre-registered missing policy",NOT_CERTIFIED
+cancelled,publication,post_award,0,1,status,excluded at publication; terminal status only,NOT_CERTIFIED
+no_award_after_tender,publication,post_award,0,1,status|award_value,excluded at publication; terminal status only,NOT_CERTIFIED
+buyer_supplier_repeat_share,publication,award_decision,0,0,buyer_id|winner_id|all awards in corpus,excluded at publication; award decision published (pair and buyer counts),NOT_CERTIFIED
+winner_share_of_buyer_awards,publication,award_decision,0,0,buyer_id|winner_id|all awards in corpus,excluded at publication; award decision published,NOT_CERTIFIED
+supplier_win_concentration,publication,award_decision,0,0,winner_id|all awards in corpus,excluded at publication; award decision published,NOT_CERTIFIED
+supplier_award_count_log,publication,award_decision,0,0,winner_id|all awards in corpus,excluded at publication; award decision published,NOT_CERTIFIED

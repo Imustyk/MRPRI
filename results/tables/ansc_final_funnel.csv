@@ -1,0 +1,11 @@
+step,stage,n,explanation
+1,Reviewed URL rows,50,unit=URL; all reviewer enum fields filled
+2,Unique PDFs,44,unit=SHA-256 PDF; remove six repeated URLs
+3,ANSC documents,13,exclude other_document
+4,Final merits documents including multi-complaint,12,"exclude interim suspension, not an upheld outcome"
+5,Final documents with confirmed OCID link,11,exclude uncertain row 3
+6,Documents with confirmed complaint outcomes,9,"pending complaint records at rows [5, 14]"
+7,Binary complaint records,13,"UNIT CHANGE: complaints; retain separate outcomes, never independent procedures"
+8,Unique procedures with one allowed scalar label (strict),7,"exclude two multi-complaint PDFs, no forced document label"
+9,Strict procedures with certified full point-in-time model features,0,full historical feature snapshot not temporally certified; corpus/future-event features
+10,Procedures eligible for formal independent temporal model comparison,0,"no certified holdout, sparse classes, selection bias"

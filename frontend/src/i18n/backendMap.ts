@@ -151,6 +151,60 @@ const MAP: Record<string, string> = {
   "method must be pearson, spearman or kendall": "backend.err.method_invalid",
   "scale must be auto, linear, log or quantile": "backend.err.scale_invalid",
   "grain must be day, week, month, quarter or year": "backend.err.grain_invalid",
+
+  // ---- /api/evaluation: external proxy labels (labels + static caveats) ----
+  "AAP supplier interdiction list (proxy label)": "backend.ext.aap_label",
+  "Procedure contested (ANSC complaints document; proxy label)": "backend.ext.ansc_label",
+  "Proxy label: procedures of sanctioned suppliers, not ground truth. The label is driven by size and competition (single-feature n_bidders baseline ~0.80); the 4-vote ensemble at ~0.49 is at random level - reported as measured.":
+    "backend.ext.aap_caveat",
+  "Complaints are a contested-procedure marker, not a confirmed violation: ANSC decisions were not accessible for this corpus, so confirmed vs rejected appeals cannot be distinguished.":
+    "backend.ext.ansc_caveat",
+  // Served in Russian by the methodology artefact.
+  "ДИ включает 0,5 — на этой метке сигнал неотличим от случайного":
+    "backend.ext.ansc_verdict",
+  "Input-noise experiment (measurement, not a cycle): score ranks are stable for exact/near-exact inputs but positions move under counterfactual noise; review top-K lists, not exact ranks.":
+    "backend.eval.noise_note",
+  "Score-distribution drift between tune (2018-2021) and test (2022-2024): the vote boundary needs periodic recalibration.":
+    "backend.eval.drift_note",
+  "Indicators of potential risk, not evidence of corruption.": "backend.eval.disclaimer",
+  // ---- bias audit verdict words (served in Russian) ----
+  "допустимо": "backend.bias.admissible",
+  "допустимо (разница объяснена легитимными факторами)": "backend.bias.admissible_explained",
+  "нарушение": "backend.bias.violation",
+  "предупреждение": "backend.bias.warning",
+
+  // ---- /api/explainability: measured SHAP vs LIME disagreement ----
+  "не согласованы": "backend.xai.verdict_disagree",
+  "Индикатор потенциального риска, а не доказательство коррупции. Разбор методов объяснения, а не оценка процедуры.":
+    "backend.xai.disclaimer",
+  "SHAP values here are computed for the Isolation Forest only; LOF, One-Class SVM and MAD have no per-row attributions.":
+    "backend.xai.note_shap_only",
+  "SHAP and LIME disagree on this model (see xai_consistency.verdict); treat attributions as model-internal, not causal.":
+    "backend.xai.note_disagree",
+
+  // ---- dataset provenance: model label ----
+  "v0 production: MAD robust z-score + IsolationForest + LOF + One-Class SVM (4-vote consensus)":
+    "backend.model.production_label",
+
+  // ---- explain.py: static limitations and reference labels ----
+  "Anomaly score = indicator of potential risk, not evidence of corruption or violation. Verification by a competent authority is required.":
+    "backend.explain.disclaimer",
+  "Explanations are model-internal reasons for an unusual score; they are not causal proof of any wrongdoing.":
+    "backend.explain.not_causal",
+  "Per-row attributions exist only for the Isolation Forest; LOF, One-Class SVM and MAD have verdicts but no per-row attribution.":
+    "backend.explain.per_row_only",
+  "Score ranks below the top-200 are noise-sensitive (input-noise audit); review lists of cases, not exact positions.":
+    "backend.explain.top200",
+  "Fields MTender does not publish are shown as unavailable, never imputed.":
+    "backend.explain.not_imputed",
+  "This record was never scored by the detection run - it is not examined, and 'unscored' is not a clearance.":
+    "backend.explain.never_scored",
+  "Global explainability (permutation importance, SHAP, SHAP vs LIME)": "backend.explain.ref_global",
+  "Permutation importance (all 22 features)": "backend.explain.ref_perm",
+  "SHAP feature importance (Isolation Forest only)": "backend.explain.ref_shap",
+  "SHAP vs LIME consistency measurement": "backend.explain.ref_xai",
+  "Input-noise sensitivity of score ranks": "backend.explain.ref_noise",
+  "Model card (MTA-0004)": "backend.explain.ref_card",
 };
 
 /**
@@ -176,7 +230,27 @@ const PATTERNS: { re: RegExp; key: string; vars: string[] }[] = [
     key: "backend.kpi.consensus",
     vars: ["min"],
   },
+  // explain.py: the SHAP/LIME disagreement limitation, verdict interpolated.
+  {
+    re: /^SHAP and LIME disagree on this model \(measured verdict: "(.+)"\); treat single attributions with caution\.$/,
+    key: "backend.explain.shap_lime_disagree",
+    vars: ["verdict"],
+  },
+  // explain.py: the dynamic "missing fields" tail of the limitations layer.
+  {
+    re: /^Not present in this record: (.+)$/,
+    key: "backend.explain.not_present",
+    vars: ["fields"],
+  },
 ];
+
+/** One exact map pass, so captured verdicts localise inside a template. */
+function localise(s: string): string {
+  const key = MAP[s];
+  if (!key) return s;
+  const out = i18n.t(key);
+  return out === key ? s : out;
+}
 
 /**
  * Translate a server-supplied English string. Falls back to the input when
@@ -195,7 +269,7 @@ export function tr(s: string | null | undefined): string {
     const m = re.exec(s);
     if (m) {
       const opts: Record<string, string> = {};
-      vars.forEach((v, i) => (opts[v] = m[i + 1]));
+      vars.forEach((v, i) => (opts[v] = localise(m[i + 1])));
       const out = i18n.t(pkey, opts);
       if (out !== pkey) return out;
     }

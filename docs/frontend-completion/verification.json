@@ -1,0 +1,17 @@
+{
+  "unit_tests": 85,
+  "original_unit_preserved": 45,
+  "chromium_scenarios_verified": 45,
+  "main_browser_run": {
+    "passed": 43,
+    "artifact_teardown_failures": 2
+  },
+  "isolated_recheck_passed": 2,
+  "workspace_crud_desktop_and_375_tests": 8,
+  "typescript": "PASS",
+  "production_build": "PASS",
+  "protected_sources": "UNCHANGED",
+  "commit": false,
+  "push": false,
+  "live_scoring": "NOT CERTIFIED: CSV parser, MongoDB and run provenance blockers"
+}

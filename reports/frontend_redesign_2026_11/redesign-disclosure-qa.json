@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "checks": [
+    "All indicator formulas open at 375px without overflow",
+    "Recorded procedural rules expose verified ETL formulas",
+    "Same-route mobile navigation restores main focus",
+    "Model features and agreement panels open without page overflow",
+    "Real-data model cards visually captured in both themes"
+  ]
+}

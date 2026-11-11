@@ -1,0 +1,97 @@
+{
+  "confirmation_source": "user_attachment:55087de1-0f21-4784-8a5a-da7ca05c5efd/Pasted text.txt, section 3",
+  "confirmation_sha256": "71555aa442d46f898794a19eac87de8b2df4f2ecd867c1d884866c4a03238ae4",
+  "review_type": "targeted_assisted_review",
+  "scope": "Eight rejected complaint outcomes only. Dates, file identity and OCID linkage require technical verification.",
+  "evidence_pack_sha256": "1e8f590d055944edc95c08e67e00267a0ebaf722703d23a89cacf98b39abcd12",
+  "records": [
+    {
+      "decision_id": "03D-336-22",
+      "complaint_id": "02/329/22",
+      "confirmed_outcome": "rejected",
+      "expected_decision_date": "2022-06-24",
+      "evidence_pages": "22",
+      "ocid_candidate": "ocds-b3wdp1-MD-1649084017389",
+      "document_url": "http://storage.mtender.gov.md/get/2f8beb53-5a2d-4d70-822e-f1bc65fc4f05-1656249163558",
+      "document_sha256": "114d17c74b44f02981efbeeef85a21f27d9855f60e9c51720ddc377987e8c5cd",
+      "local_pdf": "/var/folders/j8/sq_85g7x7_d3rwd0crjrg5nh0000gn/T/mtender_ansc_decisions/4bd33a1ba1db6c43.pdf"
+    },
+    {
+      "decision_id": "03D-166-22",
+      "complaint_id": "02/132/22",
+      "confirmed_outcome": "rejected",
+      "expected_decision_date": "2022-04-11",
+      "evidence_pages": "11-12",
+      "ocid_candidate": "ocds-b3wdp1-MD-1644854422949",
+      "document_url": "http://storage.mtender.gov.md/get/29c43c05-768d-4ee6-8bb0-150d16e65f4d-1650011494656",
+      "document_sha256": "8ffce42a708f7007fee3c5360db8c6c020ed6b19f73670b22312c6af3cbd3d23",
+      "local_pdf": "/var/folders/j8/sq_85g7x7_d3rwd0crjrg5nh0000gn/T/mtender_ansc_decisions/158df94ffd5e1dc6.pdf"
+    },
+    {
+      "decision_id": "03D-181-22",
+      "complaint_id": "02/147/22",
+      "confirmed_outcome": "rejected",
+      "expected_decision_date": "2022-04-16",
+      "evidence_pages": "18",
+      "ocid_candidate": "ocds-b3wdp1-MD-1644995653154",
+      "document_url": "http://storage.mtender.gov.md/get/e7888a30-8c59-4e07-8f42-3d9621dbe11c-1650450283618",
+      "document_sha256": "a9a23effb5603dfb3fa2572d06d1d8a80701d8bf7d760e026e58a9a5af30ae77",
+      "local_pdf": "/var/folders/j8/sq_85g7x7_d3rwd0crjrg5nh0000gn/T/mtender_ansc_decisions/733d37624a233308.pdf"
+    },
+    {
+      "decision_id": "03D-771-22",
+      "complaint_id": "02/874/22",
+      "confirmed_outcome": "rejected",
+      "expected_decision_date": "2022-11-21",
+      "evidence_pages": "21",
+      "ocid_candidate": "ocds-b3wdp1-MD-1659961877383",
+      "document_url": "http://storage.mtender.gov.md/get/bb0af2e7-6d40-4cd5-92a0-7414114caae1-1669106727479",
+      "document_sha256": "ba79b3934abc136284dcfffb513fdb28727459deb1bb43d08d605a7c5da8f7bf",
+      "local_pdf": "/var/folders/j8/sq_85g7x7_d3rwd0crjrg5nh0000gn/T/mtender_ansc_decisions/0c183b7ab7f07473.pdf"
+    },
+    {
+      "decision_id": "03D-771-22",
+      "complaint_id": "02/910/22",
+      "confirmed_outcome": "rejected",
+      "expected_decision_date": "2022-11-21",
+      "evidence_pages": "21",
+      "ocid_candidate": "ocds-b3wdp1-MD-1659961877383",
+      "document_url": "http://storage.mtender.gov.md/get/bb0af2e7-6d40-4cd5-92a0-7414114caae1-1669106727479",
+      "document_sha256": "ba79b3934abc136284dcfffb513fdb28727459deb1bb43d08d605a7c5da8f7bf",
+      "local_pdf": "/var/folders/j8/sq_85g7x7_d3rwd0crjrg5nh0000gn/T/mtender_ansc_decisions/0c183b7ab7f07473.pdf"
+    },
+    {
+      "decision_id": "03D-739-22",
+      "complaint_id": "02/826/22",
+      "confirmed_outcome": "rejected",
+      "expected_decision_date": "2022-11-14",
+      "evidence_pages": "20",
+      "ocid_candidate": "ocds-b3wdp1-MD-1663056980047",
+      "document_url": "http://storage.mtender.gov.md/get/f4274f4e-de02-4c92-9a75-22c5c9e2fcb8-1669041805260",
+      "document_sha256": "e72d1b05caf5cfe5724b161fe00c246bae02034be2d9434310875b1b42484979",
+      "local_pdf": "/var/folders/j8/sq_85g7x7_d3rwd0crjrg5nh0000gn/T/mtender_ansc_decisions/57ecda143be693ef.pdf"
+    },
+    {
+      "decision_id": "03D-739-22",
+      "complaint_id": "02/841/22",
+      "confirmed_outcome": "rejected",
+      "expected_decision_date": "2022-11-14",
+      "evidence_pages": "20",
+      "ocid_candidate": "ocds-b3wdp1-MD-1663056980047",
+      "document_url": "http://storage.mtender.gov.md/get/f4274f4e-de02-4c92-9a75-22c5c9e2fcb8-1669041805260",
+      "document_sha256": "e72d1b05caf5cfe5724b161fe00c246bae02034be2d9434310875b1b42484979",
+      "local_pdf": "/var/folders/j8/sq_85g7x7_d3rwd0crjrg5nh0000gn/T/mtender_ansc_decisions/57ecda143be693ef.pdf"
+    },
+    {
+      "decision_id": "03D-477-23",
+      "complaint_id": "02/505/23",
+      "confirmed_outcome": "rejected",
+      "expected_decision_date": "2023-07-21",
+      "evidence_pages": "11",
+      "ocid_candidate": "ocds-b3wdp1-MD-1685970121601",
+      "document_url": "http://storage.mtender.gov.md/get/696ba636-e5e1-4d7c-9eb4-bb5e8dcccfb8-1690273466813",
+      "document_sha256": "91f407480e4a531fccb04078b3efa31ae42bd0f5d4dd03344a154e311a6787f0",
+      "local_pdf": "/var/folders/j8/sq_85g7x7_d3rwd0crjrg5nh0000gn/T/mtender_ansc_decisions/9c1ffce110b2e0a4.pdf"
+    }
+  ]
+}

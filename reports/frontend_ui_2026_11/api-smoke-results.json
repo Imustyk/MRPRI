@@ -1,0 +1,289 @@
+[
+  {
+    "route": "/api/health",
+    "status": 200,
+    "seconds": 0.46,
+    "keys": [
+      "ok",
+      "artefacts",
+      "source",
+      "model_present",
+      "mongodb"
+    ]
+  },
+  {
+    "route": "/api/stats",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "n_tenders",
+      "n_buyers",
+      "n_winners",
+      "total_award_mdl",
+      "high_risk_count",
+      "high_risk_value_mdl",
+      "single_bidder_share",
+      "mean_n_bidders",
+      "mean_n_bid_records",
+      "n_with_bid_data"
+    ]
+  },
+  {
+    "route": "/api/meta",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "source",
+      "data_origin",
+      "n_tenders",
+      "scored",
+      "feature_columns",
+      "indicator_columns",
+      "unavailable",
+      "risk_bands",
+      "model",
+      "model_run_id"
+    ]
+  },
+  {
+    "route": "/api/dataset?verify_hash=true",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "origin",
+      "corpus",
+      "files",
+      "manifest",
+      "scoring",
+      "model",
+      "verification",
+      "disclaimer"
+    ]
+  },
+  {
+    "route": "/api/model-kpis",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "ok",
+      "n_rows",
+      "n_scored",
+      "n_checks",
+      "n_failed",
+      "n_skipped",
+      "contamination",
+      "consensus_min",
+      "run",
+      "detectors"
+    ]
+  },
+  {
+    "route": "/api/evaluation",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "production",
+      "external_labels",
+      "seed_stability",
+      "noise_sensitivity",
+      "drift",
+      "bias",
+      "disclaimer"
+    ]
+  },
+  {
+    "route": "/api/explainability",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "model_explained",
+      "why_same_model",
+      "xai_consistency",
+      "global_summary",
+      "permutation_importance",
+      "shap_importance",
+      "notes",
+      "disclaimer"
+    ]
+  },
+  {
+    "route": "/api/tenders?limit=2",
+    "status": 200,
+    "seconds": 0.04,
+    "keys": [
+      "total",
+      "items"
+    ]
+  },
+  {
+    "route": "/api/tenders/ocds-b3wdp1-MD-1539840280133",
+    "status": 200
+  },
+  {
+    "route": "/api/tenders/ocds-b3wdp1-MD-1539840280133/explanation",
+    "status": 200
+  },
+  {
+    "route": "/api/graph?limit=10",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "nodes",
+      "links",
+      "stats"
+    ]
+  },
+  {
+    "route": "/api/workspace/summary",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "counts",
+      "cases_by_status",
+      "revision",
+      "db_path",
+      "vocab"
+    ]
+  },
+  {
+    "route": "/api/workspace/cases",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "items",
+      "vocab"
+    ]
+  },
+  {
+    "route": "/api/workspace/annotations",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "items",
+      "vocab"
+    ]
+  },
+  {
+    "route": "/api/workspace/watchlists",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "items",
+      "colors"
+    ]
+  },
+  {
+    "route": "/api/workspace/views",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "items"
+    ]
+  },
+  {
+    "route": "/api/workspace/activity",
+    "status": 200,
+    "seconds": 0.0,
+    "keys": [
+      "items"
+    ]
+  },
+  {
+    "route": "/api/analytics/features",
+    "status": 200,
+    "seconds": 0.87,
+    "keys": [
+      "features",
+      "categories",
+      "dates",
+      "min_pairs",
+      "n_rows"
+    ]
+  },
+  {
+    "route": "/api/analytics/correlations",
+    "status": 200,
+    "seconds": 0.7,
+    "keys": [
+      "columns",
+      "labels",
+      "matrix",
+      "pairs",
+      "n",
+      "method",
+      "min_pairs"
+    ]
+  },
+  {
+    "route": "/api/analytics/distribution?column=bid_window_days",
+    "status": 200,
+    "seconds": 0.04,
+    "keys": [
+      "column",
+      "label",
+      "bins",
+      "ecdf",
+      "summary",
+      "groups",
+      "group_by",
+      "log_x",
+      "scale"
+    ]
+  },
+  {
+    "route": "/api/analytics/scatter?x=bid_window_days&y=award_total_mdl",
+    "status": 200,
+    "seconds": 0.11,
+    "keys": [
+      "points",
+      "x",
+      "y",
+      "x_label",
+      "y_label",
+      "group",
+      "fit",
+      "n",
+      "sampled"
+    ]
+  },
+  {
+    "route": "/api/analytics/group-compare?value=bid_window_days&group=risk_level",
+    "status": 200,
+    "seconds": 0.06,
+    "keys": [
+      "value",
+      "value_label",
+      "group",
+      "group_label",
+      "groups",
+      "n",
+      "dropped_groups"
+    ]
+  },
+  {
+    "route": "/api/analytics/crosstab?a=risk_level&b=procurement_method",
+    "status": 200,
+    "seconds": 0.07,
+    "keys": [
+      "a",
+      "b",
+      "a_label",
+      "b_label",
+      "value",
+      "rows",
+      "cols",
+      "matrix",
+      "max",
+      "dropped"
+    ]
+  },
+  {
+    "route": "/api/analytics/timeseries",
+    "status": 200,
+    "seconds": 0.06,
+    "keys": [
+      "buckets",
+      "grain"
+    ]
+  }
+]

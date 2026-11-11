@@ -4,6 +4,7 @@
  * procedures were examined and cleared.
  */
 import i18n, { intlLocale } from "./i18n";
+import { assertApiData, ApiHttpError } from "./contracts";
 import { tr } from "./i18n/backendMap";
 
 export type RiskLevel = "unscored" | "low" | "medium" | "high" | "critical";
@@ -65,6 +66,7 @@ export type Tender = {
    * are different claims, so the missing case is not folded into false.
    */
   model_flags: Record<string, boolean | null>;
+  score_provenance?: { run_id: string | null; source: string | null };
   /** Flagged by at least three of the four detectors, or null if unscored. */
   consensus_flag: boolean | null;
   iso_score: number | null;
@@ -102,7 +104,20 @@ export type Stats = {
   level_counts: Record<string, number>;
   procedure_counts: Record<string, number>;
   top_cpv: { cpv_code: string; cpv_label: null; n: number; avg_risk: number | null; value: number }[];
-  monthly: { month: string; n: number; avg_risk: number; value: number }[];
+  monthly: { month: string; n: number; avg_risk: number | null; value: number }[];
+  snapshot_cohorts?: {
+    date_field: "published_at";
+    source_field: string;
+    timezone: "UTC";
+    interpretation: "retrospective_snapshot_cohorts";
+    publication_time_certified: false;
+    n_total: number;
+    n_dated: number;
+    n_scored: number;
+    n_missing_date: number;
+    n_invalid_date: number;
+    monthly: { month: string; n: number; n_scored: number; n_unscored: number; avg_risk: number | null }[];
+  };
   top_risky_buyers: {
     buyer_id: string;
     buyer_name: string;
@@ -206,18 +221,32 @@ export type GraphData = {
 
 /** Renders a value that may legitimately be absent, without faking a zero. */
 export function val(n: number | null | undefined, digits = 2): string {
-  if (n === null || n === undefined || Number.isNaN(n)) return "\u2014";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "\u2014";
   return n.toLocaleString(intlLocale(), {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });
 }
 
-export async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+/** Keep cancellation distinct; localize network failures without inventing a result. */
+async function transport(url: string, options?: RequestInit): Promise<Response> {
+  try { return await fetch(url, options); }
+  catch (reason) {
+    if (options?.signal?.aborted || reason instanceof DOMException && reason.name === "AbortError") throw reason;
+    throw new Error(i18n.t("completion.network_error", {url}));
+  }
+}
+
+export async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const res = await transport(url, { signal });
+  return readJson<T>(res, url);
+}
+
+/** Shared response handling: not-ok, empty-body and malformed-body templates. */
+async function readJson<T>(res: Response, url: string): Promise<T> {
   const raw = await res.text();
   if (!res.ok) {
-    throw new Error(
+    throw new ApiHttpError(res.status,
       extractError(raw) ||
         i18n.t("api.http_error", { status: res.status, statusText: res.statusText, url }),
     );
@@ -228,11 +257,12 @@ export async function getJson<T>(url: string): Promise<T> {
     // "Unexpected end of JSON input" in the UI.
     throw new Error(i18n.t("api.empty_body", { url, status: res.status }));
   }
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
+  let data: unknown;
+  try { data = JSON.parse(raw); } catch {
     throw new Error(i18n.t("api.malformed_body", { url }));
   }
+  assertApiData(url, data);
+  return data as T;
 }
 
 export function mdl(n: number) {
@@ -248,13 +278,13 @@ export function pct(n: number) {
 }
 
 export function int(n: number | null | undefined): string {
-  if (n === null || n === undefined || Number.isNaN(n)) return "\u2014";
+  if (n === null || n === undefined || !Number.isFinite(n)) return "\u2014";
   return Math.round(n).toLocaleString(intlLocale());
 }
 
 /** Anomaly percentile: 0-100, one decimal, never a fabricated precision. */
 export function pctile(n: number | null | undefined): string {
-  if (n === null || n === undefined || Number.isNaN(n)) return "\u2014";
+  if (n === null || n === undefined || !Number.isFinite(n) || n < 0 || n > 100) return "\u2014";
   return n.toFixed(1);
 }
 
@@ -459,7 +489,7 @@ function qs(params: Record<string, string | number | boolean | undefined | null>
   return s ? `?${s}` : "";
 }
 
-export const getFeatures = () => getJson<FeatureCatalog>("/api/analytics/features");
+export const getFeatures = (signal?: AbortSignal) => getJson<FeatureCatalog>("/api/analytics/features", signal);
 
 /** The bounded relational slice; see GraphStats for what the limit clipped. */
 export const getGraph = (p: {
@@ -467,30 +497,28 @@ export const getGraph = (p: {
   min_awards?: number;
   min_risk?: number | null;
   sort?: GraphSort;
-} = {}) =>
+} = {}, signal?: AbortSignal) =>
   getJson<GraphData>(
     `/api/graph${qs({
       limit: p.limit,
       min_awards: p.min_awards,
       min_risk: p.min_risk,
       sort: p.sort,
-    })}`,
-  );
+    })}`, signal);
 
 export const getCorrelations = (p: {
   features?: string[];
   method?: string;
   min_abs?: number;
   top?: number;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<Correlations>(
     `/api/analytics/correlations${qs({
       features: p.features?.join(","),
       method: p.method,
       min_abs: p.min_abs,
       top: p.top,
-    })}`,
-  );
+    })}`, signal);
 
 export const getDistribution = (p: {
   column: string;
@@ -498,7 +526,7 @@ export const getDistribution = (p: {
   group?: string;
   log_x?: boolean;
   scale?: string;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<Distribution>(
     `/api/analytics/distribution${qs({
       column: p.column,
@@ -506,8 +534,7 @@ export const getDistribution = (p: {
       group: p.group,
       log_x: p.log_x,
       scale: p.scale,
-    })}`,
-  );
+    })}`, signal);
 
 export const getScatter = (p: {
   x: string;
@@ -516,7 +543,7 @@ export const getScatter = (p: {
   limit?: number;
   log_x?: boolean;
   log_y?: boolean;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<ScatterData>(
     `/api/analytics/scatter${qs({
       x: p.x,
@@ -525,42 +552,38 @@ export const getScatter = (p: {
       limit: p.limit,
       log_x: p.log_x,
       log_y: p.log_y,
-    })}`,
-  );
+    })}`, signal);
 
 export const getGroupCompare = (p: {
   value: string;
   group: string;
   limit?: number;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<GroupCompare>(
-    `/api/analytics/group-compare${qs({ value: p.value, group: p.group, limit: p.limit })}`,
-  );
+    `/api/analytics/group-compare${qs({ value: p.value, group: p.group, limit: p.limit })}`, signal);
 
 export const getCrosstab = (p: {
   a: string;
   b: string;
   value?: string;
   limit?: number;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<Crosstab>(
-    `/api/analytics/crosstab${qs({ a: p.a, b: p.b, value: p.value, limit: p.limit })}`,
-  );
+    `/api/analytics/crosstab${qs({ a: p.a, b: p.b, value: p.value, limit: p.limit })}`, signal);
 
 export const getTimeSeries = (p: {
   date_field?: string;
   grain?: string;
   group?: string;
   value?: string;
-}) =>
+}, signal?: AbortSignal) =>
   getJson<TimeSeries>(
     `/api/analytics/timeseries${qs({
       date_field: p.date_field,
       grain: p.grain,
       group: p.group,
       value: p.value,
-    })}`,
-  );
+    })}`, signal);
 
 /* ==========================================================================
    Model KPI: catalogue + live checks for the four detectors
@@ -636,7 +659,7 @@ export type ModelKpis = {
   metrics: { available: boolean; reason: string };
 };
 
-export const getModelKpis = () => getJson<ModelKpis>("/api/model-kpis");
+export const getModelKpis = (signal?: AbortSignal) => getJson<ModelKpis>("/api/model-kpis", signal);
 
 /* ==========================================================================
    Workspace CRUD
@@ -723,19 +746,22 @@ export async function send<T>(
   url: string,
   body?: unknown,
 ): Promise<T> {
-  const res = await fetch(url, {
+  const res = await transport(url, {
     method,
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const raw = await res.text();
   if (!res.ok) {
-    throw new Error(
+    throw new ApiHttpError(res.status,
       extractError(raw) || i18n.t("api.http_error", { status: res.status, statusText: res.statusText, url }),
     );
   }
-  if (!raw.trim()) return undefined as T;
-  return JSON.parse(raw) as T;
+  if (!raw.trim()) { if (res.status === 204) return undefined as T; throw new Error(i18n.t("api.empty_body", {url,status:res.status})); }
+  let data: unknown;
+  try { data = JSON.parse(raw); } catch { throw new Error(i18n.t("api.malformed_body", { url })); }
+  assertApiData(url, data);
+  return data as T;
 }
 
 /** FastAPI validation errors are a list of {loc, msg}; flatten to one line. */
@@ -759,17 +785,15 @@ function extractError(raw: string): string {
   return raw.slice(0, 300);
 }
 
-export const getWorkspaceSummary = () => getJson<WorkspaceSummary>("/api/workspace/summary");
+export const getWorkspaceSummary = (signal?: AbortSignal) => getJson<WorkspaceSummary>("/api/workspace/summary", signal);
 
-export const getCases = (p: { status?: string; q?: string } = {}) =>
+export const getCases = (p: { status?: string; q?: string } = {}, signal?: AbortSignal) =>
   getJson<{ items: CaseRecord[]; vocab: { status: string[]; priority: string[] } }>(
-    `/api/workspace/cases${qs(p)}`,
-  );
+    `/api/workspace/cases${qs(p)}`, signal);
 
-export const getCase = (id: number) =>
+export const getCase = (id: number, signal?: AbortSignal) =>
   getJson<{ case: CaseRecord; ocids: string[]; annotations: AnnotationRecord[] }>(
-    `/api/workspace/cases/${id}`,
-  );
+    `/api/workspace/cases/${id}`, signal);
 
 export const createCase = (body: {
   title: string;
@@ -786,10 +810,9 @@ export const updateCase = (id: number, body: Record<string, unknown>) =>
 export const deleteCase = (id: number) =>
   send<{ deleted: number }>("DELETE", `/api/workspace/cases/${id}`);
 
-export const getAnnotations = (p: { ocid?: string; case_id?: number; category?: string; q?: string } = {}) =>
+export const getAnnotations = (p: { ocid?: string; case_id?: number; category?: string; q?: string } = {}, signal?: AbortSignal) =>
   getJson<{ items: AnnotationRecord[]; vocab: { category: string[] } }>(
-    `/api/workspace/annotations${qs(p)}`,
-  );
+    `/api/workspace/annotations${qs(p)}`, signal);
 
 export const createAnnotation = (body: {
   ocid: string;
@@ -805,11 +828,11 @@ export const updateAnnotation = (id: number, body: Record<string, unknown>) =>
 export const deleteAnnotation = (id: number) =>
   send<{ deleted: number }>("DELETE", `/api/workspace/annotations/${id}`);
 
-export const getWatchlists = () =>
-  getJson<{ items: Watchlist[]; colors: Record<string, string> }>("/api/workspace/watchlists");
+export const getWatchlists = (signal?: AbortSignal) =>
+  getJson<{ items: Watchlist[]; colors: Record<string, string> }>("/api/workspace/watchlists", signal);
 
-export const getWatchlist = (id: number) =>
-  getJson<{ watchlist: Watchlist; items: WatchItem[] }>(`/api/workspace/watchlists/${id}`);
+export const getWatchlist = (id: number, signal?: AbortSignal) =>
+  getJson<{ watchlist: Watchlist; items: WatchItem[] }>(`/api/workspace/watchlists/${id}`, signal);
 
 export const createWatchlist = (body: { name: string; description?: string; color?: string }) =>
   send<Watchlist>("POST", "/api/workspace/watchlists", body);
@@ -832,7 +855,7 @@ export const updateWatchlistItem = (itemId: number, note: string) =>
 export const deleteWatchlistItem = (itemId: number) =>
   send<{ deleted: number }>("DELETE", `/api/workspace/watchlists/items/${itemId}`);
 
-export const getViews = () => getJson<{ items: SavedView[] }>("/api/workspace/views");
+export const getViews = (signal?: AbortSignal) => getJson<{ items: SavedView[] }>("/api/workspace/views", signal);
 
 export const createView = (body: { name: string; description?: string; payload?: Record<string, unknown> }) =>
   send<SavedView>("POST", "/api/workspace/views", body);
@@ -842,7 +865,364 @@ export const updateView = (id: number, body: Record<string, unknown>) =>
 
 export const deleteView = (id: number) => send<{ deleted: number }>("DELETE", `/api/workspace/views/${id}`);
 
-export const getActivity = (limit = 25) =>
-  getJson<{ items: ActivityRecord[] }>(`/api/workspace/activity${qs({ limit })}`);
+export const getActivity = (limit = 25, signal?: AbortSignal) =>
+  getJson<{ items: ActivityRecord[] }>(`/api/workspace/activity${qs({ limit })}`, signal);
 
 export const resetWorkspace = () => send<WorkspaceSummary>("POST", "/api/workspace/reset?confirm=true");
+
+/* ==========================================================================
+   Research: dataset provenance, external evaluation, explainability
+   ========================================================================== */
+
+/**
+ * Where the served corpus came from. `synthetic_in_use` is the flag the UI
+ * badges on: a synthetic demo must never read as real procurement data.
+ */
+export type DatasetOrigin = {
+  kind: "real-ocds" | "synthetic-demo" | "missing" | "unknown";
+  synthetic_in_use: boolean;
+  meta_declared_source: string | null;
+  /** How the origin was decided (schema probe), verbatim from the server. */
+  evidence: string;
+};
+
+export type DatasetCorpus = {
+  records: number;
+  scored: number;
+  unscored: number;
+  year_from: string | null;
+  year_to: string | null;
+  band_counts: Record<string, number>;
+};
+
+export type DatasetFile = { path: string; bytes: number; modified_at: string };
+
+export type DatasetManifestEntry = {
+  path: string;
+  bytes: number | null;
+  sha256: string | null;
+};
+
+export type DatasetManifest = {
+  exported_at: string | null;
+  n_documents: number | null;
+  entries: DatasetManifestEntry[];
+};
+
+export type DatasetScoring = {
+  run_id: string | null;
+  generated_at: string | null;
+  contamination: number | null;
+  random_state: number | null;
+  n_feature_columns: number | null;
+  rows_in_run: number | null;
+  scores_source: string | null;
+  scored_rows_in_csv: number | null;
+};
+
+export type DatasetModel = {
+  version: string;
+  role: string;
+  label: string;
+  detectors: Record<string, number | null>;
+  artefact: string | null;
+  artefact_present: boolean;
+};
+
+/**
+ * SHA-256 comparison against the export manifest. `hash_matches_manifest` is
+ * null until a verification has actually run; null never reads as "verified".
+ */
+export type DatasetVerification = {
+  hash_verified: boolean;
+  hash_matches_manifest: boolean | null;
+  compared_files: number;
+  mismatches: { path: string; expected?: string; actual?: string }[];
+};
+
+export type DatasetReport = {
+  origin: DatasetOrigin;
+  corpus: DatasetCorpus;
+  files: DatasetFile[];
+  manifest: DatasetManifest;
+  scoring: DatasetScoring;
+  model: DatasetModel;
+  verification: DatasetVerification;
+  disclaimer: string;
+};
+
+/**
+ * An external proxy label, not ground truth: `roc_auc` <= 0.5 or a cluster CI
+ * spanning 0.5 means the signal is indistinguishable from random, and the UI
+ * must render that as measured instead of spinning it.
+ */
+export type ExternalLabel = {
+  id: string;
+  label: string;
+  available: boolean;
+  roc_auc: number | null;
+  caveat: string;
+  /** AAP-only fields (absent on the ANSC entry, so optional). */
+  pr_auc?: number | null;
+  base_rate?: number | null;
+  precision_votes_ge3?: number | null;
+  supplier_concentration?: {
+    n_exact_suppliers?: number | null;
+    positives?: number | null;
+    largest_supplier_share?: number | null;
+  } | null;
+  /** ANSC-only fields: cluster bootstrap CI around the point estimate. */
+  cluster_ci?: [number, number] | null;
+  cluster_by?: string | null;
+  n_boot?: number | null;
+  n_clusters?: number | null;
+  baselines?: Record<string, EvalBaseline> | null;
+  verdict_code?: string | null;
+  verdict_text?: string | null;
+};
+
+export type EvalBaseline = {
+  auc?: number | null;
+  cluster_ci?: [number, number] | null;
+  repeats?: number | null;
+  mean?: number | null;
+  std?: number | null;
+  q025?: number | null;
+  q975?: number | null;
+};
+
+export type SeedStability = {
+  runs: number;
+  consensus_mean: number;
+  jaccard_mean: number;
+};
+
+/**
+ * Pre-registered noise hypotheses. Shapes differ per hypothesis (H1 has
+ * threshold/observed_min, H2 rho/top200 pairs, H4 has measured correlations
+ * with no pass threshold), so the numeric detail is carried in the index
+ * signature and rendered verbatim rather than flattened into one schema.
+ */
+export type NoiseVerdict = {
+  passed?: boolean;
+  note?: string;
+  [k: string]: number | string | boolean | undefined;
+};
+
+export type NoiseRegime = {
+  id: string;
+  n_runs: number | null;
+  spearman: number | null;
+  spearman_ci_low: number | null;
+  spearman_ci_high: number | null;
+  top200_jaccard: number | null;
+  band_change_pct: number | null;
+  directaward_spearman: number | null;
+  directaward_band_change_pct: number | null;
+};
+
+export type Evaluation = {
+  production: {
+    version: string;
+    unchanged: boolean;
+    run_id: string | null;
+    generated_at: string | null;
+    boundary: string | null;
+    tune_period: string | null;
+    test_period: string | null;
+  };
+  external_labels: ExternalLabel[];
+  seed_stability: SeedStability | null;
+  noise_sensitivity: {
+    available: boolean;
+    verdicts: Record<string, NoiseVerdict> | null;
+    regimes: NoiseRegime[];
+    note: string;
+  };
+  drift: {
+    psi_max: number | null;
+    ks_max: number | null;
+    overfitting_warning: boolean | null;
+    note: string;
+  };
+  bias: {
+    n_dimensions: number | null;
+    high_plus_share_corpus: number | null;
+    critical_share_corpus: number | null;
+    /** Server-served Russian verdict words; localised via the backend map. */
+    verdict_counts: Record<string, number> | null;
+    available: boolean;
+  };
+  disclaimer: string;
+};
+
+export type ImportanceRow = {
+  feature: string;
+  mean: number | string | null;
+  std?: number | string | null;
+};
+
+export type ShapRow = { feature: string; mean_abs: number | string | null };
+
+export type XaiAgreement = {
+  spearman?: {
+    mean?: number | null;
+    mean_ci?: [number, number] | null;
+    median?: number | null;
+    median_ci?: [number, number] | null;
+  };
+  top3_overlap?: Record<string, number | null>;
+  top5_overlap?: Record<string, number | null>;
+  sign_agreement?: Record<string, number | null>;
+  lime_r2?: Record<string, number | null>;
+  lime_stability?: Record<string, number | null>;
+  [k: string]: unknown;
+};
+
+export type Explainability = {
+  model_explained: string | null;
+  why_same_model: string | null;
+  xai_consistency: {
+    available: boolean;
+    /** Measured verdict (server serves it in Russian; localised via map). */
+    verdict: string | null;
+    agreement: XaiAgreement;
+    low_agreement_diagnosis: unknown;
+    disclaimer: string | null;
+  };
+  global_summary: {
+    available: boolean;
+    stage?: string | null;
+    generated_at?: string | null;
+    shap_status?: string | null;
+    strongest_separators?: unknown;
+    permutation_importance_top?: unknown;
+    unavailable_indicators?: unknown;
+  };
+  permutation_importance: ImportanceRow[];
+  shap_importance: ShapRow[];
+  notes: string[];
+  disclaimer: string;
+};
+
+export type ExplanationFactItem = {
+  field: string;
+  label: string;
+  value: string | number | null;
+  /** 0-100 position within the corpus; absent when no distribution exists. */
+  percentile?: number | null;
+};
+
+export type ExplanationIndicatorItem = {
+  key: string;
+  label: string;
+  triggered: boolean;
+  corpus_rate: number | null;
+  corpus_n: number | null;
+};
+
+export type ExplanationDetectorItem = {
+  key: string;
+  label: string;
+  verdict: "flagged" | "not_flagged" | "unscored";
+  score: number | null;
+  score_percentile: number | null;
+};
+
+export type ExplanationReferenceItem = {
+  label: string;
+  path: string;
+  available: boolean;
+};
+
+export type ExplanationLimitationItem = { text: string };
+
+/** The five layers stay distinct unions so each page narrows before mapping. */
+export type ExplanationLayer =
+  | { id: "facts"; items: ExplanationFactItem[] }
+  | { id: "indicators"; items: ExplanationIndicatorItem[] }
+  | { id: "detectors"; items: ExplanationDetectorItem[] }
+  | { id: "references"; items: ExplanationReferenceItem[] }
+  | { id: "limitations"; items: ExplanationLimitationItem[] };
+
+export type TenderExplanation = {
+  tender_id: string | null;
+  ocid: string | null;
+  model_version: string;
+  scoring_run_id: string | null;
+  scoring_generated_at: string | null;
+  consensus: {
+    band: RiskLevel | null;
+    risk_score: number | null;
+    n_models_flagging: number | null;
+  };
+  layers: ExplanationLayer[];
+  disclaimer: string;
+};
+
+/**
+ * `verify_hash` recomputes SHA-256 server-side; it is off by default so the
+ * overview card never pays for hashing on every page load.
+ */
+export const getDataset = (verifyHash = false, signal?: AbortSignal) =>
+  getJson<DatasetReport>(`/api/dataset${qs({ verify_hash: verifyHash ? true : undefined })}`, signal);
+
+export const getEvaluation = (signal?: AbortSignal) => getJson<Evaluation>("/api/evaluation", signal);
+
+export const getExplainability = (signal?: AbortSignal) => getJson<Explainability>("/api/explainability", signal);
+
+/**
+ * Layered explanation for one procedure. The endpoint 404s for identifiers it
+ * does not know; that resolves to `null` so the detail page can say "no
+ * explanation stored" instead of surfacing an HTTP error. Every other failure
+ * rejects through the shared error templates, exactly like `getJson`.
+ */
+export async function getTenderExplanation(id: string, signal?: AbortSignal): Promise<TenderExplanation | null> {
+  const url = `/api/tenders/${encodeURIComponent(id)}/explanation`;
+  const res = await transport(url, { signal });
+  if (res.status === 404) return null;
+  return readJson<TenderExplanation>(res, url);
+}
+
+/**
+ * Documented MTender procedure URL scheme: the OCDS identifier resolves to the
+ * published procedure page. Used for every external "open on MTender" link.
+ */
+export function mtenderUrl(ocid: string): string {
+  return `https://public.mtender.gov.md/tenders/${encodeURIComponent(ocid)}`;
+}
+
+export type DetectorKey = "statistical_mad_zscore" | "isolation_forest" | "local_outlier_factor" | "one_class_svm";
+export type DetectorAnalysis = {
+  key: DetectorKey;
+  label: string;
+  field: string;
+  score: number | null;
+  verdict: "flagged" | "not_flagged" | "unavailable";
+  n_reference: number;
+  n_missing_score: number;
+  score_percentile: number | null;
+  bins: { index: number; start: number; end: number; n: number; selected: boolean }[];
+  threshold: { value: number; operator: string; source: string } | null;
+  threshold_matches_verdict: boolean | null;
+  params: Record<string, unknown>;
+  features: string[];
+  training_medians: null;
+  training_mad: null;
+  local_attribution: null;
+};
+export type ModelAnalysis = {
+  tender_id: string;
+  run_id: string | null;
+  source: string | null;
+  summary_matches_run: boolean;
+  generated_at: string | null;
+  model_version: string | null;
+  n_reference: number;
+  n_corpus: number;
+  scope: "same_run_available_scores";
+  detectors: DetectorAnalysis[];
+  agreement: { left: string; right: string; n: number; n_agree: number; agreement: number | null }[][];
+  consensus: { n_models_flagging: number | null; flag: boolean | null; band: string | null; percentile: number | null };
+};
+export const getModelAnalysis = (id: string, signal?: AbortSignal) => getJson<ModelAnalysis>(`/api/tenders/${encodeURIComponent(id)}/model-analysis`, signal);

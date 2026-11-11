@@ -1,0 +1,90 @@
+
+Running 45 tests using 1 worker
+
+[1/45] [chromium] › e2e/completion-live.spec.ts:3:1 › LIVE read-only route inventory, terminal states, unknown procedure vs route
+[2/45] [chromium] › e2e/completion.spec.ts:6:1 › contract violations hide dependent results; a failed options request is explicit
+[3/45] [chromium] › e2e/completion.spec.ts:12:1 › visible back restores exact filters; research links preserve selection; safe fallback
+  1) [chromium] › e2e/completion.spec.ts:12:1 › visible back restores exact filters; research links preserve selection; safe fallback 
+
+    Error: browserContext.close: ENOENT: no such file or directory, open '/Users/imustyk/Diplom/frontend/test-results/.playwright-artifacts-0/traces/222eb7ebef88c56bfdae-28e78866b13198a3ec9e-recording5.trace'
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/completion-visible-back-re-bfb9a-rve-selection-safe-fallback-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/completion-visible-back-re-bfb9a-rve-selection-safe-fallback-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/completion-visible-back-re-bfb9a-rve-selection-safe-fallback-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/completion-visible-back-re-bfb9a-rve-selection-safe-fallback-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[4/45] [chromium] › e2e/completion.spec.ts:20:1 › explanation failure is independent, retry does not reload tender/model; 404 is unavailable
+[5/45] [chromium] › e2e/completion.spec.ts:29:1 › rapid manual selection uses newest result and browser Back restores previous selection
+[6/45] [chromium] › e2e/completion.spec.ts:35:1 › Workspace cases: refusal retains draft, double submit, status rollback, edit, note, delete, Activity
+  2) [chromium] › e2e/completion.spec.ts:35:1 › Workspace cases: refusal retains draft, double submit, status rollback, edit, note, delete, Activity 
+
+    Error: browserContext.close: ENOENT: no such file or directory, open '/Users/imustyk/Diplom/frontend/test-results/.playwright-artifacts-1/traces/222eb7ebef88c56bfdae-34f9e988c2f8274f2fc6-recording4.trace'
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/completion-Workspace-cases-faae5-k-edit-note-delete-Activity-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/completion-Workspace-cases-faae5-k-edit-note-delete-Activity-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/completion-Workspace-cases-faae5-k-edit-note-delete-Activity-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/completion-Workspace-cases-faae5-k-edit-note-delete-Activity-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[7/45] [chromium] › e2e/completion.spec.ts:45:1 › Workspace annotations: create, edit, confirmed delete
+[8/45] [chromium] › e2e/completion.spec.ts:48:1 › Workspace watchlists: keyboard select, create/edit items, remove and delete
+[9/45] [chromium] › e2e/completion.spec.ts:52:1 › Saved views: object validation, legacy unsupported fields, create/apply/reload/edit/delete
+[10/45] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix en/light
+[11/45] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix en/dark
+[12/45] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix ru/light
+[13/45] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix ru/dark
+[14/45] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix ro/light
+[15/45] [chromium] › e2e/completion.spec.ts:55:73 › mocked models/forms matrix ro/dark
+[16/45] [chromium] › e2e/completion.spec.ts:62:1 › invalid drill hash is recoverable; theme repaints canvas from CSS tokens
+[17/45] [chromium] › e2e/completion.spec.ts:66:1 › CSV export and empty network filters remain usable
+[18/45] [chromium] › e2e/completion.spec.ts:71:1 › RACI filters, role focus, reset and header search perform real navigation
+[19/45] [chromium] › e2e/distributions.spec.ts:14:1 › MOCKED | spread chart: interval geometry, focusable rows, raw quartile table
+[20/45] [chromium] › e2e/distributions.spec.ts:71:1 › MOCKED | request states: tabs announce loading and settle to a result or an explicit empty
+[21/45] [chromium] › e2e/i18n.spec.ts:19:5 › en / light: routes render translated and themed
+[22/45] [chromium] › e2e/i18n.spec.ts:19:5 › en / dark: routes render translated and themed
+[23/45] [chromium] › e2e/i18n.spec.ts:19:5 › ru / light: routes render translated and themed
+[24/45] [chromium] › e2e/i18n.spec.ts:19:5 › ru / dark: routes render translated and themed
+[25/45] [chromium] › e2e/i18n.spec.ts:19:5 › ro / light: routes render translated and themed
+[26/45] [chromium] › e2e/i18n.spec.ts:19:5 › ro / dark: routes render translated and themed
+[27/45] [chromium] › e2e/menu.spec.ts:7:3 › mobile menu › Tab/Shift+Tab stay inside the drawer, Escape closes and returns focus
+[28/45] [chromium] › e2e/model-fixture.spec.ts:11:1 › histogram: score marker, hatched threshold marker, same-interval coincidence
+[29/45] [chromium] › e2e/model-fixture.spec.ts:52:1 › histogram: all-zero counts and a missing score stay honest
+[30/45] [chromium] › e2e/network.spec.ts:19:1 › MOCKED | keyboard reaches the same selection as the mouse via the accessible table
+[31/45] [chromium] › e2e/network.spec.ts:69:1 › MOCKED | touch-equivalent path: tapping a row selects it too
+[32/45] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /
+[33/45] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /tenders
+[34/45] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /models
+[35/45] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /indicators
+[36/45] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /distributions
+[37/45] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /network
+[38/45] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /workspace
+[39/45] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /method
+[40/45] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /kpis
+[41/45] [chromium] › e2e/routes.spec.ts:19:3 › no overflow at required widths — /raci
+[42/45] [chromium] › e2e/tender-detail.spec.ts:14:1 › model card shows real provenance and an honest reference state
+[43/45] [chromium] › e2e/tenders.spec.ts:16:1 › MOCKED | filters and page survive open → back, and a reload keeps them too
+[44/45] [chromium] › e2e/tenders.spec.ts:73:1 › MOCKED | Back steps a page push; a filter edit resets the page
+[45/45] [chromium] › e2e/tenders.spec.ts:101:1 › MOCKED | invalid URL parameters are normalised without a history stop
+  2 failed
+    [chromium] › e2e/completion.spec.ts:12:1 › visible back restores exact filters; research links preserve selection; safe fallback 
+    [chromium] › e2e/completion.spec.ts:35:1 › Workspace cases: refusal retains draft, double submit, status rollback, edit, note, delete, Activity 
+  43 passed (2.4m)

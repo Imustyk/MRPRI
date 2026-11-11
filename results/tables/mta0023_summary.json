@@ -1,0 +1,21 @@
+{
+  "requests_total": 19,
+  "budget": 20,
+  "http_status_counts": {
+    "301": 6,
+    "200": 8,
+    "404": 5
+  },
+  "successful_pdf_responses": 4,
+  "unique_pdf_bodies": 3,
+  "version_rows": 17,
+  "field_feature_rows": 20,
+  "status_counts": {
+    "PARTIALLY VERIFIED": 8,
+    "NOT CERTIFIED": 12
+  },
+  "certified_t0_procedures": 0,
+  "certified_publication_features": 0,
+  "publication_feature_count": 8,
+  "decision": "NO-GO"
+}

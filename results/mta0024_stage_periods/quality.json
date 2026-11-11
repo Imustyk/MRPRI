@@ -1,0 +1,223 @@
+{
+  "features_csv": "/Users/imustyk/Diplom/data/features/features.csv",
+  "features_sha256": "9e26782375476571ea770935582c3cee1c286f71cde4ad97ec96d81d3d8d92f7",
+  "features_rows": 152378,
+  "periods_csv": "/Users/imustyk/Library/Application Support/com.grokapp.grok-app/workspaces/general/mta_0024_0025/results/mta0024_stage_periods/stage_periods.csv",
+  "periods_rows": 152378,
+  "package_dir": "/Users/imustyk/Diplom/data/raw/ocds_packages",
+  "join": {
+    "comparable_ocids": 152378,
+    "features_only": 0,
+    "periods_only": 0
+  },
+  "submission_window_status": {
+    "no_evaluation_record": 93618,
+    "evaluation_complete": 58760
+  },
+  "legacy_cross_stage": 58759,
+  "evaluation_window_observed": 58760,
+  "evaluation_window_missing": 93618,
+  "historically_certified_rows": 0,
+  "windows_clipped_at_3650": 0,
+  "missing_window_stored_as_number": 0,
+  "bins_legacy_feature_bid_window": {
+    "missing": 0,
+    "0": 227,
+    "1_to_6": 2434,
+    "7_to_14": 8847,
+    "15_to_29": 24605,
+    "30": 97617,
+    "31_to_90": 18477,
+    "91_to_365": 109,
+    "366_to_3650": 62,
+    "above_3650": 0
+  },
+  "bins_stage_clipped_window": {
+    "missing": 93618,
+    "0": 1,
+    "1_to_6": 35553,
+    "7_to_14": 19783,
+    "15_to_29": 3204,
+    "30": 23,
+    "31_to_90": 188,
+    "91_to_365": 8,
+    "366_to_3650": 0,
+    "above_3650": 0
+  },
+  "bins_stage_unclipped_window": {
+    "missing": 93618,
+    "0": 1,
+    "1_to_6": 35553,
+    "7_to_14": 19783,
+    "15_to_29": 3204,
+    "30": 23,
+    "31_to_90": 188,
+    "91_to_365": 8,
+    "366_to_3650": 0,
+    "above_3650": 0
+  },
+  "bins_reproduced_legacy_merge": {
+    "missing": 96234,
+    "0": 227,
+    "1_to_6": 2434,
+    "7_to_14": 8847,
+    "15_to_29": 24605,
+    "30": 1381,
+    "31_to_90": 18477,
+    "91_to_365": 109,
+    "366_to_3650": 62,
+    "above_3650": 2
+  },
+  "deadline_flags": {
+    "legacy_short": 2661,
+    "legacy_long": 171,
+    "stage_short_among_observed": 35554,
+    "stage_long_among_observed": 8,
+    "stage_short_missing": 93618,
+    "stage_long_missing": 93618
+  },
+  "value_30_in_legacy_feature": {
+    "rows": 97617,
+    "stage_missing": 93618,
+    "stage_also_30": 0,
+    "stage_other_observed_value": 3999
+  },
+  "reproduced_merge_versus_features": {
+    "start_dates_equal": 152374,
+    "end_dates_equal": 149761,
+    "legacy_days_equal_where_reproduced_numeric": 56142,
+    "reproduced_numeric": 56144,
+    "stage_days_equal_legacy_feature_where_observed": 340
+  },
+  "period_value_differs_from_legacy_feature": 152038,
+  "observed_stage_window": {
+    "n": 58760,
+    "min": 0.0,
+    "median": 5.0,
+    "mean": 6.676786929884275,
+    "p25": 3.0,
+    "p75": 8.0,
+    "max": 328.0
+  },
+  "evaluation_complete_not_cross_stage": [
+    {
+      "ocid": "ocds-b3wdp1-MD-1703678445874",
+      "bid_window_days": 3.0,
+      "legacy_bid_window_days": 3.0,
+      "legacy_start_stage": "evaluation",
+      "legacy_end_stage": "evaluation"
+    },
+    {
+      "ocid": "ocds-b3wdp1-MD-1712223575963",
+      "bid_window_days": 5.0,
+      "legacy_bid_window_days": 5.0,
+      "legacy_start_stage": "evaluation",
+      "legacy_end_stage": "evaluation"
+    }
+  ],
+  "legacy_30_but_stage_other_bins": {
+    "missing": 0,
+    "0": 0,
+    "1_to_6": 2467,
+    "7_to_14": 1302,
+    "15_to_29": 201,
+    "30": 0,
+    "31_to_90": 28,
+    "91_to_365": 1,
+    "366_to_3650": 0,
+    "above_3650": 0
+  },
+  "stage_30_legacy_feature_bins": {
+    "missing": 0,
+    "0": 0,
+    "1_to_6": 1,
+    "7_to_14": 2,
+    "15_to_29": 1,
+    "30": 0,
+    "31_to_90": 19,
+    "91_to_365": 0,
+    "366_to_3650": 0,
+    "above_3650": 0
+  },
+  "date_mismatch": {
+    "start_mismatch": 4,
+    "end_mismatch": 2617,
+    "end_mismatch_and_no_evaluation_record": 1,
+    "end_mismatch_and_evaluation_complete": 2616,
+    "end_mismatch_reproduced_missing": 0,
+    "end_mismatch_features_missing": 2617
+  },
+  "audit_packages": [
+    {
+      "ocid": "ocds-b3wdp1-MD-1644854422949",
+      "matches_mta0022": true,
+      "legacy_window_days": 8,
+      "submission_window_days": 12,
+      "submission_window_status": "evaluation_complete"
+    },
+    {
+      "ocid": "ocds-b3wdp1-MD-1644995653154",
+      "matches_mta0022": true,
+      "legacy_window_days": 34,
+      "submission_window_days": 9,
+      "submission_window_status": "evaluation_complete"
+    },
+    {
+      "ocid": "ocds-b3wdp1-MD-1649084017389",
+      "matches_mta0022": true,
+      "legacy_window_days": 28,
+      "submission_window_days": 13,
+      "submission_window_status": "evaluation_complete"
+    },
+    {
+      "ocid": "ocds-b3wdp1-MD-1656940842812",
+      "matches_mta0022": true,
+      "legacy_window_days": 13,
+      "submission_window_days": 3,
+      "submission_window_status": "evaluation_complete"
+    },
+    {
+      "ocid": "ocds-b3wdp1-MD-1659961877383",
+      "matches_mta0022": true,
+      "legacy_window_days": 28,
+      "submission_window_days": 10,
+      "submission_window_status": "evaluation_complete"
+    },
+    {
+      "ocid": "ocds-b3wdp1-MD-1663056980047",
+      "matches_mta0022": true,
+      "legacy_window_days": 32,
+      "submission_window_days": 7,
+      "submission_window_status": "evaluation_complete"
+    },
+    {
+      "ocid": "ocds-b3wdp1-MD-1665058207960",
+      "matches_mta0022": true,
+      "legacy_window_days": 25,
+      "submission_window_days": 9,
+      "submission_window_status": "evaluation_complete"
+    },
+    {
+      "ocid": "ocds-b3wdp1-MD-1685970121601",
+      "matches_mta0022": true,
+      "legacy_window_days": 18,
+      "submission_window_days": 8,
+      "submission_window_status": "evaluation_complete"
+    }
+  ],
+  "snapshot_note": "Stage-consistent columns describe the current compiled releases. historically_certified is 0 on every row. The legacy columns are copies of the production feature snapshot, which MTA-0022 also did not certify as publication-time values.",
+  "stage_feature_table": "/Users/imustyk/Library/Application Support/com.grokapp.grok-app/workspaces/general/mta_0024_0025/results/mta0024_stage_periods/stage_feature_table.csv.gz",
+  "stage_feature_table_sha256": "20db8187b9d007f4379648c9b6ff044ef6796ce1b0cb43a36475e30875f0f96f",
+  "cross_stage_without_evaluation_window": [
+    {
+      "ocid": "ocds-b3wdp1-MD-1643538664394",
+      "submission_window_status": "no_evaluation_record",
+      "legacy_start_stage": "planning",
+      "legacy_end_stage": "base",
+      "legacy_bid_window_days": 30.0,
+      "legacy_window_days_reproduced": null,
+      "bid_window_days": null
+    }
+  ],
+  "blank_legacy_days_among_evaluation_complete": 2616
+}

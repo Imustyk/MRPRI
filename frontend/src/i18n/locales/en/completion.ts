@@ -1,0 +1,32 @@
+export default {
+  "contract_error": "Data contract violation: {{field}} must satisfy {{rule}}. Dependent results are unavailable.",
+  "rules": {
+    "object": "a JSON object",
+    "array": "an array",
+    "percentile": "a finite number from 0 to 100",
+    "votes": "an integer from 0 to 4",
+    "count": "a finite non-negative count",
+    "raw_score": "the score domain of this detector",
+    "share": "a number from 0 to 1",
+    "band": "a documented risk band",
+    "boolean": "true, false or null",
+    "bins": "valid histogram intervals",
+    "provenance": "a verified scoring run"
+  },
+  "pending": "Saving…",
+  "apply": "Apply",
+  "unsupported": "Unsupported view fields: {{fields}}. This view cannot be applied.",
+  "invalid_view": "The view must be a JSON object with valid supported filters.",
+  "load_error": "Unable to load this procedure",
+  "hash_error": "The network link contains an invalid identifier. Select a node again.",
+  "supported": "Supported filters: q, level, procedure, min (0–95, step 5), offset (step 40). Other saved fields are retained but cannot be applied.",
+  "edit_case": "Edit case",
+  "edit_watch": "Edit watchlist",
+  "edit_item": "Edit item note",
+  "query": "Search text",
+  "minimum": "Minimum percentile",
+  "offset": "List offset",
+  "updated": "Changes saved",
+  "network_error": "Network request failed for {{url}}. Check the connection and retry.",
+  "results_error": "The response could not be used to display reliable results. Retry the request or review the specific source error below."
+};

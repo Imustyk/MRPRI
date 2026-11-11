@@ -1,0 +1,74 @@
+{
+  "baseline": "c9c9a08",
+  "protocol_sha256": "de13e8b100f320c6fb896732952f802d3c4505553bdd336b5a03d2f8cc7b03f6",
+  "stats": {
+    "mapped_missing_local_file": 455,
+    "inventory_rows": 7750,
+    "mapped_pdf_urls": 7295,
+    "unique_local_pdf_hashes": 2449,
+    "orphan_pdf_files": 0,
+    "pdfs_scanned": 2449,
+    "no_readable_own_dated_header": 2373,
+    "scan_or_unreadable_header": 484,
+    "no_own_dated_ANSC_merits_header": 10,
+    "candidate": 58,
+    "merits_other_decision_year": 29,
+    "no_unambiguous_merits_complaint": 8,
+    "target_year_previously_reviewed_hash": 3
+  },
+  "inventory_formats": {
+    "pdf": 7295,
+    "msword": 235,
+    "": 206,
+    "vnd.ms-excel": 5,
+    "jpeg": 5,
+    "rtf": 4
+  },
+  "unresolved_records": 546,
+  "candidate_rows": 26,
+  "class_counts": {
+    "admitted": {
+      "pdfs": 15,
+      "decisions": 15,
+      "new_decisions": 15,
+      "new_ocids": 15,
+      "test_screen_decisions": 15,
+      "test_screen_ocids": 15
+    },
+    "partially_admitted": {
+      "pdfs": 4,
+      "decisions": 4,
+      "new_decisions": 4,
+      "new_ocids": 4,
+      "test_screen_decisions": 4,
+      "test_screen_ocids": 4
+    },
+    "rejected": {
+      "pdfs": 6,
+      "decisions": 6,
+      "new_decisions": 6,
+      "new_ocids": 6,
+      "test_screen_decisions": 6,
+      "test_screen_ocids": 6
+    },
+    "mixed": {
+      "pdfs": 1,
+      "decisions": 1,
+      "new_decisions": 1,
+      "new_ocids": 1,
+      "test_screen_decisions": 1,
+      "test_screen_ocids": 1
+    }
+  },
+  "years": {
+    "2022|admitted": 8,
+    "2023|admitted": 7,
+    "2022|partially_admitted": 3,
+    "2022|rejected": 5,
+    "2023|mixed": 1,
+    "2023|partially_admitted": 1,
+    "2023|rejected": 1
+  },
+  "new_reviewed_labels": 0,
+  "note": "All counts are unverified machine-screen candidates; scans without a readable header remain unresolved; no population-complete assertion."
+}

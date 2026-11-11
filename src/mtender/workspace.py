@@ -232,6 +232,8 @@ def create_case(
 ) -> dict[str, Any]:
     ocid_list = clean_ocids(ocids)
     with transaction() as con:
+        # Allocate the next reference under the same write lock as the insert.
+        con.execute("BEGIN IMMEDIATE")
         ref = _next_case_ref(con)
         cur = con.execute(
             "INSERT INTO cases (ref,title,status,priority,owner,summary,ocids,created_at,updated_at)"

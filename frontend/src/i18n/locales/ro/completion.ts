@@ -1,0 +1,32 @@
+export default {
+  "contract_error": "Încălcarea contractului de date: {{field}} necesită {{rule}}. Rezultatele dependente nu sunt disponibile.",
+  "rules": {
+    "object": "un obiect JSON",
+    "array": "un tablou",
+    "percentile": "un număr finit între 0 și 100",
+    "votes": "un întreg între 0 și 4",
+    "count": "un număr finit nenegativ",
+    "raw_score": "scala documentată a detectorului",
+    "share": "un număr între 0 și 1",
+    "band": "o categorie de risc documentată",
+    "boolean": "true, false sau null",
+    "bins": "intervale valide ale histogramei",
+    "provenance": "o rulare verificată a modelelor"
+  },
+  "pending": "Se salvează…",
+  "apply": "Aplică",
+  "unsupported": "Câmpuri neacceptate: {{fields}}. Vizualizarea nu poate fi aplicată.",
+  "invalid_view": "Vizualizarea trebuie să fie un obiect JSON cu filtre valide acceptate.",
+  "load_error": "Procedura nu a putut fi încărcată",
+  "hash_error": "Legătura grafului conține un identificator invalid. Selectați din nou un nod.",
+  "supported": "Filtre acceptate: q, level, procedure, min (0–95, pas 5), offset (pas 40). Alte câmpuri sunt păstrate, dar nu pot fi aplicate.",
+  "edit_case": "Editează cazul",
+  "edit_watch": "Editează lista",
+  "edit_item": "Editează nota elementului",
+  "query": "Text de căutare",
+  "minimum": "Percentila minimă",
+  "offset": "Poziția în listă",
+  "updated": "Modificări salvate",
+  "network_error": "Solicitarea către {{url}} a eșuat. Verificați conexiunea și reîncercați.",
+  "results_error": "Răspunsul sursei nu permite afișarea unor rezultate fiabile. Reîncercați solicitarea sau verificați eroarea indicată mai jos."
+};

@@ -16,6 +16,13 @@ const distributions: typeof en = {
   none_group: "(nimic)",
   na: "n/d",
 
+  // Human descriptions of the request parameters (loading / stale announcements).
+  params_corr: "{{method}} · {{n}} indici",
+  params_dist: "{{feature}} · binuri {{scale}} · împărțire {{split}}",
+  params_rel: "{{x}} × {{y}} · culoare {{group}} · {{scale}}",
+  params_spread: "{{measure}} după {{group}}",
+  params_mix: "rânduri {{a}} · coloane {{b}} · {{measure}}",
+
   corr_h: "Matrice de corelație",
   corr_p:
     "Celulele sunt coeficientul de corelație; turcoaz pentru negativ, auriu pentru pozitiv, iar opacitatea urmează magnitudinea. Calculat pe rândurile unde ambele indici sunt prezente.",
@@ -27,6 +34,8 @@ const distributions: typeof en = {
   computing: "Se calculează matricea…",
   pick_two: "Alegeți cel puțin doi indici",
   pick_two_hint: "Ctrl/Cmd-click în listă pentru a selecta mai mulți.",
+  corr_empty: "Nicio matrice de corelație pentru această selecție",
+  corr_empty_hint: "Mai puțin de doi indici selectați au date pereche cu acești parametri.",
   cell_title: "{{a}} × {{b}}: r = {{r}}",
   legend: "{{method}} · {{n}} rânduri · minimum {{min}} observații pereche",
   pairs_h: "Cele mai puternice perechi",
@@ -72,6 +81,7 @@ const distributions: typeof en = {
   log_far: "mult peste",
   log_times: "{{n}}×",
   tooltip_procedures: "proceduri",
+  tooltip_interval: "Interval: {{from}} – {{to}}",
   tooltip_value: "valoare ≈ {{v}}",
   ecdf_h: "Distribuție cumulativă empirică",
   ecdf_p:
@@ -86,6 +96,10 @@ const distributions: typeof en = {
   th_n: "n",
   th_p25: "p25",
   th_p75: "p75",
+  dist_empty: "Nicio distribuție pentru această selecție",
+  dist_empty_hint: "Indicele ales nu a întors niciun bin cu acești parametri.",
+  median_by_empty: "Niciun grup pentru această împărțire",
+  median_by_empty_hint: "Grupurile sub 20 de observații sunt excluse; niciunul nu a trecut aici.",
 
   rel_h: "Relație pereche",
   rel_p:
@@ -109,7 +123,36 @@ const distributions: typeof en = {
     "Interval intercuartilic pe grup. Se folosește un box-plot, nu o bară a mediei, pentru că media unei coloane monetare asimetrică la dreapta este setată de cea mai mare valoare.",
   f_measure: "Măsură",
   f_groupby: "Grupează după",
-  spread_note: "Bara acoperă p25 → p75, cu mediana la schimbarea de culoare.",
+  f_spread_scale: "Scara axei",
+  spread_note:
+    "Fiecare rând acoperă intervalul real p25 → p75; rombul marchează mediana. Valorile nu sunt niciodată însumate sau stivuite.",
+  spread_legend_interval: "interval p25 → p75",
+  spread_legend_median: "mediană",
+  spread_chart_label: "Interval intercuartilic de la p25 la p75 cu marcaj de mediană — {{measure}}",
+  spread_value_axis: "Valoare · {{measure}}",
+  spread_tip_hint: "Treceți cu mouse-ul sau focalizați un rând pentru cuartilelor brute, unități și n.",
+  spread_row_missing: "fără cuartile · n={{n}}",
+  spread_row_invalid: "cuartile nevalide (p25 > p75)",
+  spread_row_nonpos: "în afara axei log: cuartile zero sau negative",
+  spread_row_summary:
+    "{{name}} — {{measure}}: p25 {{p25}}, mediană {{median}}, p75 {{p75}}, n={{n}}",
+  spread_empty: "Niciun grup cu cuartile pentru această selecție",
+  spread_empty_hint: "Împărțirea aleasă nu a întors niciun grup cu destule observații.",
+  spread_log_note_one:
+    "Axa logaritmică: {{names}} este lăsată în afara scării pentru că cuartilele sale sunt zero sau negative; rândul rămâne vizibil ca un substituent.",
+  spread_log_note_few:
+    "Axa logaritmică: {{names}} — {{count}} grupuri sunt lăsate în afara scării pentru că cuartilele lor sunt zero sau negative; rândurile lor rămân substituenți.",
+  spread_log_note_many:
+    "Axa logaritmică: {{names}} — {{count}} grupuri sunt lăsate în afara scării pentru că cuartilele lor sunt zero sau negative; rândurile lor rămân substituenți.",
+  spread_log_note_other:
+    "Axa logaritmică: {{names}} — {{count}} grupuri sunt lăsate în afara scării pentru că cuartilele lor sunt zero sau negative; rândurile lor rămân substituenți.",
+  spread_log_fallback:
+    "A fost cerută o axă logaritmică, dar {{names}} au cuartile zero sau negative, deci este afișată axa liniară pentru toate grupurile.",
+  spread_undrawable_one: "Un grup nu are cuartile utilizabile (lipsă sau inversate) și este afișat ca substituent.",
+  spread_undrawable_few: "{{count}} grupuri nu au cuartile utilizabile (lipsă sau inversate) și sunt afișate ca substituenți.",
+  spread_undrawable_many: "{{count}} grupuri nu au cuartile utilizabile (lipsă sau inversate) și sunt afișate ca substituenți.",
+  spread_undrawable_other: "{{count}} grupuri nu au cuartile utilizabile (lipsă sau inversate) și sunt afișate ca substituenți.",
+  spread_raw_table: "Valori brute ale cuartilelor",
   dropped_groups_one: "{{count}} grup mai mic a fost omis pentru prea puține observații.",
   dropped_groups_few: "{{count}} grupuri mai mici au fost omise pentru prea puține observații.",
   dropped_groups_many: "{{count}} grupuri mai mici au fost omise pentru prea puține observații.",
@@ -128,6 +171,8 @@ const distributions: typeof en = {
   th_total: "total",
   cells_sum: "Celulele sunt suma {{label}}.",
   cells_count: "Celulele sunt numărători de proceduri.",
+  mix_intensity:
+    "Umplerea celulelor folosește o singură culoare semantică și se saturează cel mult la 55%, astfel cifrele rămân lizibile în ambele teme.",
   dropped_levels_one: "{{count}} nivel de frecvență joasă a fost omis ca matricea să rămână lizibilă.",
   dropped_levels_few: "{{count}} niveluri de frecvență joasă au fost omise ca matricea să rămână lizibilă.",
   dropped_levels_many: "{{count}} niveluri de frecvență joasă au fost omise ca matricea să rămână lizibilă.",

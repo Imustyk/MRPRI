@@ -12,7 +12,7 @@ const method = {
     step1: `Walk the whole public OCID history (<code>01a</code>) and fetch one OCDS package per procedure (<code>01b</code>), keeping the exact response body in an archive so any result can be recomputed.`,
     step2: `Normalise and validate (<code>02</code>): resolve the buyer from <code>parties[].roles</code> because the top-level <code>buyer</code> is never populated, read CPV from both <code>tender.classification</code> and <code>tender.items[].classification</code>, and accept both address layouts.`,
     step3: `Engineer indicators in SQL and pandas (<code>03</code>), with the MongoDB and pandas definitions of the CPV median cross-checked against each other.`,
-    step4: `Score with four independent detectors (<code>06</code>): a MAD z-score baseline, Isolation Forest, Local Outlier Factor and One-Class SVM, each at a 5% contamination assumption. Binary red flags are reported separately instead of being z-scored. What each detector is held to is checked live on the <kpilink>Model KPI page</kpilink>.`,
+    step4: `Score with four detectors (<code>06</code>): MAD uses its recorded robust-z threshold; Isolation Forest, LOF and One-Class SVM use a declared 5% contamination/nu assumption. These assumptions are not measured accuracy. Binary flags are reported separately. See the <kpilink>Model KPI page</kpilink> for live checks.`,
     step5: `Export the snapshot (<code>04</code>), descriptive tables (<code>05</code>), SHAP and permutation importance (<code>07</code>) and a live field dictionary (<code>08</code>).`,
   },
   band_h: "How the risk band is set",
@@ -23,7 +23,7 @@ const method = {
   absent_th_field: "Field",
   absent_th_why: "Why it is unavailable",
   high_h: "What a high band means",
-  high_p: `The detector flags statistical and rule-based irregularities used internationally as <em>corruption risk indicators</em>. It does not accuse a firm or a contracting authority. Moldova publishes no procedure-level "corrupt / not corrupt" label, so precision and recall are not computable on this source: model quality is evidenced by agreement between independent detectors and by univariate significance testing of each indicator against the consensus flag, while any evaluation against known labels requires an external dataset.`,
+  high_p: `The system identifies statistical and rule-based <em>risk indicators</em>. Agreement is an internal diagnostic, not independent proof of detection quality. A valid external evaluation needs verified labels, independent analysis units and historically available features. A high band is a reason for further review, not a legal finding.`,
   high_p2: `Award amounts are summed across every awarded lot before being compared with the estimate, because <code>estimated_value</code> covers the whole procedure while a procedure can be awarded in hundreds of lots.`,
 };
 

@@ -9,13 +9,19 @@
  */
 const en = {
   nav: {
+    not_found: "Page not found",
+    not_found_hint: "Check the address or return to the overview.",
+    search: "Search procedures",
+    search_placeholder: "Title, buyer or OCID",
+    open_menu: "Open menu",
+    close_menu: "Close menu",
     group_analysis: "Analysis",
     group_thesis: "Thesis",
     overview: "Overview",
-    procedures: "Procedures",
+    procedures: "Procurements",
     distributions: "Distributions",
-    network: "Buyer–winner network",
-    workspace: "Workspace",
+    network: "Relationship graph",
+    workspace: "Work cases",
     methodology: "Methodology",
     kpis: "Model KPI",
     raci: "RACI matrix",
@@ -28,7 +34,7 @@ const en = {
     doc_desc:
       "Anomaly detection over real Moldova public procurement data from the MTender OCDS feed.",
     tagline: "Anomaly detection for Moldova public procurement",
-    foot_1: "Master's application · Law 131/2015 · Isolation Forest + red flags",
+    foot_1: "Research application · MTender open data",
     foot_2: "Scores are risk indicators, not legal findings.",
     skip: "Skip to content",
   },
@@ -57,6 +63,12 @@ const en = {
     and: "and",
     table_scrollable: "Data table, scrollable",
     empty_value: "—",
+    open_mtender: "Open on MTender",
+    // Screen-reader announcements for the shared request panel.
+    results_loading: "Loading results for {{params}}.",
+    results_updating: "Updating. Showing results for {{shown}}, waiting for {{waiting}}.",
+    results_ready: "Results ready for {{params}}.",
+    stale_marker: "Updating — the values shown are still for {{shown}}; waiting for {{waiting}}.",
   },
   risk: {
     unscored: "not scored",
@@ -96,6 +108,13 @@ const en = {
     empty_body: "The API returned an empty body for {{url}} (HTTP {{status}}).",
     malformed_body: "The API returned a malformed body for {{url}}.",
     bad_json: "Payload is not valid JSON: {{err}}",
+  },
+  fixture: {
+    title: "Model card fixtures (isolated test data)",
+    lede:
+      "Synthetic detectors used to verify the histogram states: score marker, hatched threshold marker, both in one interval, all-zero counts and a missing score.",
+    notice:
+      "This route exists only in a development build and is not linked from the product navigation. The numbers below are not measurements from the served dataset.",
   },
 };
 

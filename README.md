@@ -268,6 +268,9 @@ Checks:
 - Open http://127.0.0.1:8000/api/stats — KPI JSON
 - Open http://127.0.0.1:8000/api/meta — feature list and the fields MTender does not publish
 - Open http://127.0.0.1:8000/api/model-kpis — KPI catalogue for the four detectors plus live checks over the scores being served
+- Open http://127.0.0.1:8000/api/dataset?verify_hash=true — dataset provenance: record counts, origin probe (real vs synthetic), SHA-256 manifest verification
+- Open http://127.0.0.1:8000/api/evaluation — the research evaluation as measured, **negative external results included**
+- Open http://127.0.0.1:8000/api/explainability — global importance plus the measured SHAP/LIME disagreement (`xai_consistency`)
 
 Useful routes:
 
@@ -283,6 +286,16 @@ Useful routes:
 | GET | `/api/indicators` | Mean features by risk band |
 | GET | `/api/model-kpis` | Detector KPI catalogue + live checks on served scores |
 | GET | `/api/meta` | Model weights and feature list |
+| GET | `/api/dataset?verify_hash=` | Dataset provenance: counts, origin (real vs synthetic), model identity, SHA-256 manifest verification |
+| GET | `/api/evaluation` | External-label metrics with cluster CIs, seed/noise stability, drift, bias — negative results included as measured |
+| GET | `/api/explainability` | Global importance + the measured SHAP/LIME disagreement, reported not hidden |
+| GET | `/api/tenders/{tender_id}/explanation` | Deterministic five-layer explanation (facts → indicators → detector percentiles → references → limitations); 404 for unknown ids |
+
+Research artefacts behind these routes (labels, CIs, baselines, expert-review
+export) are documented in `docs/EXTERNAL_VALIDATION_REPORT.md`,
+`docs/EXPERIMENTAL_MODEL_COMPARISON.md` and
+`docs/REAL_DATA_INTEGRATION_REPORT.md`; regenerate them with
+`scripts/34`–`37`.
 
 Optional curl rebuild:
 

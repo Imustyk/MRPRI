@@ -1,0 +1,23 @@
+[
+  {
+    "name": "Case: create, persist, update status and confirmed delete",
+    "status": "PASS"
+  },
+  {
+    "name": "Annotation: create, edit, persist and delete",
+    "status": "PASS"
+  },
+  {
+    "name": "Watchlist: create, recolour, add OCID, deduplicate, remove and delete",
+    "status": "PASS"
+  },
+  {
+    "name": "Saved view: invalid JSON guard, create, edit and delete",
+    "status": "PASS"
+  },
+  {
+    "name": "Workspace JavaScript errors",
+    "status": "PASS",
+    "errors": []
+  }
+]

@@ -1,0 +1,142 @@
+COMMAND 0
+EXIT 0
+STDOUT
+{
+ "status": "review_complete",
+ "total": 50,
+ "complete": 50,
+ "required_fields": [
+  "reviewer_outcome",
+  "reviewer_document_type",
+  "reviewer_link_verified"
+ ],
+ "n_missing": 0,
+ "n_invalid": 0
+}
+
+STDERR
+
+COMMAND 1
+EXIT 0
+STDOUT
+{
+ "status": "metrics_computed",
+ "n_labeled": 44,
+ "accuracy": 0.6154,
+ "macro_f1": 0.3639,
+ "unknown_share_extracted": 0.2308,
+ "mislink_share": 0.0
+}
+
+STDERR
+
+COMMAND 2
+EXIT 0
+STDOUT
+{
+ "status": "labels_written",
+ "n_documents": 50,
+ "n_upheld_1": 6,
+ "n_rejected_0": 5,
+ "n_null": 39,
+ "n_multi_complaint_rows": 2
+}
+written /Users/imustyk/Diplom/data/external/ansc_upheld_labels.csv
+
+STDERR
+
+COMMAND 3
+EXIT 1
+STDOUT
+..............................................F......................... [ 13%]
+........................................................................ [ 27%]
+........................................................................ [ 41%]
+........................................................................ [ 54%]
+........................................................................ [ 68%]
+........................................................................ [ 82%]
+........................................................................ [ 96%]
+....................                                                     [100%]
+=================================== FAILURES ===================================
+_ TestSampleIndependence.test_metrics_and_report_carry_the_independence_block __
+
+self = <test_ansc_metrics.TestSampleIndependence object at 0x109bf5dd0>
+tmp_path = PosixPath('/private/var/folders/j8/sq_85g7x7_d3rwd0crjrg5nh0000gn/T/pytest-of-imustyk/pytest-125/test_metrics_and_report_carry_0')
+
+    def test_metrics_and_report_carry_the_independence_block(self,
+                                                             tmp_path):
+        rows = [mrow(1, "admitted", "admitted", "ansc_decision", "confirmed"),
+                mrow(2, "rejected", "rejected", "ansc_decision", "confirmed")]
+        indep = {"n_rows": 2, "n_unique_urls": 2,
+                 "n_independent_documents": 1, "n_independent_procedures": 1,
+                 "byte_duplicate_groups": [[1, 2]],
+                 "rows_without_local_pdf": [],
+                 "note": "denominators must use independent documents"}
+>       m = s45.compute_metrics(rows, {}, independence=indep)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_ansc_metrics.py:486: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+labeled = [{'ocid': 'ocds-m1', 'decision_id': '03D-1-22', 'document_url': 'http://storage.mtender.gov.md/get/m1', 'extracted_out...ecision_id': '03D-2-22', 'document_url': 'http://storage.mtender.gov.md/get/m2', 'extracted_outcome': 'rejected', ...}]
+layer_by_url = {}
+independence = {'n_rows': 2, 'n_unique_urls': 2, 'n_independent_documents': 1, 'n_independent_procedures': 1, ...}
+
+    def compute_metrics(labeled: list[dict], layer_by_url: dict[str, str],
+                        independence: dict | None = None) -> dict:
+        """All quality metrics over fully labelled rows (pure function).
+    
+        MTA-0019 §4/§5: outcome metrics are computed on the EVALUATED set -
+        rows the reviewer confirmed as ANSC decisions (legacy rows without a
+        ``reviewer_document_type`` column are all evaluated). Document-type
+        detection, link quality and the multi-complaint count cover ALL
+        reviewed rows. ``independence`` (``sample_independence``) carries the
+        counts of INDEPENDENT documents/procedures the denominators must use.
+        """
+        # Identity is supplied by sample_independence (SHA-256), never inferred
+        # from outcome or model scores. Refuse ambiguous duplicate groups.
+        n_reviewed_urls = len(labeled)
+        if independence:
+            excluded_indexes: set[int] = set()
+            for group in independence.get("byte_duplicate_groups", []):
+                if not group or any(i < 1 or i > len(labeled) for i in group):
+                    raise ValueError("invalid byte-duplicate row indexes")
+                first = labeled[group[0] - 1]
+                for i in group[1:]:
+                    row = labeled[i - 1]
+                    for field in ("ocid", "reviewer_outcome",
+                                  "reviewer_document_type", "reviewer_link_verified",
+                                  "extracted_outcome"):
+                        if row.get(field, "") != first.get(field, ""):
+>                           raise ValueError(f"conflicting duplicate {field}: {group}")
+E                           ValueError: conflicting duplicate ocid: [1, 2]
+
+scripts/45_ansc_review_metrics.py:336: ValueError
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/starlette/testclient.py:40
+  /Users/imustyk/Diplom/.venv/lib/python3.11/site-packages/starlette/testclient.py:40: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = typing.Callable[[], typing.ContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_ansc_metrics.py::TestSampleIndependence::test_metrics_and_report_carry_the_independence_block
+1 failed, 523 passed, 1 warning in 15.80s
+
+STDERR
+
+FINAL TEST RE-RUN EXIT 0
+........................................................................ [ 13%]
+........................................................................ [ 27%]
+........................................................................ [ 41%]
+........................................................................ [ 54%]
+........................................................................ [ 68%]
+........................................................................ [ 82%]
+........................................................................ [ 96%]
+....................                                                     [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/starlette/testclient.py:40
+  /Users/imustyk/Diplom/.venv/lib/python3.11/site-packages/starlette/testclient.py:40: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = typing.Callable[[], typing.ContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+524 passed, 1 warning in 15.73s
+

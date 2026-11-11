@@ -1,0 +1,35 @@
+[
+  {
+    "name": "Production build: all nine routes and lazy-loaded chunks",
+    "status": "PASS"
+  },
+  {
+    "name": "Unknown address: helpful 404 and return to overview",
+    "status": "PASS"
+  },
+  {
+    "name": "Procedure API interruption: retry, no false empty result",
+    "status": "PASS"
+  },
+  {
+    "name": "Global search resets previous filters",
+    "status": "PASS"
+  },
+  {
+    "name": "Network: sorting, CSV export, pair selection and drill-down",
+    "status": "PASS"
+  },
+  {
+    "name": "RACI: role focus, phase filter, search and reset",
+    "status": "PASS"
+  },
+  {
+    "name": "Russian previews: desktop and mobile, reduced motion",
+    "status": "PASS"
+  },
+  {
+    "name": "Production JavaScript exceptions",
+    "status": "PASS",
+    "errors": []
+  }
+]

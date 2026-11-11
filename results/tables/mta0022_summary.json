@@ -1,0 +1,20 @@
+{
+  "target_procedures": 8,
+  "classes": {
+    "1": 2,
+    "0": 6
+  },
+  "history_t0_certified": 0,
+  "certified_publication_feature_cells": 0,
+  "publication_feature_cells": 32,
+  "modern_PN_EV_hybrid_periods": 8,
+  "notice_amendment_procedures": 2,
+  "notice_references": 12,
+  "notice_bodies_locally_cached": 0,
+  "latest_EV_after_endpoint": 8,
+  "award_decision_certified": 0,
+  "decision": "NO-GO; no automatic stage switch",
+  "bson_sources_read": 12,
+  "source_rows": 19,
+  "sample_target_matches": 0
+}

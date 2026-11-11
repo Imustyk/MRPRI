@@ -1,33 +1,29 @@
 import { Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import { getJson, type Meta } from "../api";
-import { useEffect, useState } from "react";
-import { PageHead } from "../ui";
+import { useRequest } from "../hooks";
+import { PageHead, ErrorNote, Loading } from "../ui";
 import { tr } from "../i18n/backendMap";
 
 export default function Method() {
   const { t } = useTranslation();
-  const [meta, setMeta] = useState<Meta | null>(null);
-  useEffect(() => {
-    getJson<Meta>("/api/meta").then(setMeta).catch(() => undefined);
-  }, []);
-
+  const request = useRequest("meta", signal => getJson<Meta>("/api/meta", signal));
+  const meta = request.error ? null : request.data;
   return (
     <div>
       <PageHead
-        kicker={t("method.kicker")}
-        title={t("method.title")}
-        lede={
-          <Trans
-            i18nKey="method.lede"
-            components={{
-              code: <code />,
-              racilink: <Link to="/raci" />,
-            }}
-          />
-        }
+        title={t("product.how")}
+        lede={t("product.steps")}
       />
+      <div className="card"><p>{t("analysis.disclaimer")}</p><Link to="/tenders">{t("product.browse")}</Link></div>
+      <details className="card research-disclosure">
+        <summary>{t("product.technical")}</summary>
+        <p className="lede">
+          <Trans i18nKey="method.lede" components={{ code: <code />, racilink: <Link to="/raci" /> }} />
+        </p>
 
+      {request.error && <ErrorNote error={request.error} onRetry={request.reload} />}
+      {request.loading && <Loading />}
       <div className="stack">
       <div className="card">
         <h2>{t("method.pipeline_h")}</h2>
@@ -112,6 +108,8 @@ export default function Method() {
         </p>
       </div>
       </div>
+      <Link to="/models">{t("product.results")}</Link>
+      </details>
     </div>
   );
 }

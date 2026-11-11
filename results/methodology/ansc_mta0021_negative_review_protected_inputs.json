@@ -1,0 +1,12 @@
+{
+  "data/external/ansc_manual_review_50.csv": "31c613c4f3cdb2410ebc8faf0847f993e23d5ec41a3224b0941997daa8ff7682",
+  "data/external/ansc_manual_review_pilot10.csv": "e4850d080e29dc182303e5d480271f528865425aa722b15c5c1d572ebf7203e2",
+  "data/external/ansc_complaint_level_review.csv": "5cd8c19702df2469a118354b2235598ee301f1e207dfa9799a15928a3c3ab35b",
+  "data/external/ansc_upheld_labels.csv": "d0e84a520493a02664647d3cf6a2ae71a38ae000a210cc3eda0e4ca1058356d3",
+  "data/external/ansc_review_sample_50.csv": "4cad197f4eb133263a3c8dd0d22ffbb2d2bb2e15529a0a2f13d1c66abab43ee8",
+  "data/features/features.csv": "9e26782375476571ea770935582c3cee1c286f71cde4ad97ec96d81d3d8d92f7",
+  "results/tables/MTA-0021_negative_candidates_human_review.csv": "7e1526db7744061af8a1f9639c75588902ace7e9470a91ebb615c5a249442e55",
+  "results/ansc_review_pages/MTA-0021_negative_candidates_evidence_pack.pdf": "1e8f590d055944edc95c08e67e00267a0ebaf722703d23a89cacf98b39abcd12",
+  "results/tables/ansc_mta0021_candidates.csv": "2de033e6fb40252d83c32534c8bc0ccaa25fb96831f114a445001a0362bcb957",
+  "docs/MTA-0021_INCLUSION_PROTOCOL.md": "de13e8b100f320c6fb896732952f802d3c4505553bdd336b5a03d2f8cc7b03f6"
+}

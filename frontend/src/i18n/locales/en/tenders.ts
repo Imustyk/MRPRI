@@ -1,8 +1,8 @@
 /** Tenders list page strings (English = source). */
 const tenders = {
   kicker: "Ranked procedures",
-  title: "Scored tenders",
-  lede: "Procedures from the real MTender feed, sorted by anomaly percentile. The band shows how many of the four detectors agreed; the number is a rank within this dataset, not a probability. Open a row for the full breakdown.",
+  title: "Procurements",
+  lede: "Find an MTender procedure by title, buyer or identifier. Open its details to see the data and analysis.",
   f_search: "Search",
   f_search_ph: "Buyer, winner, title or OCID",
   f_level: "Priority band",
@@ -20,14 +20,14 @@ const tenders = {
   f_risk: "Min anomaly percentile: {{v}}",
   clear: "Clear filters",
   empty: "No procedure matches these filters",
-  empty_hint_filtered: "Widen the percentile range or clear the search text.",
+  empty_hint_filtered: "Clear some filters or change the search.",
   empty_hint: "The export contains no procedures.",
   caption: "Sorted by anomaly percentile, descending. {{n}} matching procedures.",
   th_priority: "Priority",
-  th_procedure: "Procedure",
+  th_procedure: "Procurement title",
   th_buyer: "Buyer",
   th_winner: "Winner",
-  th_award: "Award (all lots)",
+  th_award: "Contract value, MDL",
   th_bidders: "Bidders",
   untitled: "Untitled procedure",
   open_nav: "Open a procedure",
@@ -35,6 +35,7 @@ const tenders = {
   prev: "Previous",
   next: "Next",
   of: "of",
+  params_desc: "Page {{page}} · {{filters}}",
 };
 
 export default tenders;

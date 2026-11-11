@@ -1,5 +1,8 @@
 import type en from "../en";
+import product from "./product";
+import completion from "./completion";
 import common from "./common";
+import analysis from "./analysis";
 import backend from "./backend";
 import overview from "./overview";
 import tenders from "./tenders";
@@ -13,6 +16,9 @@ import raci from "./raci";
 
 const ru: typeof en = {
   ...common,
+  analysis,
+  completion,
+  product,
   backend,
   overview,
   tenders,

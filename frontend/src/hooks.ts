@@ -47,3 +47,86 @@ export function useMeasure<T extends HTMLElement>(): {
 
   return { ref, width: box.width, height: box.height };
 }
+
+export type RequestState<T> = {
+  /** Latest successful payload; belongs to ``dataKey``, not necessarily ``key``. */
+  data: T | null;
+  /** Parameter label of the payload currently held (serve as human description too). */
+  dataKey: string | null;
+  /** Parameters the caller is currently asking for. */
+  key: string;
+  loading: boolean;
+  error: string | null;
+  errorStatus?: number;
+  /** True while ``key`` changed but only older data is on hand — must be labelled. */
+  stale: boolean;
+  /** Re-run the in-flight request after an error, without a page reload. */
+  reload: () => void;
+};
+
+/**
+ * One independent request with unambiguous states.
+ *
+ * - a late response can never overwrite a newer one (the fetch is aborted and a
+ *   visibility flag guards the handlers on top of that);
+ * - an error is kept per request, so two requests on one page fail separately;
+ * - previously loaded data survives a parameter change, but ``stale`` turns true
+ *   so the caller shows it only with an explicit "updating, previous parameters"
+ *   marker instead of presenting it as the answer to the new filters.
+ *
+ * ``key`` doubles as a human-readable description of the parameters — callers
+ * pass labels such as ``"open × bids by risk"`` so the stale marker can name the
+ * parameters the shown data belongs to.
+ */
+export function useRequest<T>(
+  key: string,
+  run: (signal: AbortSignal) => Promise<T>,
+  enabled = true,
+): RequestState<T> {
+  const [state, setState] = useState<{
+    data: T | null;
+    dataKey: string | null;
+    error: string | null;
+    loading: boolean;
+    errorStatus?: number;
+  }>({ data: null, dataKey: null, error: null, loading: enabled });
+  const [attempt, setAttempt] = useState(0);
+  const runRef = useRef(run);
+  runRef.current = run;
+
+  useEffect(() => {
+    if (!enabled) {
+      setState((prev) => ({ ...prev, loading: false, error: null }));
+      return;
+    }
+    const controller = new AbortController();
+    let live = true;
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    runRef
+      .current(controller.signal)
+      .then((data) => {
+        if (!live) return;
+        setState({ data, dataKey: key, error: null, loading: false });
+      })
+      .catch((reason: unknown) => {
+        if (!live || controller.signal.aborted) return;
+        setState((prev) => ({
+          ...prev,
+          error: reason instanceof Error ? reason.message : String(reason),
+          errorStatus: reason instanceof Error && "status" in reason ? Number(reason.status) : undefined,
+          loading: false,
+        }));
+      });
+    return () => {
+      live = false;
+      controller.abort();
+    };
+  }, [key, attempt, enabled]);
+
+  return {
+    ...state,
+    key,
+    stale: state.data !== null && state.dataKey !== key && enabled,
+    reload: () => setAttempt((value) => value + 1),
+  };
+}

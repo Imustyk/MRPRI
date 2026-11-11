@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useRequest } from "../hooks";
+import { Link } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -13,6 +14,8 @@ import {
 } from "recharts";
 import { Trans, useTranslation } from "react-i18next";
 import {
+  dateLabel,
+  getDataset,
   getJson,
   int,
   mdl,
@@ -23,101 +26,65 @@ import {
   val,
   type Health,
   type Meta,
-  type MongoStatus,
   type RiskLevel,
   type Stats,
 } from "../api";
-import { Empty, ErrorNote, PageHead, Skeleton, Stat, TableWrap } from "../ui";
+import { Empty, ErrorNote, PageHead, Pill, Skeleton, Stat, TableWrap } from "../ui";
 import { tr } from "../i18n/backendMap";
 
 const BAND_ORDER: RiskLevel[] = ["critical", "high", "medium", "low", "unscored"];
 const BAND_FILL: Record<string, string> = {
-  critical: "#b4232c",
-  high: "#c2661f",
-  medium: "#c9a02e",
-  low: "#2a6b4a",
-  unscored: "#c3c8cf",
+  critical: "var(--band-critical)",
+  high: "var(--band-high)",
+  medium: "var(--band-medium)",
+  low: "var(--band-low)",
+  unscored: "var(--band-unscored)",
 };
 
 export default function Overview() {
   const { t } = useTranslation();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [meta, setMeta] = useState<Meta | null>(null);
-  const [mongo, setMongo] = useState<MongoStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const load = () => {
-    setError(null);
-    setLoading(true);
-    // stats is the only blocking request; the panels below fill in after it.
-    getJson<Stats>("/api/stats")
-      .then((d) => {
-        setStats(d);
-        setLoading(false);
-      })
-      .catch((e: Error) => {
-        setError(e.message);
-        setLoading(false);
-      });
-    getJson<Meta>("/api/meta").then(setMeta).catch(() => undefined);
-    getJson<Health>("/api/health")
-      .then((h) => setMongo(h.mongodb))
-      .catch(() => undefined);
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  if (error && !stats) {
-    return (
-      <div>
-        <div className="kicker">{t("overview.err_kicker")}</div>
-        <h1>{t("overview.err_title")}</h1>
-        <p className="lede">
-          <Trans i18nKey="overview.err_lede" components={{ code: <code /> }} />
-        </p>
-        <pre className="cmd">./scripts/run_pipeline.sh</pre>
-        <div style={{ marginTop: 16 }}>
-          <ErrorNote error={error} onRetry={load} />
-        </div>
-      </div>
-    );
-  }
-
-  if (!stats) {
-    return (
-      <div>
-        <div className="kicker">{t("overview.load_kicker")}</div>
-        <h1>{t("overview.load_title")}</h1>
-        <Skeleton rows={4} height={44} />
-        <Skeleton rows={5} />
-      </div>
-    );
-  }
+  const statsReq = useRequest("stats", signal => getJson<Stats>("/api/stats", signal));
+  const metaReq = useRequest("meta", signal => getJson<Meta>("/api/meta", signal));
+  const healthReq = useRequest("health", signal => getJson<Health>("/api/health", signal));
+  const datasetReq = useRequest("dataset", signal => getDataset(true, signal));
+  const stats = statsReq.error ? null : statsReq.data;
+  const meta = metaReq.error ? null : metaReq.data;
+  const mongo = healthReq.error ? null : healthReq.data?.mongodb;
+  const dataset = datasetReq.error ? null : datasetReq.data;
+  const datasetErr = datasetReq.error;
+  const error = statsReq.error;
+  const load = statsReq.reload;
+  const header = <PageHead title={t("product.homeTitle")} lede={t("product.homeLede")} actions={<>
+    <Link className="action-primary" to="/tenders">{t("product.browse")}</Link>
+    <Link className="action-secondary" to="/models">{t("product.results")}</Link>
+    <Link className="action-secondary" to="/method">{t("product.how")}</Link>
+  </>} />;
+  if (!stats) return <div className="overview-page">
+    {header}
+    {error ? <ErrorNote error={error} onRetry={load} /> : <Skeleton rows={5} height={44} />}
+  </div>;
 
   const m = stats.metrics;
   const bandData = BAND_ORDER.filter((b) => stats.level_counts[b]).map((b) => ({
     level: b,
     n: stats.level_counts[b],
   }));
-  const months = stats.monthly.map((r) => ({ ...r, label: monthLabel(r.month) }));
+  const cohorts = stats.snapshot_cohorts;
+  const months = (cohorts?.monthly ?? []).map((r) => ({ ...r, label: monthLabel(r.month) }));
   const hasNoPublishedBids = stats.n_with_bid_data === 0;
-  // The detection run scored a sample, not the whole corpus. Every share that
-  // describes model behaviour must use scored records as its denominator,
-  // otherwise "2% high risk" silently means 2% of records no model ever saw.
+  // Shares of model outcomes use the scored population as their denominator.
   const scoredRows = bandData.filter((b) => b.level !== "unscored").reduce((a, b) => a + b.n, 0);
   const unscoredRows = stats.level_counts.unscored ?? 0;
 
   return (
-    <div>
-      <PageHead
-        kicker={t("overview.kicker")}
-        title={t("overview.title")}
-        lede={t("overview.lede", { n: stats.n_tenders.toLocaleString() })}
-      />
+    <div className="overview-page">
+      {header}
+      {dataset && <p className="microcopy">
+        {t("product.source")} · {t(dataset.origin.kind === "real-ocds" ? "overview.prov_real" : dataset.origin.synthetic_in_use ? "overview.prov_synthetic" : "overview.prov_unknown")} · {dateLabel(dataset.manifest.exported_at)}
+      </p>}
 
+      {metaReq.error && <ErrorNote error={metaReq.error} onRetry={metaReq.reload} />}
+      {healthReq.error && <ErrorNote error={healthReq.error} onRetry={healthReq.reload} />}
       {unscoredRows > 0 && (
         <div className="callout warn">
           <Trans
@@ -149,11 +116,7 @@ export default function Overview() {
           }
           tone={stats.high_risk_count > 0 ? "high" : undefined}
         />
-        <Stat
-          label={t("overview.stat_value")}
-          value={mdl(stats.high_risk_value_mdl)}
-          note={t("overview.stat_value_note")}
-        />
+        <Stat label={t("product.corpus")} value={int(stats.n_tenders)} />
         <Stat
           label={t("overview.stat_single")}
           value={stats.single_bidder_share === null ? "—" : pct(stats.single_bidder_share)}
@@ -165,6 +128,91 @@ export default function Overview() {
         />
       </div>
 
+      <ul className="legend" aria-label={t("overview.bands_h")}>
+        {BAND_ORDER.map(level => <li key={level}>
+          <span className="swatch" style={{ background: BAND_FILL[level] }} />
+          <Link to={`/tenders?level=${level}`}>{t(`risk.${level}`)} · {int(stats.level_counts[level] ?? 0)}</Link>
+        </li>)}
+      </ul>
+
+      {/* Provenance: where the rows came from and how the run is traceable. */}
+      <details className="card provenance-disclosure" open={datasetErr !== null || dataset?.origin.synthetic_in_use === true || dataset?.verification.hash_matches_manifest === false}>
+        <summary>{t("overview.prov_h")}</summary>
+        <p className="muted">{t("overview.prov_p")}</p>
+        {datasetErr ? (
+          <ErrorNote error={datasetErr} onRetry={datasetReq.reload} />
+        ) : !dataset ? (
+          <Skeleton rows={3} />
+        ) : (
+          <>
+            <div className="flags">
+              <Pill
+                tone={
+                  dataset.origin.synthetic_in_use
+                    ? "risk"
+                    : dataset.origin.kind === "real-ocds"
+                      ? "ok"
+                      : dataset.origin.kind === "missing"
+                        ? "warn"
+                        : "muted"
+                }
+              >
+                {dataset.origin.synthetic_in_use
+                  ? t("overview.prov_synthetic")
+                  : dataset.origin.kind === "real-ocds"
+                    ? t("overview.prov_real")
+                    : dataset.origin.kind === "missing"
+                      ? t("overview.prov_missing")
+                      : t("overview.prov_unknown")}
+              </Pill>
+            </div>
+            <dl className="kv">
+              <dt>{t("overview.prov_model")}</dt>
+              <dd>
+                <strong className="mono">{dataset.model.version}</strong>{" "}
+                <span className="muted">{tr(dataset.model.label)}</span>
+              </dd>
+              <dt>{t("overview.prov_scoring")}</dt>
+              <dd className="mono">
+                {dataset.scoring.run_id ?? "—"} · {dateLabel(dataset.scoring.generated_at)}
+              </dd>
+              <dt>{t("overview.prov_corpus")}</dt>
+              <dd className="mono">
+                {t("overview.prov_corpus_line", {
+                  records: int(dataset.corpus.records),
+                  scored: int(dataset.corpus.scored),
+                  unscored: int(dataset.corpus.unscored),
+                })}
+              </dd>
+              <dt>{t("overview.prov_years")}</dt>
+              <dd className="mono">
+                {dataset.corpus.year_from ?? "—"}–{dataset.corpus.year_to ?? "—"}
+              </dd>
+              <dt>{t("overview.prov_manifest")}</dt>
+              <dd className="mono">
+                {t("overview.prov_manifest_line", {
+                  date: dateLabel(dataset.manifest.exported_at),
+                  n: int(dataset.manifest.n_documents),
+                })}
+                {dataset.verification.hash_matches_manifest === true ? (
+                  <span className="muted"> · {t("overview.prov_hash_ok")}</span>
+                ) : dataset.verification.hash_matches_manifest === false ? (
+                  <span className="muted">
+                    {" "}
+                    ·{" "}
+                    {t("overview.prov_hash_mismatch", {
+                      n: int(dataset.verification.mismatches.length),
+                    })}
+                  </span>
+                ) : (
+                  <span className="muted"> · {t("overview.prov_hash_pending")}</span>
+                )}
+              </dd>
+            </dl>
+          </>
+        )}
+      </details>
+
       <div className="grid row2">
         <div className="card">
           <h2>{t("overview.monthly_h")}</h2>
@@ -174,40 +222,55 @@ export default function Overview() {
           {months.length === 0 ? (
             <Empty title={t("overview.monthly_empty")} hint={t("overview.monthly_empty_hint")} />
           ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={months} margin={{ top: 6, right: 8, bottom: 4, left: -18 }}>
-                <CartesianGrid stroke="#eee6d8" vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 11, fill: "#5c6673" }}
-                  tickLine={false}
-                  axisLine={{ stroke: "#d9d0c0" }}
-                  minTickGap={24}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fontSize: 11, fill: "#5c6673" }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={44}
-                />
-                <Tooltip
-                  formatter={(v: number | string) => [
-                    num1(Number(v)),
-                    t("overview.monthly_mean"),
-                  ]}
-                  labelFormatter={(l) => String(l)}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="avg_risk"
-                  stroke="#1e3a5f"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <>
+              <div className="cohort-summary">
+                <span>{t("overview.monthly_period", { from: months[0].label, to: months[months.length - 1].label })}</span>
+                <span>{t("overview.monthly_coverage", { dated: int(cohorts!.n_dated), total: int(cohorts!.n_total), scored: int(cohorts!.n_scored) })}</span>
+              </div>
+              <h3 className="cohort-chart-title">{t("overview.monthly_mean")}</h3>
+              {months.some((month) => month.n_scored > 0) ? (
+                <div role="img" aria-label={t("overview.monthly_line_a11y")}>
+                  <ResponsiveContainer width="100%" height={230}>
+                    <LineChart data={months} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+                      <CartesianGrid stroke="var(--line-soft)" vertical={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} minTickGap={30} />
+                      <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} width={40} />
+                      <Tooltip formatter={(value: number | string) => [num1(Number(value)), t("overview.monthly_mean")]} labelFormatter={(label) => String(label)} />
+                      <Line type="linear" dataKey="avg_risk" stroke="var(--navy-soft)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : <Empty title={t("overview.monthly_no_scores")} />}
+              <h3 className="cohort-chart-title">{t("overview.monthly_volume")}</h3>
+              <ul className="legend">
+                <li><span className="cohort-dot scored" />{t("overview.monthly_scored")}</li>
+                <li><span className="cohort-dot unscored" />{t("overview.monthly_unscored")}</li>
+              </ul>
+              <div role="img" aria-label={t("overview.monthly_bar_a11y")}>
+                <ResponsiveContainer width="100%" height={150}>
+                  <BarChart data={months} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
+                    <CartesianGrid stroke="var(--line-soft)" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} minTickGap={30} />
+                    <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} width={54} allowDecimals={false} />
+                    <Tooltip formatter={(value: number | string, name: string) => [int(Number(value)), t(name === "n_scored" ? "overview.monthly_scored" : "overview.monthly_unscored")]} />
+                    <Bar dataKey="n_scored" stackId="coverage" fill="var(--navy-soft)" isAnimationActive={false} />
+                    <Bar dataKey="n_unscored" stackId="coverage" fill="var(--chart-neutral)" isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="cohort-source">{t("overview.monthly_source")}</p>
+              <p className="cohort-source">{t("overview.monthly_excluded", { missing: int(cohorts!.n_missing_date), invalid: int(cohorts!.n_invalid_date) })}</p>
+              <details className="cohort-values">
+                <summary>{t("overview.monthly_table")}</summary>
+                <TableWrap>
+                  <table>
+                    <caption className="visually-hidden">{t("overview.monthly_h")}</caption>
+                    <thead><tr><th scope="col">{t("overview.monthly_month")}</th><th scope="col">{t("overview.monthly_volume")}</th><th scope="col">{t("overview.monthly_scored")}</th><th scope="col">{t("overview.monthly_mean")}</th></tr></thead>
+                    <tbody>{months.map((month) => <tr key={month.month}><th scope="row">{month.label}</th><td>{int(month.n)}</td><td>{int(month.n_scored)}</td><td>{month.avg_risk === null ? "—" : num1(month.avg_risk)}</td></tr>)}</tbody>
+                  </table>
+                </TableWrap>
+              </details>
+            </>
           )}
         </div>
         <div className="card">
@@ -217,20 +280,21 @@ export default function Overview() {
             <Empty title={t("overview.bands_empty")} />
           ) : (
             <ResponsiveContainer width="100%" height={244}>
-              <BarChart data={bandData} margin={{ top: 6, right: 8, bottom: 4, left: -18 }}>
-                <CartesianGrid stroke="#eee6d8" vertical={false} />
+              <BarChart data={bandData} margin={{ top: 6, right: 8, bottom: 4, left: 0 }}>
+                <CartesianGrid stroke="var(--line-soft)" vertical={false} />
                 <XAxis
                   dataKey="level"
-                  tick={{ fontSize: 11, fill: "#5c6673" }}
+                  tick={{ fontSize: 11, fill: "var(--muted)" }}
                   tickLine={false}
-                  axisLine={{ stroke: "#d9d0c0" }}
+                  axisLine={{ stroke: "var(--line)" }}
+                  minTickGap={12}
                   tickFormatter={(v: string) => t(`risk.${v}`)}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: "#5c6673" }}
+                  tick={{ fontSize: 11, fill: "var(--muted)" }}
                   tickLine={false}
                   axisLine={false}
-                  width={44}
+                  width={60}
                 />
                 <Tooltip
                   formatter={(v: number | string) => [num(Number(v)), t("overview.bands_procedures")]}
@@ -246,14 +310,6 @@ export default function Overview() {
               </BarChart>
             </ResponsiveContainer>
           )}
-          <ul className="legend">
-            {bandData.map((d) => (
-              <li key={d.level}>
-                <span className="swatch" style={{ background: BAND_FILL[d.level] }} />
-                {t(`risk.${d.level}`)} · {d.n}
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
 
@@ -304,7 +360,7 @@ export default function Overview() {
           )}
 
           <h3 style={{ marginTop: 18 }}>{t("overview.source_h")}</h3>
-          {loading ? (
+          {healthReq.loading ? (
             <Skeleton rows={3} />
           ) : mongo?.connected ? (
             <dl className="kv">
@@ -320,7 +376,7 @@ export default function Overview() {
                   : t("overview.kv_tx_no")}
               </dd>
               <dt>{t("overview.kv_scored")}</dt>
-              <dd className="mono">{int(meta?.scored ?? 0)}</dd>
+              <dd className="mono">{int(meta?.scored)}</dd>
             </dl>
           ) : (
             <p className="muted">

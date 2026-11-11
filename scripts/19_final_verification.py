@@ -21,6 +21,12 @@ exits non-zero on any mismatch:
   5. bias audit anchors     - high+ and critical shares, smallest/largest buyer
                               quintile disparity ratios
   6. threshold economics    - votes>=3 cost at c_miss=10/50/200 vs flag-nothing
+  7. iterative-cycle numbers- scripts/20 artefacts vs the quoted cycle
+                              constants (consensus, AUC, deltas, jaccard)
+  8. case registry (MTA-0016) - the registry is re-validated, re-matched and
+                              re-labelled from source data and compared with
+                              the stored scripts/38 and scripts/39 artefacts;
+                              any drift fails here
 
 Usage:
     .venv/bin/python scripts/19_final_verification.py
@@ -28,6 +34,7 @@ Usage:
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
 import time
@@ -50,6 +57,17 @@ from src.mtender.features import FEATURE_COLUMNS  # noqa: E402
 
 TOL = 1e-6
 MISMATCHES: list[str] = []
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_script(name: str):
+    path = ROOT / "scripts" / name
+    spec = importlib.util.spec_from_file_location(name.replace(".py", ""), path)
+    module = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(module)
+    return module
 
 
 def check(name: str, got: float, expected: float, tol: float = TOL) -> None:
@@ -226,6 +244,148 @@ def main() -> int:
           variants["v0_baseline"]["stop_criteria_passed"], 3)
     check("v2 stop criteria passed", variants["v2_mean_rank"]["stop_criteria_passed"], 4)
 
+    print("== 8. case registry re-derived (MTA-0016/0017) ==")
+    # The registry is re-validated, re-matched and re-labelled from the CSV
+    # and the corpus, and every headline count is compared with the stored
+    # scripts/38, 39 and 41 artefacts: a report that drifts from its
+    # source data fails here.
+    s38 = _load_script("38_case_registry_match.py")
+    s39 = _load_script("39_case_registry_check.py")
+    s41 = _load_script("41_case_registry_ingest.py")
+    registry_csv = ROOT / "data" / "external" / "case_registry.csv"
+    raw = pd.read_csv(registry_csv, dtype="string", keep_default_na=False)
+    reg, reg_val = s38.validate_registry(raw)
+    reg_corpus = s38.load_corpus(DATA_FEATURES / "features.csv")
+    reg_cases, _reg_proc, reg_summary = s38.match_cases(reg, reg_corpus)
+
+    match_artefact = json.loads(
+        (RESULTS / "methodology" / "case_registry_match.json")
+        .read_text(encoding="utf-8"))
+    check("case registry rows", reg_val["n_rows"],
+          match_artefact["validation"]["n_rows"])
+    check("case registry n_valid", reg_val["n_valid"],
+          match_artefact["validation"]["n_valid"])
+    check("case registry n_rejected", reg_val["n_rejected"],
+          match_artefact["validation"]["n_rejected"])
+    check("case registry n_matched", reg_summary["n_matched"],
+          match_artefact["matching"]["n_matched"])
+    check("case registry label-grade cases",
+          reg_summary["n_matched_label_grade"],
+          match_artefact["matching"]["n_matched_label_grade"])
+    check("case registry fuzzy candidates", reg_summary["n_fuzzy_candidates"],
+          match_artefact["matching"]["n_fuzzy_candidates"])
+    # MTA-0017: the link_basis breakdown and the unmatched reasons must
+    # reproduce as well, and every verified mark is counted.
+    if reg_summary["by_link_basis"] != match_artefact["matching"].get(
+            "by_link_basis"):
+        MISMATCHES.append(
+            "case registry by_link_basis drifted: "
+            f"{reg_summary['by_link_basis']} != "
+            f"{match_artefact['matching'].get('by_link_basis')}")
+    if reg_summary["n_unmatched_by_reason"] != match_artefact[
+            "matching"].get("n_unmatched_by_reason"):
+        MISMATCHES.append(
+            "case registry unmatched-by-reason drifted: "
+            f"{reg_summary['n_unmatched_by_reason']} != "
+            f"{match_artefact['matching'].get('n_unmatched_by_reason')}")
+    check("case registry verified_by_human",
+          reg_summary["n_verified_by_human"],
+          match_artefact["matching"].get("n_verified_by_human", 0))
+
+    check_artefact = json.loads(
+        (RESULTS / "methodology" / "case_registry_check.json")
+        .read_text(encoding="utf-8"))
+    reg_frame, reg_info = s39.build_label_population(reg_cases, reg_corpus)
+    check("case check label cases used", reg_info.get("n_label_cases_used"),
+          check_artefact["label"].get("n_label_cases_used"))
+    if reg_frame is None:
+        if check_artefact.get("status") != "no_label":
+            MISMATCHES.append("case check: re-derived empty label but the "
+                              "artefact is not status=no_label")
+        print("  label is empty on both sides (registry template) - ok")
+    else:
+        check("case check positives", reg_info["n_positives"],
+              check_artefact["label"]["n_positives"])
+        check("case check population", reg_info["n_population"],
+              check_artefact["label"]["n_population"])
+
+    # MTA-0017 second version: only verified_by_human=true records.
+    reg_frame_v, reg_info_v = s39.build_label_population(
+        reg_cases, reg_corpus, verified_only=True)
+    verified_artefact = check_artefact.get("verified_only")
+    if not isinstance(verified_artefact, dict) or "status" not in verified_artefact:
+        MISMATCHES.append("case check artefact has no verified_only block - "
+                          "re-run scripts/39 (MTA-0017)")
+    elif reg_frame_v is None:
+        if verified_artefact.get("status") != "no_label":
+            MISMATCHES.append("case check: re-derived empty verified label "
+                              "but the artefact is not status=no_label")
+    else:
+        check("case check verified positives", reg_info_v["n_positives"],
+              verified_artefact["label"]["n_positives"])
+        check("case check verified population", reg_info_v["n_population"],
+              verified_artefact["label"]["n_population"])
+
+    # MTA-0017 ingest: sources/episodes re-derived from the CSVs against
+    # the scripts/41 artefact (when 41 has been run), plus the unmatched
+    # table's own invariants.
+    ingest_path = RESULTS / "methodology" / "case_registry_ingest.json"
+    ingest_artefact = None
+    episodes_count = None
+    if ingest_path.exists():
+        ingest_artefact = json.loads(ingest_path.read_text(encoding="utf-8"))
+        sources_csv = ROOT / "data" / "external" / "case_sources.csv"
+        episodes_csv = ROOT / "data" / "external" / "case_episodes_raw.csv"
+        srcs, _src_val = s41.load_sources(sources_csv)
+        eps, ep_val = s41.load_episodes(episodes_csv, srcs)
+        check("ingest episode rows", ep_val["n_rows"],
+              ingest_artefact["validation"]["episodes"]["n_rows"])
+        check("ingest episode accepted", ep_val["n_valid"],
+              ingest_artefact["validation"]["episodes"]["n_valid"])
+        check("ingest episode rejected", ep_val["n_rejected"],
+              ingest_artefact["validation"]["episodes"]["n_rejected"])
+        candidates, _by_id = s41.build_candidates(eps, srcs)
+        derived: dict[str, int] = {}
+        for cand in candidates:
+            derived[cand["link_basis"]] = derived.get(cand["link_basis"], 0) + 1
+        if derived != ingest_artefact.get("derived_by_link_basis"):
+            MISMATCHES.append(
+                "ingest link_basis derivation drifted: "
+                f"{derived} != {ingest_artefact.get('derived_by_link_basis')}")
+        episodes_count = ep_val["n_rows"]
+        print(f"  ingest: {ep_val['n_rows']} episodes "
+              f"({ep_val['n_valid']} accepted, {ep_val['n_rejected']} "
+              "rejected), link_basis re-derived - ok")
+    else:
+        print("  case_registry_ingest.json absent (41 not run) - "
+              "ingest cross-check skipped")
+
+    unmatched_csv = ROOT / "data" / "external" / "case_unmatched.csv"
+    unmatched_rows = 0
+    if unmatched_csv.exists():
+        un_df = pd.read_csv(unmatched_csv, dtype="string", keep_default_na=False)
+        unmatched_rows = int(len(un_df))
+        if unmatched_rows:
+            bad_reasons = (set(un_df["reason"].astype(str))
+                           - set(s38.UNMATCHED_REASONS))
+            if bad_reasons:
+                MISMATCHES.append("case_unmatched reasons outside the enum: "
+                                  f"{sorted(bad_reasons)}")
+            if un_df["episode_id"].astype(str).str.strip().eq("").any():
+                MISMATCHES.append("case_unmatched has empty episode_id")
+            dups = un_df.loc[un_df["episode_id"].duplicated(),
+                             "episode_id"].astype(str).tolist()
+            if dups:
+                MISMATCHES.append(f"case_unmatched duplicate episode_id: {dups}")
+            both = (set(un_df["episode_id"].astype(str))
+                    & set(reg["case_id"].astype(str)))
+            if both:
+                MISMATCHES.append(
+                    "episodes present in BOTH registry and unmatched: "
+                    f"{sorted(both)}")
+            print(f"  unmatched table: {unmatched_rows} rows, reasons inside "
+                  "the enum - ok")
+
     summary = {
         "baseline": {"vote_distribution": dist, "bands": bands},
         "external_headline": {
@@ -247,6 +407,20 @@ def main() -> int:
             "consensus_mean": round(float(runs["n_consensus_ge3"].mean()), 1),
             "jaccard_mean": round(float(
                 runs["jaccard_consensus_vs_seed42"].mean()), 4),
+        },
+        "case_registry": {
+            "rows": reg_val["n_rows"],
+            "n_valid": reg_val["n_valid"],
+            "n_matched": reg_summary["n_matched"],
+            "label_grade_cases": reg_summary["n_matched_label_grade"],
+            "by_link_basis": reg_summary["by_link_basis"],
+            "unmatched_by_reason": reg_summary["n_unmatched_by_reason"],
+            "verified_by_human": reg_summary["n_verified_by_human"],
+            "episodes_ingested": episodes_count,
+            "unmatched_rows": unmatched_rows,
+            "check_status": check_artefact.get("status"),
+            "check_status_verified_only": (check_artefact.get("verified_only")
+                                           or {}).get("status"),
         },
         "mismatches": MISMATCHES,
         "seconds": round(time.time() - t0, 1),
