@@ -388,8 +388,8 @@ tr.clickable {
 }
 
 tr.clickable:hover,
-tr.clickable:focus-visible {
-  background: #f8f1e3;
+tr.clickable:focus-within {
+  background: var(--row-selection);
 }
 
 .table-wrap a {
@@ -508,7 +508,7 @@ select:hover {
 }
 
 button {
-  background: var(--navy);
+  background: var(--button-fill, var(--navy));
   color: #fff;
   border: 0;
   border-radius: 8px;
@@ -518,7 +518,7 @@ button {
 }
 
 button:hover:not(:disabled) {
-  background: #16304f;
+  background: var(--button-hover, #16304f);
 }
 
 button:disabled {
@@ -906,12 +906,12 @@ textarea:focus-visible {
 }
 
 button.danger {
-  background: var(--red);
+  background: var(--danger-fill, var(--red));
   color: #fff;
 }
 
 button.danger:hover:not(:disabled) {
-  background: #9c1c24;
+  background: var(--danger-hover, #9c1c24);
 }
 
 button.ghost.danger {
@@ -1506,8 +1506,6 @@ button.small,
 
 @media (min-width: 1280px) {
   .net-grid {
-    /* 1.4 rather than 1.5: the pairs card needs ~320px for its four columns at
-       1280px, and the matrix gives that up without changing its cell pitch. */
     grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
     align-items: start;
   }
@@ -1676,8 +1674,6 @@ table.sortable td {
 
 table.sortable th {
   white-space: normal;
-  /* Headers sit a step below the cells: the widest header word
-     ("процентиль", "percentile") is what a narrow card runs out of first. */
   font-size: 12px;
 }
 
@@ -1729,7 +1725,7 @@ table.sortable th[aria-sort]:not([aria-sort="none"]) {
 }
 
 tr.clickable[aria-current="true"] {
-  background: #f8f1e3;
+  background: var(--row-selection);
   box-shadow: inset 3px 0 0 var(--navy);
 }
 

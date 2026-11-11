@@ -1,6 +1,5 @@
 import { useRef, useState, type ButtonHTMLAttributes, type FormHTMLAttributes } from "react";
 import { useTranslation } from "react-i18next";
-/** A synchronous lock closes the interval before React renders disabled. */
 export function useAction() {
   const lock = useRef(false);
   const [pending, setPending] = useState(false);

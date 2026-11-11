@@ -232,7 +232,6 @@ def create_case(
 ) -> dict[str, Any]:
     ocid_list = clean_ocids(ocids)
     with transaction() as con:
-        # Allocate the next reference under the same write lock as the insert.
         con.execute("BEGIN IMMEDIATE")
         ref = _next_case_ref(con)
         cur = con.execute(

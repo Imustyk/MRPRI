@@ -52,7 +52,7 @@ const raci = {
     DE: { name: "Domain Expert", short: "Expert", basis: "Decides whether a flagged pattern is meaningful in Moldovan procurement." },
     TR: { name: "Thesis Committee", short: "Committee", basis: "Examines the analysis and its claims at review and defence." },
     DP: { name: "Data Provider", short: "Provider", basis: "MTender / MoF / AAP. External — C or I only. Publishes the data being analysed." },
-    AI: { name: "AI Coding Agent", short: "Cursor", basis: "Assisted-by role in the repo; never accountable." },
+    AI: { name: "AI Coding Agent", short: "Tooling", basis: "Assisted-by role in the repo; never accountable." },
   },
   phase: {
     A: "Corpus integrity",

@@ -2,7 +2,6 @@ import { ApiContractError } from "../contracts";
 import { getJson, getModelAnalysis, getTenderExplanation, type Tender } from "../api";
 import { useRequest, type RequestState } from "../hooks";
 function current<T>(request: RequestState<T>) { return !request.error && !request.stale ? request.data : null; }
-/** Each resource owns its cancellation, error and retry; old selections are hidden. */
 export function useProcedureData(id: string) {
   const row = useRequest(id, signal => getJson<Tender>(`/api/tenders/${encodeURIComponent(id)}`, signal), Boolean(id));
   const model = useRequest(id, signal => getModelAnalysis(id, signal), Boolean(id));

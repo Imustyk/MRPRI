@@ -15,7 +15,7 @@ Every task corresponds to real work in the repository - the artefact column name
 | `DE` | Domain Expert (procurement / anti-corruption) | Decides whether a flagged pattern is meaningful in Moldovan procurement, and reviews the case studies. Assumed. |
 | `TR` | Thesis Committee / Reviewer | Examines the analysis and its claims. Assumed. |
 | `DP` | Data Provider (MTender / MoF / AAP) | **External - C/I only.** Publishes the data being analysed. EXTERNAL - may only be C or I. |
-| `AI` | AI Coding Agent (Cursor) | Present in the repo as .cursor/settings.json. Assisted-by role; never accountable. |
+| `AI` | AI Coding Assistance | Assisted-by role under the author’s review. No accountability assignments. |
 
 ## 2. Matrix
 
@@ -72,7 +72,7 @@ Every task corresponds to real work in the repository - the artefact column name
 | Domain Expert (procurement / anti-corruption) | 0 | 0 | 18 | 12 | 30 |
 | Thesis Committee / Reviewer | 0 | 0 | 0 | 10 | 10 |
 | Data Provider (MTender / MoF / AAP) | 0 | 0 | 3 | 0 | 3 |
-| AI Coding Agent (Cursor) | 0 | 0 | 2 | 0 | 2 |
+| AI Coding Assistance | 0 | 0 | 2 | 0 | 2 |
 | **35 tasks** | **35** | **35** | **35** | **34** | |
 
 35 accountable assignments for 35 tasks - exactly one `A` per task.
@@ -112,7 +112,7 @@ Everything below is an assumption. None of it is stated in the repository.
 | 3 | A **Domain Expert** reviews flagged patterns and case studies | The project's own documents call for expert review in place of ground truth (`PROJECT_OVERVIEW.md` §7) | The 18 consultations do not happen and the anomalies go unvalidated - see risk 2 |
 | 4 | A **Thesis Committee** receives the thesis and examines at defence | Standard for a master's thesis | Drop column `TR` |
 | 5 | **MTender / MoF / AAP** are the data providers, external to the analysis | Real: `public.mtender.gov.md`, MoF monthly XLSX, the AAP blacklist | Documented, not assumed |
-| 6 | An **AI coding agent (Cursor)** assists under the author's review | Real: `.cursor/settings.json` in the repo | Drop column `AI`; no `A` depends on it |
+| 6 | **AI coding assistance** is reviewed by the author | Optional tooling support | Drop column `AI`; no `A` depends on it |
 | 7 | Expert review happens at **phase boundaries**, not continuously | No review cadence is recorded anywhere | If continuous, `SS` and `DE` load rises without bound |
 | 8 | The defence is the terminal task | `thesis/STATUS.md` ends at the full-history recompute | A publication or demo after defence adds tasks and an owner |
 

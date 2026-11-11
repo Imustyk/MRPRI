@@ -2,7 +2,6 @@ import {fixtureApi, graph} from "./completion-fixtures";
 import { expect, test } from "@playwright/test";
 import { SHOTS, expectNoDocumentOverflow, waitForRouteReady } from "./helpers";
 
-// Isolated mocked API: these tests verify UI interactions, not live scoring correctness.
 test.beforeEach(async ({page})=>{
  await fixtureApi(page);
  const links=Array.from({length:5},(_,i)=>({source:"b1",target:`s${i+1}`,weight:4+i,value:100+i,max_risk:80-i*10}));

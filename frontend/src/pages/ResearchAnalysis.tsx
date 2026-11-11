@@ -11,7 +11,6 @@ export default function ResearchAnalysis({ mode = "models" }: { mode?: "models" 
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const id = params.get("tender") ?? "";
-  // Automatic defaults replace; explicit choices are browser history entries.
   const select = useCallback(
     (value: string, replace = false) => {
       setParams(

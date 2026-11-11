@@ -160,8 +160,6 @@ def _csv_scores() -> dict[str, dict]:
 
     out: dict[str, dict] = {}
     with path.open(encoding="utf-8", newline="") as fh:
-        # Honor CSV quoting: quoted party names/titles can contain commas.
-        # Quotes inside an unquoted field remain literal with the standard reader.
         for row in _csv.DictReader(fh):
             if None in row or any(value is None for value in row.values()):
                 raise ValueError("Malformed score CSV: field count differs from header")

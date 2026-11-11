@@ -228,7 +228,6 @@ export function val(n: number | null | undefined, digits = 2): string {
   });
 }
 
-/** Keep cancellation distinct; localize network failures without inventing a result. */
 async function transport(url: string, options?: RequestInit): Promise<Response> {
   try { return await fetch(url, options); }
   catch (reason) {

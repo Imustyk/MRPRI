@@ -2,7 +2,6 @@ import {fixtureApi, id as fixtureId} from "./completion-fixtures";
 import { expect, test } from "@playwright/test";
 import { SHOTS, waitForRouteReady } from "./helpers";
 
-// Isolated mocked API: these tests verify UI interactions, not live scoring correctness.
 test.beforeEach(async ({page})=>fixtureApi(page));
 
 /**

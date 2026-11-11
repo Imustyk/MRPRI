@@ -62,7 +62,7 @@ export default function TenderDetail() {
     <section id="case-models">
       {data.analysisError && <ErrorNote error={data.analysisError} onRetry={data.retryAnalysis} />}
       {!data.analysis && !data.analysisError && <Loading label={t("analysis.loading_models")} />}
-      {data.analysis && <ModelWorkbench tender={tender} analysis={data.analysis} />}
+      {data.analysis && <ModelWorkbench tender={tender} analysis={data.analysis} showEmpty={false} />}
     </section>
     <ProcedureActions key={id} tender={tender} />
     <details id="case-evidence" className="surface evidence-panel research-disclosure">

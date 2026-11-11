@@ -86,7 +86,7 @@ export default function Workspace() {
   };
 
   return (
-    <Revision.Provider value={revision}><div>
+    <Revision.Provider value={revision}><div className="workspace-page">
       <PageHead
         kicker={t("workspace.kicker")}
         title={t("workspace.title")}
@@ -309,6 +309,7 @@ function CasesTab({
                       <td className="mono">
                         <button
                           className="ghost small"
+                          aria-expanded={openId === r.id}
                           onClick={() => setOpenId(openId === r.id ? null : r.id)}
                         >
                           {r.ref}
@@ -325,7 +326,7 @@ function CasesTab({
                       <td className="mono">{n}</td>
                       <td className="muted mono">{when(r.updated_at)}</td>
                       <td>
-                        <span style={{ display: "flex", gap: 6 }}>
+                        <div className="case-actions">
                           <StatusEditor
                             value={r.status}
                             options={vocab?.case_status ?? []}
@@ -345,7 +346,7 @@ function CasesTab({
                           >
                             {t("common.delete")}
                           </ConfirmButton>
-                        </span>
+                        </div>
                       </td>
                     </tr>
                   );

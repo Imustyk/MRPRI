@@ -40,7 +40,6 @@ const kpis: typeof en = {
   checks_th_detail: "Detaliu",
   whole_corpus: "tot corpusul",
 
-  /* ---- Dovada cercetării și fiabilitate (GET /api/evaluation) ---- */
   evidence_h: "Dovada cercetării și fiabilitate",
   evidence_p: `Ce dovadă independentă există în spatele acestor scoruri — etichete proxy externe, stabilitate la semințe și la zgomot de intrare, derivă a scorurilor și un audit de bias — cu rezultatele negative exact așa cum au fost măsurate. Niciuna nu este o precizare de acuratețe: acest corpus nu are etichete fundamentale de corupție.`,
   ext_h: "Etichete proxy externe",
@@ -83,7 +82,6 @@ const kpis: typeof en = {
   evidence_disclaimer:
     "Un scor de anomalie este un indicator de risc potențial, nu dovadă de corupție. Etichetele externe sunt proxy, iar rangurile sub top-200 sunt sensibile la zgomot. Aceste cifre descriu doar comportamentul pe acest corpus — nu se revendică precizie, recall sau acuratețe.",
 
-  /* ---- Concordanța explicațiilor (GET /api/explainability) ---- */
   xai_h: "Concordanța explicațiilor (SHAP vs LIME)",
   xai_p: "Două metode de atribuire pe același model, comparate așa cum au fost măsurate. Dezacordul este raportat, nu ascuns.",
   xai_na: "Niciun artefact de concordanță pe disc — nimic de raportat, nimic inventat.",

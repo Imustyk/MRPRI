@@ -48,7 +48,7 @@ const raci: typeof en = {
     DE: { name: "Expert de domeniu", short: "Expert", basis: "Decide dacă un model semnalat are sens în achizițiile moldovenești." },
     TR: { name: "Comisia de teză", short: "Comisia", basis: "Examinează analiza și afirmațiile sale la revizuire și apărare." },
     DP: { name: "Furnizor de date", short: "Furnizor", basis: "MTender / MoF / AAP. Extern — doar C sau I. Publică datele analizate." },
-    AI: { name: "Agent de codare AI", short: "Cursor", basis: "Rol de asistat în repo; niciodată responsabil." },
+    AI: { name: "Agent de codare AI", short: "Instrumente", basis: "Rol de asistat în repo; niciodată responsabil." },
   },
   phase: {
     A: "Integritatea corpusului",

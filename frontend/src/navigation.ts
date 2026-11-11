@@ -1,4 +1,3 @@
-/** Only the internal procurement list is a valid return destination. */
 export function safeReturnTo(raw: string | null | undefined): string {
   if (!raw || !raw.startsWith("/tenders") || /[\\\u0000-\u001f]/.test(raw) || raw.length > 4096) return "/tenders";
   try {

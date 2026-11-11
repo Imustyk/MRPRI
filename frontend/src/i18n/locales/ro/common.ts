@@ -1,6 +1,5 @@
 import type en from "../en/common";
 
-/** Română. Regula de plural: one / other. */
 const ro: typeof en = {
   nav: {
     not_found: "Pagina nu a fost găsită",

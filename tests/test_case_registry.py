@@ -440,8 +440,8 @@ def test_buyer_period_only_never_in_label(tmp_path):
          "evidence_level": "A", "match_confidence": "high",
          "verified_by_human": "true"}])
     rec = per_case[0]
-    assert rec["n_procedures_matched"] > 0         # в реестр попадает
-    assert rec["label_grade"] is False             # ...а в метку — нет
+    assert rec["n_procedures_matched"] > 0         # Included in the registry.
+    assert rec["label_grade"] is False             # Excluded from the label set.
     assert summary["n_matched"] == 1
     assert summary["n_matched_label_grade"] == 0
     assert summary["by_link_basis"]["buyer_period_only"]["label_grade"] == 0

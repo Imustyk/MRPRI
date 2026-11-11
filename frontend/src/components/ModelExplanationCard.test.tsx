@@ -113,9 +113,7 @@ describe("ModelWorkbench keyboard navigation", () => {
     render(<ModelWorkbench tender={tender} analysis={analysis([])} />);
     expect(screen.queryByRole("tablist")).toBeNull();
     expect(screen.queryAllByRole("tab")).toHaveLength(0);
-    // The consensus block still renders (its vote denominators are a voting
-    // rule, not the detector list), and nothing indexes past the empty list.
-    expect(screen.getAllByRole("table").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("table")).toBeNull();
   });
 
   it("tolerates a single detector: arrows never wrap into nothing", () => {
@@ -153,14 +151,20 @@ describe("ModelWorkbench keyboard navigation", () => {
     expect(tabs[3].getAttribute("aria-selected")).toBe("true");
   });
 
-  it("renders with a partial detector list (agreement rows beyond the list are skipped)", () => {
-    const partial = [detector(), detector({ key: "isolation_forest", label: "IF" })];
-    const model = analysis(partial);
-    // Simulate a truncated agreement matrix: one row too many.
-    model.agreement = [...model.agreement, []];
-    render(<ModelWorkbench tender={tender} analysis={model} />);
-    expect(screen.getAllByRole("tab")).toHaveLength(2);
-    // Vote table plus agreement table; no crash from the extra matrix row.
-    expect(screen.getAllByRole("table").length).toBeGreaterThanOrEqual(2);
+  it("hides agreement with no comparable decisions", () => {
+    const model = analysis([detector(), detector({ key: "isolation_forest" })]);
+    model.agreement = model.agreement.map(row => row.map(cell => ({ ...cell, n: 0, n_agree: 0, agreement: null })));
+    const { container } = render(<ModelWorkbench tender={tender} analysis={model} />);
+    expect(container.querySelector(".agreement-panel")).toBeNull();
+  });
+
+  it("shows each available pair once and keeps a real zero percent", () => {
+    const model = analysis([detector(), detector({ key: "isolation_forest" }), detector({ key: "local_outlier_factor" })]);
+    model.agreement = model.agreement.map(row => row.map(cell => cell.left === "local_outlier_factor" || cell.right === "local_outlier_factor"
+      ? { ...cell, n: 0, n_agree: 0, agreement: null }
+      : { ...cell, n: 10, n_agree: 0, agreement: 0 }));
+    const { container } = render(<ModelWorkbench tender={tender} analysis={model} />);
+    expect(container.querySelectorAll(".agreement-table tbody tr")).toHaveLength(1);
+    expect(container.querySelector(".agreement-table tbody")?.textContent).toContain("0 / 10");
   });
 });

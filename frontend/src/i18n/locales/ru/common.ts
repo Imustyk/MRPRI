@@ -1,6 +1,5 @@
 import type en from "../en/common";
 
-/** Русский. Формы _one/_few/_many/_other для счётных строк. */
 const ru: typeof en = {
   nav: {
     not_found: "Страница не найдена",

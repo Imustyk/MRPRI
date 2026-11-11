@@ -16,6 +16,5 @@ test("MOCKED | an unscored procedure reports unavailable model scores", async ({
   } }));
   await page.goto(`/tenders/${id}`);
   await expect(page.getByText("Model scores are unavailable for this procurement.")).toBeVisible();
-  await expect(page.locator(".model-vote-table tbody tr")).toHaveCount(4);
-  await expect(page.locator(".model-vote-table tbody tr").first().locator("td").first()).toHaveText("—");
+  await expect(page.locator(".model-vote-table, .model-tabs, .agreement-panel, .score-histogram")).toHaveCount(0);
 });

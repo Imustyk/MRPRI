@@ -82,13 +82,15 @@ export function ModelExplanationCard({ model, context }: { model: DetectorAnalys
   const rawId = useId().replace(/[^a-zA-Z0-9]/g, "");
   const hatchId = `hist-hatch-${rawId}`;
   const flags = histogramFlags(model);
-  const useLog = logCount && !flags.allZero;
+  const hasDistribution = flags.hasBins && !flags.allZero;
+  const useLog = logCount;
   const bars: HistogramBar[] = model.bins.map((bin) => ({
     ...bin,
     label: `${metric(bin.start)} – ${metric(bin.end)}`,
     // log10(1 + count): counts of zero stay at zero instead of −∞.
     display_n: useLog ? Math.log10(1 + bin.n) : bin.n,
   }));
+  const params = Object.entries(model.params).filter(([, value]) => value != null && !Array.isArray(value));
   const selected = flags.selectedIndex === null ? undefined : model.bins.find((bin) => bin.index === flags.selectedIndex);
   // Recharts types a custom shape as (props: unknown) => Element, so the
   // narrow props are read defensively and "nothing to draw" is an empty <g>.
@@ -115,12 +117,12 @@ export function ModelExplanationCard({ model, context }: { model: DetectorAnalys
     <article className="model-explanation surface" data-model={model.key}>
       <header className="section-heading"><div><span className="eyebrow">{t("analysis.model_explanation")}</span><h3>{model.label}</h3></div><Verdict value={model.verdict} /></header>
       <p className="muted">{t(`analysis.models.${model.key}.description`)}</p>
-      <div className="model-metrics">
-        <div><span>{t("analysis.raw_score")}</span><strong>{metric(model.score, 6)}</strong><small><code>{model.field}</code></small></div>
-        <div><span>{t("analysis.score_rank")}</span><strong>{model.score_percentile === null ? "—" : `${metric(model.score_percentile, 1)} / 100`}</strong><small>{t("analysis.rank_definition")}</small></div>
-        <div><span>{t("analysis.reference_size")}</span><strong>{metric(model.n_reference, 0)}</strong><small>{t("analysis.same_run")}</small></div>
-      </div>
-      {flags.hasBins ? <>
+      {(flags.hasScore || model.score_percentile != null || model.n_reference > 0) && <div className="model-metrics">
+        {flags.hasScore && <div><span>{t("analysis.raw_score")}</span><strong>{metric(model.score, 6)}</strong><small><code>{model.field}</code></small></div>}
+        {model.score_percentile != null && <div><span>{t("analysis.score_rank")}</span><strong>{metric(model.score_percentile, 1)} / 100</strong><small>{t("analysis.rank_definition")}</small></div>}
+        {model.n_reference > 0 && <div><span>{t("analysis.reference_size")}</span><strong>{metric(model.n_reference, 0)}</strong><small>{t("analysis.same_run")}</small></div>}
+      </div>}
+      {hasDistribution ? <>
         <div className="chart-heading"><h4>{t("analysis.score_distribution")}</h4><label className="compact-toggle"><input type="checkbox" checked={logCount} onChange={(event) => setLogCount(event.target.checked)} />{t("analysis.log_counts")}</label></div>
         <p className="microcopy">{t("analysis.hist_scope", { n: metric(model.n_reference, 0), missing: metric(model.n_missing_score, 0), run: context.run_id ?? "—" })}</p>
         <div className="score-histogram" role="img" aria-label={t("analysis.hist_a11y", { name: model.label, value: metric(model.score, 6) })}>
@@ -147,65 +149,86 @@ export function ModelExplanationCard({ model, context }: { model: DetectorAnalys
           </ResponsiveContainer>
         </div>
         <ul className="legend">
-          <li><i className="legend-marker selected" />{flags.hasScore ? t("analysis.legend_selected", { v: metric(model.score, 6) }) : t("analysis.selected_interval")}</li>
+          {selected && <li><i className="legend-marker selected" />{t("analysis.legend_selected", { v: metric(model.score, 6) })}</li>}
           {flags.thresholdBin !== undefined && model.threshold && <li><i className="legend-marker threshold" />{t("analysis.legend_threshold", { v: `${model.threshold.operator} ${metric(model.threshold.value, 6)}` })}</li>}
           {flags.sameInterval && <li className="muted">{t("analysis.same_interval")}</li>}
           <li>{useLog ? t("analysis.y_log") : t("analysis.y_count")}</li>
         </ul>
         {useLog && <p className="microcopy">{t("analysis.log_note_raw")}</p>}
-        {flags.allZero && <p className="microcopy">{t("analysis.hist_all_zero")}</p>}
         <p className="microcopy">{t("analysis.bin_note")}</p>
       </> : <Empty title={t("analysis.reference_unavailable")} hint={t("analysis.reference_reason")} />}
-      <div className="model-boundary"><strong>{t("analysis.threshold")}</strong><span>{model.threshold ? `${model.threshold.operator} ${metric(model.threshold.value, 6)}` : t("analysis.unavailable")}</span></div>
+      {model.threshold && <div className="model-boundary"><strong>{t("analysis.threshold")}</strong><span>{model.threshold.operator} {metric(model.threshold.value, 6)}</span></div>}
       {model.threshold && <p className="microcopy break-anywhere">{t("analysis.source")}: <code>{model.threshold.source}</code></p>}
       {model.threshold_matches_verdict === false && <p className="callout warn">{t("analysis.threshold_mismatch")}</p>}
       <p className="microcopy">{t(`analysis.models.${model.key}.limitation`)}</p>
-      <details className="research-disclosure"><summary>{t("analysis.features_parameters")}</summary>
-        <h4>{t("analysis.features")}</h4>{model.key === "statistical_mad_zscore" && <code className="formula">maxⱼ |xⱼ − medianⱼ| / (1.4826 × MADⱼ)</code>}{model.features.length ? <ul className="feature-chips">{model.features.map((feature) => <li key={feature}><code>{feature}</code></li>)}</ul> : <p>{t("analysis.unavailable")}</p>}
-        <h4>{t("analysis.parameters")}</h4><dl className="kv">{Object.entries(model.params).filter(([, value]) => !Array.isArray(value)).map(([key, value]) => <div className="kv-pair" key={key}><dt><code>{key}</code></dt><dd>{String(value)}</dd></div>)}</dl>
+      {(model.key === "statistical_mad_zscore" || model.features.length > 0 || params.length > 0) && <details className="research-disclosure">
+        <summary>{t("analysis.features_parameters")}</summary>
+        {model.key === "statistical_mad_zscore" && <code className="formula">maxⱼ |xⱼ − medianⱼ| / (1.4826 × MADⱼ)</code>}
+        {model.features.length > 0 && <><h4>{t("analysis.features")}</h4><ul className="feature-chips">{model.features.map(feature => <li key={feature}><code>{feature}</code></li>)}</ul></>}
+        {params.length > 0 && <><h4>{t("analysis.parameters")}</h4><dl className="kv">{params.map(([key, value]) => <div className="kv-pair" key={key}><dt><code>{key}</code></dt><dd>{String(value)}</dd></div>)}</dl></>}
         <p className="microcopy">{t("analysis.no_attribution")}</p>
-      </details>
-      <details className="research-disclosure" open={showAll} onToggle={(event) => setShowAll(event.currentTarget.open)}><summary>{t("analysis.distribution_table")}</summary>
+      </details>}
+      {hasDistribution && <details className="research-disclosure" open={showAll} onToggle={(event) => setShowAll(event.currentTarget.open)}><summary>{t("analysis.distribution_table")}</summary>
         <TableWrap><table><thead><tr><th scope="col">{t("analysis.score_intervals")}</th><th scope="col">{t("analysis.procedures")}</th><th scope="col">{t("analysis.selection")}</th></tr></thead><tbody>{model.bins.map((bin) => <tr key={bin.index} className={bin.index === flags.thresholdBin ? "threshold-row" : undefined}><th scope="row">{metric(bin.start, 6)} – {metric(bin.end, 6)}</th><td>{metric(bin.n, 0)}</td><td>{bin.selected && flags.hasScore ? t("analysis.selected_interval") : "—"}{bin.index === flags.thresholdBin && <div className="muted">{t("analysis.threshold_interval")}</div>}</td></tr>)}</tbody></table></TableWrap>
-      </details>
-      <footer className="model-source"><span>{t("analysis.source")}: {context.source ?? t("analysis.unavailable")}</span><span>{t("analysis.run")}: <code>{context.run_id ?? "—"}</code></span><span>{t("analysis.version")}: {context.model_version ?? t("analysis.unavailable")}</span></footer>
+      </details>}
+      {(context.source || context.run_id || context.model_version) && <footer className="model-source">
+        {context.source && <span>{t("analysis.source")}: {context.source}</span>}
+        {context.run_id && <span>{t("analysis.run")}: <code>{context.run_id}</code></span>}
+        {context.model_version && <span>{t("analysis.version")}: {context.model_version}</span>}
+      </footer>}
     </article>
   );
 }
 
-export function ModelWorkbench({ tender, analysis }: { tender: Tender; analysis: ModelAnalysis }) {
+export function ModelWorkbench({ tender, analysis, showEmpty = true }: { tender: Tender; analysis: ModelAnalysis; showEmpty?: boolean }) {
   const { t } = useTranslation();
-  const [active, setActive] = useState(analysis.detectors[0]?.key);
-  const model = analysis.detectors.find((item) => item.key === active) ?? analysis.detectors[0];
+  const detectors = analysis.detectors.filter(item => item.score != null || item.verdict !== "unavailable" || item.threshold || item.bins.some(bin => bin.n > 0));
+  const [active, setActive] = useState(detectors[0]?.key);
+  const model = detectors.find(item => item.key === active) ?? detectors[0];
   const id = useId();
-  const count = analysis.detectors.length;
+  const count = detectors.length;
+  const labels = new Map(analysis.detectors.map(item => [item.key as string, MODEL_SHORT[item.key] ?? item.label]));
+  const seen = new Set<string>();
+  const pairs = analysis.agreement.flat().flatMap(cell => {
+    const left = labels.get(cell.left);
+    const right = labels.get(cell.right);
+    if (!left || !right || cell.left === cell.right || cell.n <= 0 || cell.agreement == null) return [];
+    const key = [cell.left, cell.right].sort().join("/");
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [{ ...cell, key, left, right, agreement: cell.agreement }];
+  });
+  const decisions = Object.values(tender.model_flags ?? {}).filter(value => typeof value === "boolean").length;
+  const hasSummary = tender.n_models_flagging != null || tender.risk_score != null || tender.consensus_flag != null || decisions > 0;
+  if (!showEmpty && !count && !hasSummary && !pairs.length) return null;
   return <section className="model-workbench" aria-labelledby={`${id}-title`}>
     <div className="section-heading"><div><span className="eyebrow">{t("analysis.explainability_first")}</span><h2 id={`${id}-title`}>{t("analysis.compare_models")}</h2></div><BandBadge level={tender.risk_level} nModels={tender.n_models_flagging} /></div>
-    <div className="consensus-summary surface">
-      <div><span>{t("analysis.votes")}</span><strong>{tender.n_models_flagging == null ? "—" : `${tender.n_models_flagging} / 4`}</strong></div>
-      <div><span>{t("analysis.relative_rank")}</span><strong>{metric(tender.risk_score, 1)}{tender.risk_score != null ? " / 100" : ""}</strong></div>
-      <div><span>{t("analysis.consensus")}</span><strong>{tender.consensus_flag == null ? t("analysis.unavailable") : tender.consensus_flag ? t("analysis.yes") : t("analysis.no")}</strong></div>
-      <p>{t("analysis.coverage_decisions")}: {Object.values(tender.model_flags ?? {}).filter((value) => typeof value === "boolean").length} / 4. {t("analysis.voting_note")}</p>
-    </div>
-    {!analysis.summary_matches_run && <p className="callout warn">{t("analysis.run_unverified")}</p>}
-    <TableWrap><table className="model-vote-table"><caption>{t("analysis.scales_note")}</caption><thead><tr><th scope="col">{t("analysis.model")}</th><th scope="col">{t("analysis.raw_score")}</th><th scope="col">{t("analysis.verdict")}</th><th scope="col">{t("analysis.details")}</th></tr></thead><tbody>{analysis.detectors.map((item) => <tr key={item.key} className={item.key === model?.key ? "selected-row" : ""}><th scope="row">{item.label}</th><td className="mono">{metric(item.score, 6)}</td><td><Verdict value={item.verdict} /></td><td><button className="ghost small" onClick={() => {
+    {hasSummary && <div className="consensus-summary surface">
+      {tender.n_models_flagging != null && <div><span>{t("analysis.votes")}</span><strong>{tender.n_models_flagging} / 4</strong></div>}
+      {tender.risk_score != null && <div><span>{t("analysis.relative_rank")}</span><strong>{metric(tender.risk_score, 1)} / 100</strong></div>}
+      {tender.consensus_flag != null && <div><span>{t("analysis.consensus")}</span><strong>{t(tender.consensus_flag ? "analysis.yes" : "analysis.no")}</strong></div>}
+      {decisions > 0 && <p>{t("analysis.coverage_decisions")}: {decisions} / 4. {t("analysis.voting_note")}</p>}
+    </div>}
+    {count === 0 && !hasSummary && <p className="muted">{t("product.unavailablePriority")}</p>}
+    {count > 0 && !analysis.summary_matches_run && <p className="callout warn">{t("analysis.run_unverified")}</p>}
+    {count > 0 && <TableWrap><table className="model-vote-table"><caption>{t("analysis.scales_note")}</caption><thead><tr><th scope="col">{t("analysis.model")}</th><th scope="col">{t("analysis.raw_score")}</th><th scope="col">{t("analysis.verdict")}</th><th scope="col">{t("analysis.details")}</th></tr></thead><tbody>{detectors.map((item) => <tr key={item.key} className={item.key === model?.key ? "selected-row" : ""}><th scope="row">{item.label}</th><td className="mono">{metric(item.score, 6)}</td><td><Verdict value={item.verdict} /></td><td><button className="ghost small" onClick={() => {
       setActive(item.key);
       requestAnimationFrame(() => {
         const panel = document.getElementById(`${id}-panel`);
         panel?.focus({ preventScroll: true });
         panel?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
       });
-    }} aria-pressed={item.key === model?.key}>{t("analysis.inspect")}</button></td></tr>)}</tbody></table></TableWrap>
+    }} aria-pressed={item.key === model?.key}>{t("analysis.inspect")}</button></td></tr>)}</tbody></table></TableWrap>}
     {/* Tab list follows the detector count actually present: 0 detectors render
         no tabs at all, and arrows/Home/End wrap within that count. */}
     {count > 0 && <div className="model-tabs" role="tablist" aria-label={t("analysis.compare_models")}>
-      {analysis.detectors.map((item, index) => <button key={item.key} id={`${id}-${item.key}`} role="tab" aria-controls={`${id}-panel`} aria-selected={item.key === model?.key} tabIndex={item.key === model?.key ? 0 : -1} onClick={() => setActive(item.key)} onKeyDown={(event) => {
+      {detectors.map((item, index) => <button key={item.key} id={`${id}-${item.key}`} role="tab" aria-controls={`${id}-panel`} aria-selected={item.key === model?.key} tabIndex={item.key === model?.key ? 0 : -1} onClick={() => setActive(item.key)} onKeyDown={(event) => {
         const next = event.key === "ArrowRight" ? (index + 1) % count
           : event.key === "ArrowLeft" ? (index - 1 + count) % count
           : event.key === "Home" ? 0
           : event.key === "End" ? count - 1 : -1;
         if (next < 0 || next >= count) return;
-        const target = analysis.detectors[next];
+        const target = detectors[next];
         if (!target) return;
         event.preventDefault();
         setActive(target.key);
@@ -213,13 +236,16 @@ export function ModelWorkbench({ tender, analysis }: { tender: Tender; analysis:
       }}>{MODEL_SHORT[item.key] ?? item.label}</button>)}
     </div>}
     {model && <div id={`${id}-panel`} role="tabpanel" tabIndex={0} aria-labelledby={`${id}-${model.key}`}><ModelExplanationCard key={model.key} model={model} context={analysis} /></div>}
-    {count > 0 && <details className="surface research-disclosure agreement-panel"><summary>{t("analysis.agreement_title")}</summary><p className="microcopy">{t("analysis.agreement_scope", { n: metric(analysis.n_reference, 0), run: analysis.run_id ?? "—" })}</p>
-      <TableWrap><table className="agreement-table"><caption>{t("analysis.agreement_definition")}</caption><thead><tr><th scope="col">{t("analysis.model")}</th>{analysis.detectors.map((item) => <th scope="col" key={item.key}>{MODEL_SHORT[item.key] ?? item.label}</th>)}</tr></thead><tbody>{analysis.agreement.map((cells, i) => {
-        // A partial agreement matrix must not index past the detector list.
-        const rowModel = analysis.detectors[i];
-        if (!rowModel) return null;
-        return <tr key={rowModel.key}><th scope="row">{MODEL_SHORT[rowModel.key] ?? rowModel.label}</th>{cells.map((cell) => <td key={cell.right} style={{ background: cell.agreement === null ? undefined : `color-mix(in srgb, var(--chart-blue) ${Math.round(cell.agreement * 18)}%, var(--card))` }}>{cell.agreement === null ? "—" : `${metric(100 * cell.agreement, 1)}%`}<small>{metric(cell.n_agree, 0)} / {metric(cell.n, 0)}</small></td>)}</tr>;
-      })}</tbody></table></TableWrap>
+    {pairs.length > 0 && <details className="surface research-disclosure agreement-panel">
+      <summary>{t("analysis.agreement_title")}</summary>
+      <TableWrap><table className="agreement-table">
+        <caption>{t("analysis.agreement_definition")}</caption>
+        <thead><tr><th scope="col">{t("analysis.model_pair")}</th><th scope="col">{t("analysis.agreement_share")}</th></tr></thead>
+        <tbody>{pairs.map(pair => <tr key={pair.key}>
+          <th scope="row">{pair.left} / {pair.right}</th>
+          <td>{metric(100 * pair.agreement, 1)}% <small>{metric(pair.n_agree, 0)} / {metric(pair.n, 0)}</small></td>
+        </tr>)}</tbody>
+      </table></TableWrap>
     </details>}
   </section>;
 }

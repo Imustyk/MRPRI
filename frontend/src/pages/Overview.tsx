@@ -72,7 +72,6 @@ export default function Overview() {
   const cohorts = stats.snapshot_cohorts;
   const months = (cohorts?.monthly ?? []).map((r) => ({ ...r, label: monthLabel(r.month) }));
   const hasNoPublishedBids = stats.n_with_bid_data === 0;
-  // Shares of model outcomes use the scored population as their denominator.
   const scoredRows = bandData.filter((b) => b.level !== "unscored").reduce((a, b) => a + b.n, 0);
   const unscoredRows = stats.level_counts.unscored ?? 0;
 
@@ -83,8 +82,6 @@ export default function Overview() {
         {t("product.source")} · {t(dataset.origin.kind === "real-ocds" ? "overview.prov_real" : dataset.origin.synthetic_in_use ? "overview.prov_synthetic" : "overview.prov_unknown")} · {dateLabel(dataset.manifest.exported_at)}
       </p>}
 
-      {metaReq.error && <ErrorNote error={metaReq.error} onRetry={metaReq.reload} />}
-      {healthReq.error && <ErrorNote error={healthReq.error} onRetry={healthReq.reload} />}
       {unscoredRows > 0 && (
         <div className="callout warn">
           <Trans
@@ -100,11 +97,11 @@ export default function Overview() {
         </div>
       )}
 
-      <div className="grid cards-4">
+      <div className="grid cards-4 overview-stats">
+        <Stat label={t("product.corpus")} value={int(stats.n_tenders)} />
         <Stat
           label={t("overview.stat_scored")}
           value={int(scoredRows)}
-          note={t("overview.stat_scored_note", { n: int(stats.n_tenders) })}
         />
         <Stat
           label={t("overview.stat_high")}
@@ -116,7 +113,6 @@ export default function Overview() {
           }
           tone={stats.high_risk_count > 0 ? "high" : undefined}
         />
-        <Stat label={t("product.corpus")} value={int(stats.n_tenders)} />
         <Stat
           label={t("overview.stat_single")}
           value={stats.single_bidder_share === null ? "—" : pct(stats.single_bidder_share)}
@@ -128,12 +124,119 @@ export default function Overview() {
         />
       </div>
 
-      <ul className="legend" aria-label={t("overview.bands_h")}>
+      <ul className="overview-priorities" aria-label={t("overview.bands_h")}>
         {BAND_ORDER.map(level => <li key={level}>
-          <span className="swatch" style={{ background: BAND_FILL[level] }} />
-          <Link to={`/tenders?level=${level}`}>{t(`risk.${level}`)} · {int(stats.level_counts[level] ?? 0)}</Link>
+          <Link to={`/tenders?level=${level}`}>
+            <span className="swatch" aria-hidden="true" style={{ background: BAND_FILL[level] }} />
+            <span>{t(`risk.${level}`)}</span>
+            <strong>{int(stats.level_counts[level] ?? 0)}</strong>
+          </Link>
         </li>)}
       </ul>
+
+      <details className="card research-disclosure priority-chart">
+        <summary>{t("overview.bands_h")}</summary>
+        <p className="muted">{t("overview.bands_p")}</p>
+        {bandData.length === 0 ? (
+          <Empty title={t("overview.bands_empty")} />
+        ) : (
+          <ResponsiveContainer width="100%" height={244}>
+            <BarChart data={bandData} margin={{ top: 6, right: 8, bottom: 4, left: 0 }}>
+              <CartesianGrid stroke="var(--line-soft)" vertical={false} />
+              <XAxis
+                dataKey="level"
+                tick={{ fontSize: 11, fill: "var(--muted)" }}
+                tickLine={false}
+                axisLine={{ stroke: "var(--line)" }}
+                minTickGap={12}
+                tickFormatter={(v: string) => t(`risk.${v}`)}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "var(--muted)" }}
+                tickLine={false}
+                axisLine={false}
+                width={60}
+              />
+              <Tooltip
+                formatter={(v: number | string) => [num(Number(v)), t("overview.bands_procedures")]}
+                labelFormatter={(l) => t(`risk.${l}`)}
+              />
+              <Bar dataKey="n" radius={[6, 6, 0, 0]}>
+
+                {bandData.map((d) => (
+                  <Cell key={d.level} fill={BAND_FILL[d.level]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </details>
+
+      <div className="card">
+        <h2>{t("overview.monthly_h")}</h2>
+        <p className="muted">
+          <Trans i18nKey="overview.monthly_p" />
+        </p>
+        {months.length === 0 ? (
+          <Empty title={t("overview.monthly_empty")} hint={t("overview.monthly_empty_hint")} />
+        ) : (
+          <>
+            <div className="cohort-summary">
+              <span>{t("overview.monthly_period", { from: months[0].label, to: months[months.length - 1].label })}</span>
+              <span>{t("overview.monthly_coverage", { dated: int(cohorts!.n_dated), total: int(cohorts!.n_total), scored: int(cohorts!.n_scored) })}</span>
+            </div>
+            <div className="cohort-charts">
+              <div className="cohort-chart">
+                <h3 className="cohort-chart-title">{t("overview.monthly_mean")}</h3>
+                {months.some((month) => month.n_scored > 0) ? (
+                  <div role="img" aria-label={t("overview.monthly_line_a11y")}>
+                    <ResponsiveContainer width="100%" height={230}>
+                      <LineChart data={months} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+                        <CartesianGrid stroke="var(--line-soft)" vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} minTickGap={30} />
+                        <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} width={40} />
+                        <Tooltip formatter={(value: number | string) => [num1(Number(value)), t("overview.monthly_mean")]} labelFormatter={(label) => String(label)} />
+                        <Line type="linear" dataKey="avg_risk" stroke="var(--navy-soft)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : <Empty title={t("overview.monthly_no_scores")} />}
+              </div>
+              <div className="cohort-chart">
+                <h3 className="cohort-chart-title">{t("overview.monthly_volume")}</h3>
+                <div role="img" aria-label={t("overview.monthly_bar_a11y")}>
+                  <ResponsiveContainer width="100%" height={230}>
+                    <BarChart data={months} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
+                      <CartesianGrid stroke="var(--line-soft)" vertical={false} />
+                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} minTickGap={30} />
+                      <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} width={54} allowDecimals={false} />
+                      <Tooltip formatter={(value: number | string, name: string) => [int(Number(value)), t(name === "n_scored" ? "overview.monthly_scored" : "overview.monthly_unscored")]} />
+                      <Bar dataKey="n_scored" stackId="coverage" fill="var(--navy-soft)" isAnimationActive={false} />
+                      <Bar dataKey="n_unscored" stackId="coverage" fill="var(--chart-neutral)" isAnimationActive={false} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <ul className="legend">
+                  <li><span className="cohort-dot scored" />{t("overview.monthly_scored")}</li>
+                  <li><span className="cohort-dot unscored" />{t("overview.monthly_unscored")}</li>
+                </ul>
+              </div>
+            </div>
+            <p className="cohort-source">{t("overview.monthly_source")}</p>
+            <p className="cohort-source">{t("overview.monthly_excluded", { missing: int(cohorts!.n_missing_date), invalid: int(cohorts!.n_invalid_date) })}</p>
+            <details className="cohort-values">
+              <summary>{t("overview.monthly_table")}</summary>
+              <TableWrap>
+                <table>
+                  <caption className="visually-hidden">{t("overview.monthly_h")}</caption>
+                  <thead><tr><th scope="col">{t("overview.monthly_month")}</th><th scope="col">{t("overview.monthly_volume")}</th><th scope="col">{t("overview.monthly_scored")}</th><th scope="col">{t("overview.monthly_mean")}</th></tr></thead>
+                  <tbody>{months.map((month) => <tr key={month.month}><th scope="row">{month.label}</th><td>{int(month.n)}</td><td>{int(month.n_scored)}</td><td>{month.avg_risk === null ? "—" : num1(month.avg_risk)}</td></tr>)}</tbody>
+                </table>
+              </TableWrap>
+            </details>
+          </>
+        )}
+      </div>
 
       {/* Provenance: where the rows came from and how the run is traceable. */}
       <details className="card provenance-disclosure" open={datasetErr !== null || dataset?.origin.synthetic_in_use === true || dataset?.verification.hash_matches_manifest === false}>
@@ -215,106 +318,6 @@ export default function Overview() {
 
       <div className="grid row2">
         <div className="card">
-          <h2>{t("overview.monthly_h")}</h2>
-          <p className="muted">
-            <Trans i18nKey="overview.monthly_p" />
-          </p>
-          {months.length === 0 ? (
-            <Empty title={t("overview.monthly_empty")} hint={t("overview.monthly_empty_hint")} />
-          ) : (
-            <>
-              <div className="cohort-summary">
-                <span>{t("overview.monthly_period", { from: months[0].label, to: months[months.length - 1].label })}</span>
-                <span>{t("overview.monthly_coverage", { dated: int(cohorts!.n_dated), total: int(cohorts!.n_total), scored: int(cohorts!.n_scored) })}</span>
-              </div>
-              <h3 className="cohort-chart-title">{t("overview.monthly_mean")}</h3>
-              {months.some((month) => month.n_scored > 0) ? (
-                <div role="img" aria-label={t("overview.monthly_line_a11y")}>
-                  <ResponsiveContainer width="100%" height={230}>
-                    <LineChart data={months} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
-                      <CartesianGrid stroke="var(--line-soft)" vertical={false} />
-                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} minTickGap={30} />
-                      <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} width={40} />
-                      <Tooltip formatter={(value: number | string) => [num1(Number(value)), t("overview.monthly_mean")]} labelFormatter={(label) => String(label)} />
-                      <Line type="linear" dataKey="avg_risk" stroke="var(--navy-soft)" strokeWidth={2} dot={false} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : <Empty title={t("overview.monthly_no_scores")} />}
-              <h3 className="cohort-chart-title">{t("overview.monthly_volume")}</h3>
-              <ul className="legend">
-                <li><span className="cohort-dot scored" />{t("overview.monthly_scored")}</li>
-                <li><span className="cohort-dot unscored" />{t("overview.monthly_unscored")}</li>
-              </ul>
-              <div role="img" aria-label={t("overview.monthly_bar_a11y")}>
-                <ResponsiveContainer width="100%" height={150}>
-                  <BarChart data={months} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
-                    <CartesianGrid stroke="var(--line-soft)" vertical={false} />
-                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} minTickGap={30} />
-                    <YAxis tick={{ fontSize: 10, fill: "var(--muted)" }} tickLine={false} axisLine={false} width={54} allowDecimals={false} />
-                    <Tooltip formatter={(value: number | string, name: string) => [int(Number(value)), t(name === "n_scored" ? "overview.monthly_scored" : "overview.monthly_unscored")]} />
-                    <Bar dataKey="n_scored" stackId="coverage" fill="var(--navy-soft)" isAnimationActive={false} />
-                    <Bar dataKey="n_unscored" stackId="coverage" fill="var(--chart-neutral)" isAnimationActive={false} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="cohort-source">{t("overview.monthly_source")}</p>
-              <p className="cohort-source">{t("overview.monthly_excluded", { missing: int(cohorts!.n_missing_date), invalid: int(cohorts!.n_invalid_date) })}</p>
-              <details className="cohort-values">
-                <summary>{t("overview.monthly_table")}</summary>
-                <TableWrap>
-                  <table>
-                    <caption className="visually-hidden">{t("overview.monthly_h")}</caption>
-                    <thead><tr><th scope="col">{t("overview.monthly_month")}</th><th scope="col">{t("overview.monthly_volume")}</th><th scope="col">{t("overview.monthly_scored")}</th><th scope="col">{t("overview.monthly_mean")}</th></tr></thead>
-                    <tbody>{months.map((month) => <tr key={month.month}><th scope="row">{month.label}</th><td>{int(month.n)}</td><td>{int(month.n_scored)}</td><td>{month.avg_risk === null ? "—" : num1(month.avg_risk)}</td></tr>)}</tbody>
-                  </table>
-                </TableWrap>
-              </details>
-            </>
-          )}
-        </div>
-        <div className="card">
-          <h2>{t("overview.bands_h")}</h2>
-          <p className="muted">{t("overview.bands_p")}</p>
-          {bandData.length === 0 ? (
-            <Empty title={t("overview.bands_empty")} />
-          ) : (
-            <ResponsiveContainer width="100%" height={244}>
-              <BarChart data={bandData} margin={{ top: 6, right: 8, bottom: 4, left: 0 }}>
-                <CartesianGrid stroke="var(--line-soft)" vertical={false} />
-                <XAxis
-                  dataKey="level"
-                  tick={{ fontSize: 11, fill: "var(--muted)" }}
-                  tickLine={false}
-                  axisLine={{ stroke: "var(--line)" }}
-                  minTickGap={12}
-                  tickFormatter={(v: string) => t(`risk.${v}`)}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: "var(--muted)" }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={60}
-                />
-                <Tooltip
-                  formatter={(v: number | string) => [num(Number(v)), t("overview.bands_procedures")]}
-                  labelFormatter={(l) => t(`risk.${l}`)}
-                />
-                <Bar dataKey="n" radius={[6, 6, 0, 0]}>
-                  {/* Same colours as the band badges, so the chart and the
-                      table read as one system. */}
-                  {bandData.map((d) => (
-                    <Cell key={d.level} fill={BAND_FILL[d.level]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
-
-      <div className="grid row2">
-        <div className="card">
           <h2>{t("overview.cpv_h")}</h2>
           <p className="muted">{t("overview.cpv_p")}</p>
           {stats.top_cpv.length === 0 ? (
@@ -360,6 +363,8 @@ export default function Overview() {
           )}
 
           <h3 style={{ marginTop: 18 }}>{t("overview.source_h")}</h3>
+          {metaReq.error && <ErrorNote error={metaReq.error} onRetry={metaReq.reload} />}
+          {healthReq.error && <ErrorNote error={healthReq.error} onRetry={healthReq.reload} />}
           {healthReq.loading ? (
             <Skeleton rows={3} />
           ) : mongo?.connected ? (

@@ -21,7 +21,6 @@ export class ApiHttpError extends Error {
 function requireRule(ok: boolean, field: string, rule: string) {
   if (!ok) throw new ApiContractError(field, rule);
 }
-/** Validation rejects the payload; it never clamps, imputes or writes back data. */
 export function assertApiData(url: string, payload: unknown): void {
   const path = url.split("?")[0];
   requireRule(payload !== null && typeof payload === "object" && !Array.isArray(payload), path, "object");
@@ -29,9 +28,7 @@ export function assertApiData(url: string, payload: unknown): void {
     if (!value || typeof value !== "object") return;
     if (Array.isArray(value)) { value.forEach((item, index) => walk(item, `${at}[${index}]`)); return; }
     const row = value as Record<string, unknown>;
-    // Meta maps describe fields; their n_* keys are names, not observations.
     if (["/api/meta.unavailable", "/api/meta.risk_bands"].includes(at) && Object.values(row).every(item => typeof item === "string")) return;
-    // Baseline keys are feature names. Their values are metric records.
     const baselineMap = /^\/api\/evaluation\.external_labels\[\d+\]\.baselines$/.test(at);
     for (const [key, item] of Object.entries(row)) {
       const field = `${at}.${key}`;
@@ -57,13 +54,11 @@ export function assertApiData(url: string, payload: unknown): void {
       }
       walk(item, field);
     }
-    // Analytical envelopes rename the measured value: preserve its domain.
     const rankedField = typeof row.column === "string" && ranked.has(row.column) || typeof row.key === "string" && ranked.has(row.key);
     const rankedValue = typeof row.value === "string" && ranked.has(row.value);
     const checkSummary = (summary: unknown, label: string) => { if (summary && typeof summary === "object") for (const [key, n] of Object.entries(summary)) if (["min","max","mean","median","p25","p75","p90","p99"].includes(key) && n !== null) requireRule(percentile(n), `${label}.${key}`, "percentile"); };
     if (rankedField) {
       checkSummary(row.summary, `${at}.summary`);
-      // Bin edges may legitimately extend beyond the range of observed values; validate observed summaries, not padded edges.
     }
     if (rankedValue && Array.isArray(row.groups)) row.groups.forEach((group, i) => checkSummary(group, `${at}.groups[${i}]`));
     if (Array.isArray(row.points)) for (const point of row.points) for (const axis of ["x", "y"]) if (typeof row[axis] === "string" && ranked.has(row[axis] as string)) requireRule(percentile(point[axis]), `${at}.points.${axis}`, "percentile");

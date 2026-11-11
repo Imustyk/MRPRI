@@ -65,6 +65,8 @@ const analysis: typeof en = {
   "verdict": "Decizie salvată",
   "details": "Detalii",
   "inspect": "Examinează modelul",
+  "model_pair": "Pereche de modele",
+  "agreement_share": "Decizii concordante",
   "agreement_title": "Cât de des coincid deciziile?",
   "agreement_scope": "Aceeași rulare {{run}}: {{n}} proceduri. Fiecare celulă exclude deciziile lipsă ale perechii.",
   "agreement_definition": "Acord = decizii identice / perechi cu ambele decizii. Include nesemnalările comune; nu este acuratețe externă.",

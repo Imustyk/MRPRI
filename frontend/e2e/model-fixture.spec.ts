@@ -57,10 +57,7 @@ test("histogram: all-zero counts and a missing score stay honest", async ({ page
   await page.getByRole("tab", { name: "Isolation Forest" }).click();
   const allZero = page.locator('.model-explanation[data-model="isolation_forest"]');
   await expect(allZero).toBeVisible();
-  const zeroText = (await allZero.innerText()).replace(/\s+/g, " ");
-  // Fixed 0–1 axis, explicit explanation, no fabricated marker.
-  expect(zeroText).toMatch(/Every interval holds zero procedures/);
-  // Zero-height bars draw nothing at all — no phantom columns, no markers.
+  await expect(allZero.locator(".score-histogram")).toHaveCount(0);
   await expect(allZero.locator(".hist-bar")).toHaveCount(0);
   await expect(allZero.locator(".hist-bar-selected")).toHaveCount(0);
   await expect(allZero.locator(".hist-bar-threshold")).toHaveCount(0);
@@ -68,9 +65,7 @@ test("histogram: all-zero counts and a missing score stay honest", async ({ page
   await page.getByRole("tab", { name: "LOF" }).click();
   const missing = page.locator('.model-explanation[data-model="local_outlier_factor"]');
   await expect(missing).toBeVisible();
-  const missingText = (await missing.innerText()).replace(/\s+/g, " ");
-  // Score absent → no selected marker; the threshold is still shown.
-  expect(missingText).toMatch(/—/);
+  await expect(missing.locator(".model-metrics")).not.toContainText("Raw model score");
   await expect(missing.locator(".hist-bar-selected")).toHaveCount(0);
   await expect(missing.locator(".hist-bar-threshold")).toHaveCount(1);
 

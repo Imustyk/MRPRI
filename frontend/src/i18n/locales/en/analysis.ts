@@ -63,6 +63,8 @@ const analysis = {
   "verdict": "Stored decision",
   "details": "Details",
   "inspect": "Inspect model",
+  "model_pair": "Model pair",
+  "agreement_share": "Matching decisions",
   "agreement_title": "How often do model decisions agree?",
   "agreement_scope": "Same run {{run}}: {{n}} procedures. Each cell excludes missing verdicts for its pair.",
   "agreement_definition": "Agreement = matching decisions / pairs with both decisions. This includes shared non-flags and is not external accuracy.",

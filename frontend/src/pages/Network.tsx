@@ -309,8 +309,8 @@ function Matrix({
           y={AXIS_H}
           width={gridW}
           height={gridH}
-          fill="#fcfcfd"
-          stroke="#eef0f3"
+          fill="var(--network-grid)"
+          stroke="var(--network-grid-line)"
         />
         {selRi >= 0 && (
           <rect
@@ -318,7 +318,7 @@ function Matrix({
             y={AXIS_H + selRi * cell}
             width={gridW}
             height={cell}
-            fill="#f8f1e3"
+            fill="var(--network-selection)"
           />
         )}
         {selCi >= 0 && (
@@ -327,7 +327,7 @@ function Matrix({
             y={AXIS_H}
             width={cell}
             height={gridH}
-            fill="#f8f1e3"
+            fill="var(--network-selection)"
           />
         )}
         {/* A faint lattice: with a 50-row grid the eye needs a rail to follow a
@@ -339,7 +339,7 @@ function Matrix({
             x2={AXIS_W + gridW}
             y1={AXIS_H + i * cell}
             y2={AXIS_H + i * cell}
-            stroke="#f0f2f5"
+            stroke="var(--network-grid-line)"
           />
         ))}
         {Array.from({ length: cols.length + 1 }, (_, i) => (
@@ -349,7 +349,7 @@ function Matrix({
             x2={AXIS_W + i * cell}
             y1={AXIS_H}
             y2={AXIS_H + gridH}
-            stroke="#f0f2f5"
+            stroke="var(--network-grid-line)"
           />
         ))}
         {rowEls}
