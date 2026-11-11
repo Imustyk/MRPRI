@@ -59,7 +59,7 @@ afterEach(() => {
 describe("readTenderFilters (URL validation)", () => {
   it("keeps sane values", () => {
     const f = readTenderFilters(new URLSearchParams("q=abc&level=high&min=40&offset=80"));
-    expect(f).toEqual({ q: "abc", level: "high", procedure: "", minRisk: 40, offset: 80 });
+    expect(f).toEqual({ q: "abc", level: "high", procedure: "", minRisk: 40, offset: 80, extra: {} });
   });
 
   it("rejects an unknown risk band", () => {

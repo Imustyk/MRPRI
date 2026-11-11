@@ -19,6 +19,13 @@ for (const route of ROUTES) {
   test(`no overflow at required widths — ${route}`, async ({ page }) => {
     await page.goto(route);
     await waitForRouteReady(page);
+    if (route === "/distributions") {
+      const distributions = page.getByRole("tab", { name: "Distributions", exact: true });
+      if (await distributions.isVisible()) {
+        await distributions.click();
+        await expect(page.locator(".recharts-wrapper, [role=alert], .empty").first()).toBeVisible({ timeout: 20_000 });
+      }
+    }
 
     for (const width of WIDTHS) {
       await page.setViewportSize({ width, height: width < 768 ? 812 : 1000 });

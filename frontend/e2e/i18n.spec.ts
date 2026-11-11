@@ -7,9 +7,9 @@ import { SHOTS, expectNoDocumentOverflow, waitForRouteReady } from "./helpers";
  */
 
 const LANGS: { code: "en" | "ru" | "ro"; probe: RegExp }[] = [
-  { code: "en", probe: /Distributions|Scored tenders|Overview/ },
-  { code: "ru", probe: /Распределения|Процедуры|Обзор/ },
-  { code: "ro", probe: /Distribuții|Proceduri|Prezentare/ },
+  { code: "en", probe: /Distributions|Procurements|Overview/ },
+  { code: "ru", probe: /Распределения|Закупки|Обзор/ },
+  { code: "ro", probe: /Distribuții|Achiziții|Prezentare/ },
 ];
 
 const ROUTES = ["/", "/tenders", "/distributions", "/network", "/models"];

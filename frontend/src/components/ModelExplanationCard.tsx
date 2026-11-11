@@ -132,9 +132,12 @@ export function ModelExplanationCard({ model, context }: { model: DetectorAnalys
                 </pattern>
               </defs>
               <CartesianGrid stroke="var(--line-soft)" vertical={false} />
-              <XAxis dataKey="index" tickFormatter={(index: number) => metric(bars[index]?.start)} minTickGap={28} tick={{ fill: "var(--muted)", fontSize: 10 }} label={{ value: t("analysis.score_intervals"), position: "insideBottom", offset: -16, fill: "var(--muted)", fontSize: 11 }} />
+              <XAxis dataKey="index" tickFormatter={(index: number) => {
+                const start = bars.find(bin => bin.index === index)?.start;
+                return start !== undefined && Math.abs(start) >= 1_000_000 ? start.toExponential(1) : metric(start);
+              }} minTickGap={28} tick={{ fill: "var(--muted)", fontSize: 10 }} label={{ value: t("analysis.score_intervals"), position: "insideBottom", offset: -16, fill: "var(--muted)", fontSize: 11 }} />
               <YAxis width={58} allowDecimals={false} tick={{ fill: "var(--muted)", fontSize: 10 }} tickFormatter={(value: number) => metric(useLog ? Math.round(10 ** value - 1) : value, 0)} domain={[0, useLog ? Math.log10(1 + flags.maxCount) : flags.allZero ? 1 : "auto"]} ticks={flags.allZero ? [0] : undefined} />
-              <Tooltip allowEscapeViewBox={{ x: false, y: false }} position={{ y: 0 }} labelFormatter={(index) => bars[Number(index)]?.label ?? String(index)} formatter={(_value, _name, item) => [metric(item.payload.n, 0), t("analysis.procedures")]} />
+              <Tooltip allowEscapeViewBox={{ x: false, y: false }} position={{ y: 0 }} labelFormatter={(index) => bars.find(bin => bin.index === Number(index))?.label ?? String(index)} formatter={(_value, _name, item) => [metric(item.payload.n, 0), t("analysis.procedures")]} />
               <Bar dataKey="display_n" isAnimationActive={false} shape={renderBar} />
               {/* Threshold first: at a shared interval its dashed 5px line sits
                   behind the solid 2px score line, both stay legible. */}

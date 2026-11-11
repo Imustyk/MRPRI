@@ -1,4 +1,5 @@
 import type en from "../en";
+import product from "./product";
 import completion from "./completion";
 import common from "./common";
 import analysis from "./analysis";
@@ -17,6 +18,7 @@ const ro: typeof en = {
   ...common,
   analysis,
   completion,
+  product,
   backend,
   overview,
   tenders,

@@ -24,6 +24,7 @@ test("MOCKED | filters and page survive open → back, and a reload keeps them t
   // Search (debounced), band filter, minimum percentile, then next page.
   await page.locator("#f-q").fill("a");
   await page.locator("#f-level").selectOption("high");
+  await page.getByText("More filters", { exact: true }).click();
   await page.locator("#f-risk").fill("30");
   await page.waitForTimeout(700);
   await page.getByRole("button", { name: "Next" }).click();

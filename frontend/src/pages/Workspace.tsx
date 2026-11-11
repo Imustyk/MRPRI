@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { tenderDestination, savedViewDestination } from "../navigation";
 import { useRequest } from "../hooks";
 import { AsyncButton, AsyncForm, useAction } from "../components/AsyncAction";
@@ -161,7 +161,15 @@ function CasesTab({
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("all");
   const [q, setQ] = useState("");
-  const [openId, setOpenId] = useState<number | null>(null);
+  const [params, setParams] = useSearchParams();
+  const rawId = Number(params.get("case"));
+  const openId = Number.isSafeInteger(rawId) && rawId > 0 ? rawId : null;
+  const setOpenId = (id: number | null) => {
+    const next = new URLSearchParams(params);
+    if (id === null) next.delete("case");
+    else next.set("case", String(id));
+    setParams(next, { replace: true });
+  };
   const [form, setForm] = useState({ title: "", priority: "medium", owner: "", summary: "", ocids: "" });
 
   const revision = useContext(Revision);

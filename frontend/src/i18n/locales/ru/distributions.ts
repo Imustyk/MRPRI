@@ -81,6 +81,7 @@ const distributions: typeof en = {
   log_far: "намного больше",
   log_times: "{{n}}×",
   tooltip_procedures: "процедуры",
+  tooltip_interval: "Интервал: {{from}} – {{to}}",
   tooltip_value: "значение ≈ {{v}}",
   ecdf_h: "Эмпирическая функция распределения",
   ecdf_p:

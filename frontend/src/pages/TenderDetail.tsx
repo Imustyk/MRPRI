@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { dateLabel, mdl, mtenderUrl } from "../api";
 import { tr } from "../i18n/backendMap";
 import { BandBadge, ErrorNote, Loading, PageHead, Pill, Skeleton, TableWrap } from "../ui";
+import { ProcedureActions } from "../components/ProcedureActions";
 import { IndicatorPanel } from "../components/IndicatorPanel";
 import { ModelWorkbench, metric } from "../components/ModelExplanationCard";
 import { useProcedureData } from "../components/useProcedureData";
@@ -38,7 +39,12 @@ export default function TenderDetail() {
       {tender.ocid && <a className="action-secondary" href={mtenderUrl(tender.ocid)} target="_blank" rel="noreferrer noopener">{t("common.open_mtender")} ↗</a>}
       <Link className="action-secondary" to={researchDestination("/models", id, returnTo)}>{t("analysis.models_title")} →</Link>
     </>} />
-    <nav className="case-section-nav" aria-label={t("analysis.case_sections")}><a href="#case-facts">{t("analysis.facts")}</a><a href="#case-models">{t("analysis.compare_models")}</a><a href="#case-indicators">{t("analysis.indicators_title")}</a><a href="#case-evidence">{t("analysis.evidence")}</a></nav>
+    <section className="surface case-facts" aria-labelledby="review-title">
+      <h2 id="review-title">{t("product.review")}</h2>
+      <p>{t(tender.risk_score == null || tender.risk_level === "unscored" ? "product.unavailablePriority" : `product.${tender.risk_level}Priority`)}</p>
+      <p className="microcopy">{t("analysis.disclaimer")}</p>
+    </section>
+    <nav className="case-section-nav" aria-label={t("analysis.case_sections")}><a href="#case-facts">{t("analysis.facts")}</a><a href="#case-indicators">{t("product.why")}</a><a href="#case-models">{t("analysis.compare_models")}</a><a href="#case-actions">{t("product.next")}</a></nav>
     <section id="case-facts" className="surface case-facts">
       <div className="section-heading"><h2>{t("analysis.facts")}</h2><BandBadge level={tender.risk_level} nModels={tender.n_models_flagging} /></div>
       <dl className="facts-grid">{facts.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
@@ -52,14 +58,15 @@ export default function TenderDetail() {
         <dt>{t("tenderDetail.cf_winner_idno")}</dt><dd>{tender.winner_idno ?? "—"}</dd>
       </dl><p className="microcopy">{t("analysis.raw_facts_limit")}</p></details>
     </section>
+    <section id="case-indicators"><IndicatorPanel tender={tender} plain /></section>
     <section id="case-models">
       {data.analysisError && <ErrorNote error={data.analysisError} onRetry={data.retryAnalysis} />}
       {!data.analysis && !data.analysisError && <Loading label={t("analysis.loading_models")} />}
       {data.analysis && <ModelWorkbench tender={tender} analysis={data.analysis} />}
     </section>
-    <section id="case-indicators"><IndicatorPanel tender={tender} /></section>
-    <section id="case-evidence" className="surface evidence-panel">
-      <div className="section-heading"><div><span className="eyebrow">{t("analysis.traceability")}</span><h2>{t("analysis.evidence")}</h2></div></div>
+    <ProcedureActions key={id} tender={tender} />
+    <details id="case-evidence" className="surface evidence-panel research-disclosure">
+      <summary>{t("analysis.evidence")}</summary>
       <p className="microcopy break-anywhere">{t("analysis.source")}: {data.analysis?.source ?? t("analysis.unavailable")} · {t("analysis.run")}: <code>{data.analysis?.run_id ?? "—"}</code></p>
       <p className="microcopy">{t("analysis.run_date")}: {dateLabel(data.analysis?.generated_at)} · {t("analysis.reference_size")}: {metric(data.analysis?.n_reference, 0)}</p>
       {data.explanationError && <ErrorNote error={data.explanationError} onRetry={data.retryExplanation} />}
@@ -72,7 +79,6 @@ export default function TenderDetail() {
         : <ul>{layer.items.map((item) => <li key={item.key}>{tr(item.label)}: {t(item.triggered ? "analysis.recorded_signal" : "analysis.not_recorded")} · {t("analysis.corpus_frequency")}: {item.corpus_rate === null ? "—" : `${metric(item.corpus_rate * 100, 2)}%`} (n = {metric(item.corpus_n, 0)})</li>)}</ul>}
       </details>) : !data.explanationLoading && !data.explanationError ? <p className="muted">{t("analysis.explanation_unavailable")}</p> : null}
       <p className="microcopy">{t("analysis.peer_limit")}</p>
-    </section>
-    <aside className="methodology-notice">{t("analysis.disclaimer")}</aside>
+    </details>
   </div>;
 }

@@ -13,7 +13,7 @@ export function PageHead({
   kickerPlain,
   actions,
 }: {
-  kicker: string;
+  kicker?: string;
   title: string;
   lede?: ReactNode;
   /** Keep the kicker in source case (procedure IDs). */
@@ -22,7 +22,7 @@ export function PageHead({
 }) {
   return (
     <header className="page-head">
-      <div className={kickerPlain ? "kicker kicker-plain mono" : "kicker"}>{kicker}</div>
+      {kicker && <div className={kickerPlain ? "kicker kicker-plain mono" : "kicker"}>{kicker}</div>}
       <h1>{title}</h1>
       {lede && <p className="lede">{lede}</p>}
       {actions && <div className="page-actions">{actions}</div>}

@@ -537,7 +537,7 @@ function DistributionBody({ data }: { data: Distribution }) {
     [data],
   );
   const bins = useMemo(
-    () => (data.bins ?? []).map((b) => ({ label: axisFmt(b.mid), n: b.n })),
+    () => (data.bins ?? []).map((bin, index) => ({ ...bin, index })),
     [data],
   );
   const usedLog = data.scale === "log";
@@ -574,25 +574,29 @@ function DistributionBody({ data }: { data: Distribution }) {
         </p>
       )}
       <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={bins} margin={{ top: 6, right: 12, bottom: 4, left: -12 }}>
+        <BarChart data={bins} margin={{ top: 6, right: 12, bottom: 4, left: 2 }}>
           <CartesianGrid stroke="var(--line-soft)" vertical={false} />
           <XAxis
-            dataKey="label"
+            dataKey="index"
+            tickFormatter={(index: number) => axisFmt(bins[index]?.mid)}
             tick={{ fontSize: 10, fill: "var(--muted)" }}
             tickLine={false}
             axisLine={{ stroke: "var(--line)" }}
             interval="preserveStartEnd"
-            minTickGap={8}
+            minTickGap={16}
           />
           <YAxis
             tick={{ fontSize: 11, fill: "var(--muted)" }}
             tickLine={false}
             axisLine={false}
-            width={48}
+            width={58}
           />
           <Tooltip
             formatter={(v: number | string) => [int(Number(v)), t("distributions.tooltip_procedures")]}
-            labelFormatter={(l) => t("distributions.tooltip_value", { v: l })}
+            labelFormatter={(index) => {
+              const bin = bins[Number(index)];
+              return bin ? t("distributions.tooltip_interval", { from: axisFmt(bin.x0), to: axisFmt(bin.x1) }) : "";
+            }}
           />
           <Bar dataKey="n" fill="var(--chart-blue)" radius={[3, 3, 0, 0]} />
         </BarChart>
@@ -601,7 +605,7 @@ function DistributionBody({ data }: { data: Distribution }) {
       <h3 style={{ marginTop: 22 }}>{t("distributions.ecdf_h")}</h3>
       <p className="muted">{t("distributions.ecdf_p")}</p>
       <ResponsiveContainer width="100%" height={240}>
-        <LineChart data={ecdf} margin={{ top: 6, right: 12, bottom: 4, left: -18 }}>
+        <LineChart data={ecdf} margin={{ top: 6, right: 12, bottom: 4, left: 2 }}>
           <CartesianGrid stroke="var(--line-soft)" vertical={false} />
           <XAxis
             dataKey="x"
@@ -619,7 +623,7 @@ function DistributionBody({ data }: { data: Distribution }) {
             tick={{ fontSize: 11, fill: "var(--muted)" }}
             tickLine={false}
             axisLine={false}
-            width={48}
+            width={58}
           />
           <Tooltip
             formatter={(v: number | string) => [`${Number(v).toFixed(1)}%`, t("distributions.tooltip_cumulative")]}

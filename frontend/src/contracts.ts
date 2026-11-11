@@ -31,15 +31,19 @@ export function assertApiData(url: string, payload: unknown): void {
     const row = value as Record<string, unknown>;
     // Meta maps describe fields; their n_* keys are names, not observations.
     if (["/api/meta.unavailable", "/api/meta.risk_bands"].includes(at) && Object.values(row).every(item => typeof item === "string")) return;
+    // Baseline keys are feature names. Their values are metric records.
+    const baselineMap = /^\/api\/evaluation\.external_labels\[\d+\]\.baselines$/.test(at);
     for (const [key, item] of Object.entries(row)) {
       const field = `${at}.${key}`;
       if (typeof item === "number") requireRule(finite(item), field, "raw_score");
       if (item !== null && item !== undefined) {
         if (ranked.has(key)) requireRule(percentile(item), field, "percentile");
         if (key === "n_models_flagging") requireRule(votes(item), field, "votes");
-        else if (!at.includes(".params") && (/^n(?:_|$)/.test(key) || ["total", "weight", "records", "scored", "unscored", "zeros", "negative", "sampled", "bytes", "min_pairs", "dropped", "degree", "awards", "pairs_all"].includes(key) || /(_count|_shown|_qualifying)$/.test(key))) requireRule(count(item), field, "count");
+        else if (!baselineMap && !at.includes(".params") && (/^n(?:_|$)/.test(key) || ["total", "weight", "records", "scored", "unscored", "zeros", "negative", "sampled", "bytes", "min_pairs", "dropped", "degree", "awards", "pairs_all"].includes(key) || /(_count|_shown|_qualifying)$/.test(key))) requireRule(count(item), field, "count");
         if (raw.has(key)) requireRule(finite(item) && (!(key === "rule_score" || key === "lof_score") || item >= 0), field, "raw_score");
-        if (shares.has(key) && !(key === "agreement" && Array.isArray(item))) requireRule(finite(item) && item >= 0 && item <= 1, field, "share");
+        const agreementRecord = key === "agreement" && at === "/api/explainability.xai_consistency";
+        if (agreementRecord) requireRule(typeof item === "object" && !Array.isArray(item), field, "object");
+        else if (shares.has(key) && !(key === "agreement" && Array.isArray(item))) requireRule(finite(item) && item >= 0 && item <= 1, field, "share");
         if (key === "risk_level" || key === "band" && at.endsWith(".consensus")) requireRule(typeof item === "string" && bands.has(item), field, "band");
         if (key === "consensus_flag" || key === "flag" && at.endsWith(".consensus")) requireRule(typeof item === "boolean", field, "boolean");
         if (key === "model_flags") {

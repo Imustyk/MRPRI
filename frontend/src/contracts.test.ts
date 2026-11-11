@@ -48,3 +48,14 @@ it("meta field descriptions are not numeric observation counts", () => {
  expect(() => assertApiData("/api/meta", {unavailable:{n_bids:"Not published",n_bidders:"Missing"},risk_bands:{unscored:"No detector output"},n_tenders:2})).not.toThrow();
  expect(() => assertApiData("/api/stats", {procedure_counts:{},n_tenders:"Not published"})).toThrow();
 });
+
+it("retains evaluation feature names and signed XAI correlations", () => {
+  expect(() => assertApiData("/api/evaluation", { external_labels: [{ baselines: {
+    n_bidders_log: { auc: 0.51, cluster_ci: [0.49, 0.53] },
+  } }] })).not.toThrow();
+  expect(() => assertApiData("/api/explainability", { xai_consistency: { agreement: {
+    spearman: { median: -0.6798 }, sign_agreement: { median: 0.11 },
+  } } })).not.toThrow();
+  expect(() => assertApiData("/api/explainability", { xai_consistency: { agreement: 0.4 } })).toThrow();
+  expect(() => assertApiData("/api/tenders/x/model-analysis", { agreement: 2, detectors: [] })).toThrow();
+});

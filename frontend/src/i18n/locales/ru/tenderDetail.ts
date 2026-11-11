@@ -1,7 +1,7 @@
 import type en from "../en/tenderDetail";
 
 const tenderDetail: typeof en = {
-  back: "← Все процедуры",
+  back: "Все закупки",
   loading_title: "Загрузка процедуры…",
   not_found_title: "Процедура не найдена",
   not_found_lede: `Для <code>{{id}}</code> ничего не хранится. Возможно, она относится к запуску конвейера, который с тех пор был заменён, либо идентификатор введён с ошибкой.`,

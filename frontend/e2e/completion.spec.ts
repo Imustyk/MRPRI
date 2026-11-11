@@ -22,7 +22,7 @@ test("explanation failure is independent, retry does not reload tender/model; 40
  await page.route(`**/api/tenders/${id}`,async route=>{rowCalls++;await route.fulfill({json:tender});});
  await page.route("**/model-analysis",async route=>{modelCalls++;await route.fulfill({json:analysis});});
  await page.route("**/explanation",route=>route.fulfill(failed?{status:500,json:{detail:"TEST explanation failed"}}:{status:404,json:{detail:"No explanation"}}));
- await page.goto(`/tenders/${id}`);await expect(page.locator(".model-workbench")).toBeVisible();await expect(page.locator("#case-evidence").getByRole("alert")).toContainText("TEST explanation failed");
+ await page.goto(`/tenders/${id}`);await expect(page.locator(".model-workbench")).toBeVisible();await page.locator("#case-evidence > summary").click();await expect(page.locator("#case-evidence").getByRole("alert")).toContainText("TEST explanation failed");
  await page.screenshot({path:`${SHOTS}/completion-explanation-error.png`,fullPage:true});
  failed=false;await page.locator("#case-evidence").getByRole("button",{name:/Retry/}).click();await expect(page.locator("#case-evidence").getByRole("alert")).toHaveCount(0);await expect(page.locator("#case-evidence")).toContainText("Legacy explanation layers are unavailable");expect(rowCalls).toBe(1);expect(modelCalls).toBe(1);
 });

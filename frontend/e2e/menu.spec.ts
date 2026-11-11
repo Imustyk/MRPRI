@@ -41,7 +41,7 @@ test.describe("mobile menu", () => {
 
     // Reopen and follow a link: menu closes and focus moves to the main region.
     await toggle.click();
-    await sidebar.getByRole("link", { name: "Procedures" }).click();
+    await sidebar.getByRole("link", { name: "Procurements" }).click();
     await page.waitForURL(/\/tenders/);
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
     await page.waitForFunction(() => document.activeElement?.id === "main", undefined, {

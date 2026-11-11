@@ -12,18 +12,15 @@ export default function Method() {
   return (
     <div>
       <PageHead
-        kicker={t("method.kicker")}
-        title={t("method.title")}
-        lede={
-          <Trans
-            i18nKey="method.lede"
-            components={{
-              code: <code />,
-              racilink: <Link to="/raci" />,
-            }}
-          />
-        }
+        title={t("product.how")}
+        lede={t("product.steps")}
       />
+      <div className="card"><p>{t("analysis.disclaimer")}</p><Link to="/tenders">{t("product.browse")}</Link></div>
+      <details className="card research-disclosure">
+        <summary>{t("product.technical")}</summary>
+        <p className="lede">
+          <Trans i18nKey="method.lede" components={{ code: <code />, racilink: <Link to="/raci" /> }} />
+        </p>
 
       {request.error && <ErrorNote error={request.error} onRetry={request.reload} />}
       {request.loading && <Loading />}
@@ -111,6 +108,8 @@ export default function Method() {
         </p>
       </div>
       </div>
+      <Link to="/models">{t("product.results")}</Link>
+      </details>
     </div>
   );
 }

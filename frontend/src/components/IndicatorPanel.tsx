@@ -30,12 +30,12 @@ const RULE_LOGIC: Record<string, string> = {
 };
 const ACTIVE_LABELS: Record<string, string> = { single_bidder: "Single bidder", short_deadline: "Short bidding window" };
 
-export function IndicatorPanel({ tender }: { tender: Tender }) {
+export function IndicatorPanel({ tender, plain = false }: { tender: Tender; plain?: boolean }) {
   const { t } = useTranslation();
   const [group, setGroup] = useState<string>("all");
   const flags = Array.isArray(tender.flags) ? tender.flags : [];
   return <section className="indicator-section">
-    <div className="section-heading"><div><span className="eyebrow">{t("analysis.separate_rules")}</span><h2>{t("analysis.indicators_title")}</h2></div></div>
+    <div className="section-heading"><div><span className="eyebrow">{t("analysis.separate_rules")}</span><h2>{t(plain ? "product.why" : "analysis.indicators_title")}</h2></div></div>
     <p className="muted">{t("analysis.indicators_note")}</p>
     <div className="filter-segments" role="group" aria-label={t("analysis.indicator_group")}>
       {GROUPS.map((key) => <button key={key} type="button" aria-pressed={key === group} onClick={() => setGroup(key)}>{t(`analysis.groups.${key}`)}</button>)}
@@ -54,11 +54,12 @@ export function IndicatorPanel({ tender }: { tender: Tender }) {
         <div className="indicator-value">{missing ? t("analysis.unavailable") : metric(value, 4)}</div>
         <p>{t(`analysis.indicators.${item.key}.description`)}</p>
         {triggered && <p><Pill tone="warn">{t("analysis.recorded_signal")}: {tr(ACTIVE_LABELS[item.key])}</Pill></p>}
+        {plain && <p className="microcopy">{t(`analysis.indicators.${item.key}.limitation`)}</p>}
         <details className="research-disclosure"><summary>{t("analysis.formula_quality")}</summary>
           <h4>{t("analysis.formula")}</h4><code className="formula">{item.formula}</code>
           <h4>{t("analysis.inputs")}</h4><code className="break-anywhere">{item.inputs}</code>
           <p className="microcopy">{t("analysis.etl_value")}: {metric(value, 6)}</p>
-          <p>{t(`analysis.indicators.${item.key}.limitation`)}</p>
+          {!plain && <p>{t(`analysis.indicators.${item.key}.limitation`)}</p>}
           <p className="microcopy">{t("analysis.source")}: <code>src/mtender/features.py</code></p>
           <p className="microcopy">{t("analysis.no_indicator_threshold")}</p>
         </details>

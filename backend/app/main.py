@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Literal
 
@@ -143,6 +144,12 @@ def tenders(
     level: str | None = None,
     procedure: str | None = None,
     buyer: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    min_value: float | None = Query(None, ge=0, allow_inf_nan=False),
+    max_value: float | None = Query(None, ge=0, allow_inf_nan=False),
+    cpv: str | None = Query(None, pattern=r"^\d{2,8}(?:-\d)?$"),
+    scored: bool | None = None,
     min_risk: float = Query(0, ge=0, le=100),
     sort: Literal["default", "risk", "value", "date"] = Query(
         "default",
@@ -185,6 +192,28 @@ def tenders(
         rows = [r for r in rows if r.get("procedure") == procedure]
     if buyer:
         rows = [r for r in rows if r.get("buyer_id") == buyer]
+    if date_from is not None and date_to is not None and date_from > date_to:
+        raise HTTPException(422, "date_from must be on or before date_to")
+    if min_value is not None and max_value is not None and min_value > max_value:
+        raise HTTPException(422, "min_value must be at most max_value")
+    if date_from is not None or date_to is not None:
+        lower = date_from.isoformat() if date_from else ""
+        upper = date_to.isoformat() if date_to else "9999-12-31"
+        rows = [
+            r for r in rows
+            if r.get("published_at") and lower <= r["published_at"][:10] <= upper
+        ]
+    if min_value is not None or max_value is not None:
+        rows = [
+            r for r in rows
+            if (value := r.get("award_total_mdl")) is not None
+            and (min_value is None or value >= min_value)
+            and (max_value is None or value <= max_value)
+        ]
+    if cpv:
+        rows = [r for r in rows if (r.get("cpv_code") or "").startswith(cpv)]
+    if scored is not None:
+        rows = [r for r in rows if (r.get("risk_score") is not None) == scored]
     rows = [r for r in rows if (r.get("risk_score") or 0) >= min_risk]
     if sort == "risk":
         rows = sorted(

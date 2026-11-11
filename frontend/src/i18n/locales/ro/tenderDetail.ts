@@ -1,7 +1,7 @@
 import type en from "../en/tenderDetail";
 
 const tenderDetail: typeof en = {
-  back: "← Toate procedurile",
+  back: "Toate achizițiile",
   loading_title: "Se încarcă procedura…",
   not_found_title: "Procedura nu a fost găsită",
   not_found_lede: `Nu există nimic stocat pentru <code>{{id}}</code>. Poate aparține unei rulări a pipeline-ului care a fost de atunci înlocuită, sau identificatorul este greșit tastat.`,

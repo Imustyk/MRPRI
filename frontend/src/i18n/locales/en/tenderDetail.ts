@@ -1,6 +1,6 @@
 /** Tender detail page strings (English = source). */
 const tenderDetail = {
-  back: "← All procedures",
+  back: "All procurements",
   loading_title: "Loading procedure…",
   not_found_title: "Procedure not found",
   not_found_lede: `Nothing is stored for <code>{{id}}</code>. It may belong to a pipeline run that has since been replaced, or the identifier may be mistyped.`,

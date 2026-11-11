@@ -2,11 +2,13 @@ import { tenderDestination } from "../navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { getJson, int, mdl, mtenderUrl, num, pctile, type Stats, type Tender } from "../api";
+import { getJson, dateLabel, mdl, num, type Stats, type Tender } from "../api";
 import { useRequest } from "../hooks";
 import { BandBadge, PageHead, RequestPanel, ErrorNote, Skeleton, TableWrap } from "../ui";
 
 const PAGE = 40;
+const ADVANCED_FILTERS = ["date_from", "date_to", "min_value", "max_value", "cpv"] as const;
+const EXTRA_FILTERS = [...ADVANCED_FILTERS, "scored", "buyer"] as const;
 const LEVELS = new Set(["critical", "high", "medium", "low", "unscored"]);
 
 /**
@@ -33,7 +35,11 @@ export function readTenderFilters(params: URLSearchParams) {
     rawOffset === null || !Number.isSafeInteger(parsedOffset) || parsedOffset <= 0
       ? 0
       : Math.floor(parsedOffset / PAGE) * PAGE;
-  return { q, level, procedure, minRisk, offset };
+  const extra = Object.fromEntries(EXTRA_FILTERS.flatMap(key => {
+    const value = params.get(key);
+    return value ? [[key, value]] : [];
+  }));
+  return { q, level, procedure, minRisk, offset, extra };
 }
 
 type TenderFilters = ReturnType<typeof readTenderFilters>;
@@ -49,7 +55,7 @@ export default function Tenders() {
   // authoritative — the request below only ever reads URL state.
   const [q, setQ] = useState(filters.q);
   const [procedureOptions, setProcedureOptions] = useState<string[]>([]);
-  const filtered = Boolean(filters.q || filters.level || filters.procedure || filters.minRisk > 0);
+  const filtered = Boolean(filters.q || filters.level || filters.procedure || filters.minRisk > 0 || Object.keys(filters.extra).length);
 
   const options = useRequest("procedure-options", signal => getJson<Stats>("/api/stats", signal));
   const location = useLocation();
@@ -121,6 +127,7 @@ export default function Tenders() {
       limit: String(PAGE),
       offset: String(filters.offset),
       min_risk: String(filters.minRisk),
+      ...filters.extra,
     });
     if (filters.q) params.set("q", filters.q);
     if (filters.level) params.set("level", filters.level);
@@ -139,6 +146,9 @@ export default function Tenders() {
     if (parsed.q) parts.push(`“${parsed.q}”`);
     if (parsed.level) parts.push(t(`risk.${parsed.level}`));
     if (parsed.procedure) parts.push(parsed.procedure.replaceAll("_", " "));
+    for (const [key, value] of Object.entries(parsed.extra ?? {})) {
+      parts.push(key === "scored" ? t(value === "true" ? "product.scored" : "risk.unscored") : value);
+    }
     if (parsed.minRisk > 0) parts.push(String(parsed.minRisk));
     return t("tenders.params_desc", {
       page: parsed.offset / PAGE + 1,
@@ -152,13 +162,12 @@ export default function Tenders() {
     update({ ...patch, offset: null }, false);
   const setPage = (offset: number) => update({ offset: offset > 0 ? offset : null }, true);
   const clearAll = () =>
-    update({ q: null, level: null, procedure: null, min: null, offset: null }, false);
+    update({ q: null, level: null, procedure: null, min: null, offset: null, ...Object.fromEntries(EXTRA_FILTERS.map(key => [key, null])) }, false);
 
   return (
     <div>
       {options.error && <ErrorNote error={options.error} onRetry={options.reload} />}
       <PageHead
-        kicker={t("tenders.kicker")}
         title={t("tenders.title")}
         lede={t("tenders.lede")}
       />
@@ -209,23 +218,48 @@ export default function Tenders() {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="f-risk">{t("tenders.f_risk", { v: filters.minRisk })}</label>
-          <input
-            id="f-risk"
-            type="range"
-            min={0}
-            max={95}
-            step={5}
-            value={filters.minRisk}
-            onChange={(e) => setFilter({ min: Number(e.target.value) })}
-          />
+          <label htmlFor="f-scored">{t("product.scoreAvailability")}</label>
+          <select id="f-scored" value={filters.extra.scored ?? ""} onChange={e => setFilter({ scored: e.target.value })}>
+            <option value="">{t("common.all")}</option>
+            <option value="true">{t("product.scored")}</option>
+            <option value="false">{t("risk.unscored")}</option>
+          </select>
         </div>
-        {filtered && (
-          <button className="ghost" onClick={clearAll}>
-            {t("tenders.clear")}
-          </button>
-        )}
+        {filtered && <button className="ghost" onClick={clearAll}>{t("tenders.clear")}</button>}
       </div>
+      <details className="card research-disclosure" open={Object.keys(filters.extra).some(key => key !== "scored") || filters.minRisk > 0 ? true : undefined}>
+        <summary>{t("product.moreFilters")}</summary>
+        <form className="toolbar" key={JSON.stringify(ADVANCED_FILTERS.map(key => filters.extra[key] ?? ""))} onSubmit={event => {
+          event.preventDefault();
+          const form = new FormData(event.currentTarget);
+          setFilter(Object.fromEntries(ADVANCED_FILTERS.map(key => [key, String(form.get(key) ?? "").trim()])));
+        }}>
+          {ADVANCED_FILTERS.map(key => (
+            <div className="field" key={key}>
+              <label htmlFor={key}>{t(`product.${key}`)}</label>
+              <input id={key} name={key} defaultValue={filters.extra[key] ?? ""}
+                type={key.startsWith("date") ? "date" : key === "cpv" ? "text" : "number"}
+                min={key.endsWith("value") ? 0 : undefined} step={key.endsWith("value") ? "any" : undefined}
+                pattern={key === "cpv" ? "[0-9]{2,8}(?:-[0-9])?" : undefined} />
+            </div>
+          ))}
+          <button type="submit">{t("product.applyFilters")}</button>
+        </form>
+        <div className="toolbar">
+          <div className="field">
+            <label htmlFor="f-risk">{t("tenders.f_risk", { v: filters.minRisk })}</label>
+            <input
+              id="f-risk"
+              type="range"
+              min={0}
+              max={95}
+              step={5}
+              value={filters.minRisk}
+              onChange={(e) => setFilter({ min: Number(e.target.value) })}
+            />
+          </div>
+        </div>
+      </details>
 
       <RequestPanel
         state={req}
@@ -251,12 +285,13 @@ export default function Tenders() {
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">{t("tenders.th_priority")}</th>
                     <th scope="col">{t("tenders.th_procedure")}</th>
                     <th scope="col">{t("tenders.th_buyer")}</th>
-                    <th scope="col">{t("tenders.th_winner")}</th>
+                    <th scope="col">{t("product.published")}</th>
                     <th scope="col">{t("tenders.th_award")}</th>
-                    <th scope="col">{t("tenders.th_bidders")}</th>
+                    <th scope="col">{t("tenders.th_priority")}</th>
+                    <th scope="col">{t("product.scoreAvailability")}</th>
+                    <th scope="col">{t("product.details")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -273,55 +308,21 @@ export default function Tenders() {
                       }}
                     >
                       <td>
-                        <strong className="mono">{pctile(row.risk_score)}</strong>
-                        <div>
-                          <BandBadge level={row.risk_level} nModels={row.n_models_flagging} />
-                        </div>
-                      </td>
-                      <td>
-                        <Link to={destination(row.tender_id)}>
-                          {row.title ?? t("tenders.untitled")}
-                        </Link>
-                        {/* External source of record; the row click handler above
-                            skips anchors, and stopPropagation keeps it explicit. */}
-                        {row.ocid && (
-                          <a
-                            className="ext-arrow"
-                            href={mtenderUrl(row.ocid)}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            title={t("common.open_mtender")}
-                            aria-label={t("common.open_mtender")}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            ↗
-                          </a>
-                        )}
+                        <Link to={destination(row.tender_id)}>{row.title ?? t("tenders.untitled")}</Link>
                         <div className="muted mono">{row.tender_id}</div>
                       </td>
                       <td>{row.buyer_name ?? "—"}</td>
-                      <td>{row.winner_name ?? "—"}</td>
-                      <td className="mono">
-                        {row.award_total_mdl === null ? "—" : mdl(row.award_total_mdl)}
-                      </td>
-                      <td className="mono">{int(row.n_bidders)}</td>
+                      <td>{dateLabel(row.published_at)}</td>
+                      <td className="mono">{row.award_total_mdl == null ? "—" : mdl(row.award_total_mdl)}</td>
+                      <td><BandBadge level={row.risk_level} nModels={row.n_models_flagging} /></td>
+                      <td>{t(row.risk_score == null ? "risk.unscored" : "product.scored")}</td>
+                      <td><Link to={destination(row.tender_id)} aria-label={`${t("product.details")}: ${row.title ?? row.tender_id}`}>{t("product.details")}</Link></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </TableWrap>
-            {/* The table rows themselves are not focusable, so this list gives
-                keyboard and screen-reader users the same navigation. */}
-            <nav className="muted" aria-label={t("tenders.open_nav")} style={{ marginTop: 10, fontSize: 12 }}>
-              {t("tenders.open_directly")}{" "}
-              {result.items.slice(0, 6).map((row) => (
-                <span key={row.tender_id}>
-                  <Link to={destination(row.tender_id)} className="mono" style={{ marginRight: 10 }}>
-                    {row.tender_id}
-                  </Link>
-                </span>
-              ))}
-            </nav>
+
           </>
         )}
       </RequestPanel>

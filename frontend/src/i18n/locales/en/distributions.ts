@@ -80,6 +80,7 @@ const distributions = {
   log_far: "far",
   log_times: "{{n}}×",
   tooltip_procedures: "procedures",
+  tooltip_interval: "Interval: {{from}} – {{to}}",
   tooltip_value: "value ≈ {{v}}",
   ecdf_h: "Empirical cumulative distribution",
   ecdf_p:

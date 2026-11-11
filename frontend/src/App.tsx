@@ -104,10 +104,10 @@ export default function App() {
   const nav = [
     { label: t("nav.group_analysis"), items: [
       { to: "/", label: t("nav.overview") }, { to: "/tenders", label: t("nav.procedures") },
-      { to: "/models", label: t("analysis.models_title") }, { to: "/indicators", label: t("analysis.indicators_title") },
-      { to: "/distributions", label: t("nav.distributions") }, { to: "/network", label: t("nav.network") }, { to: "/workspace", label: t("nav.workspace") },
+      { to: "/models", label: t("analysis.models_title") }, { to: "/network", label: t("nav.network") }, { to: "/workspace", label: t("nav.workspace") },
+      { to: "/method", label: t("product.how") },
     ] },
-    { label: t("analysis.research"), items: [{ to: "/method", label: t("nav.methodology") }, { to: "/kpis", label: t("nav.kpis") }, { to: "/raci", label: t("nav.raci") }] },
+    { label: t("analysis.research"), items: [{ to: "/indicators", label: t("analysis.indicators_title") }, { to: "/distributions", label: t("nav.distributions") }, { to: "/kpis", label: t("nav.kpis") }, { to: "/raci", label: t("nav.raci") }] },
   ];
   let selectedProcedure = new URLSearchParams(location.search).get("tender");
   if (!selectedProcedure && location.pathname.startsWith("/tenders/")) {

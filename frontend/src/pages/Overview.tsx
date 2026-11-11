@@ -53,34 +53,16 @@ export default function Overview() {
   const dataset = datasetReq.error ? null : datasetReq.data;
   const datasetErr = datasetReq.error;
   const error = statsReq.error;
-  const loading = statsReq.loading;
   const load = statsReq.reload;
-  if (error && !stats) {
-    return (
-      <div>
-        <div className="kicker">{t("overview.err_kicker")}</div>
-        <h1>{t("overview.err_title")}</h1>
-        <p className="lede">
-          {t("completion.results_error")}
-        </p>
-
-        <div style={{ marginTop: 16 }}>
-          <ErrorNote error={error} onRetry={load} />
-        </div>
-      </div>
-    );
-  }
-
-  if (!stats) {
-    return (
-      <div>
-        <div className="kicker">{t("overview.load_kicker")}</div>
-        <h1>{t("overview.load_title")}</h1>
-        <Skeleton rows={4} height={44} />
-        <Skeleton rows={5} />
-      </div>
-    );
-  }
+  const header = <PageHead title={t("product.homeTitle")} lede={t("product.homeLede")} actions={<>
+    <Link className="action-primary" to="/tenders">{t("product.browse")}</Link>
+    <Link className="action-secondary" to="/models">{t("product.results")}</Link>
+    <Link className="action-secondary" to="/method">{t("product.how")}</Link>
+  </>} />;
+  if (!stats) return <div className="overview-page">
+    {header}
+    {error ? <ErrorNote error={error} onRetry={load} /> : <Skeleton rows={5} height={44} />}
+  </div>;
 
   const m = stats.metrics;
   const bandData = BAND_ORDER.filter((b) => stats.level_counts[b]).map((b) => ({
@@ -90,23 +72,16 @@ export default function Overview() {
   const cohorts = stats.snapshot_cohorts;
   const months = (cohorts?.monthly ?? []).map((r) => ({ ...r, label: monthLabel(r.month) }));
   const hasNoPublishedBids = stats.n_with_bid_data === 0;
-  // The detection run scored a sample, not the whole corpus. Every share that
-  // describes model behaviour must use scored records as its denominator,
-  // otherwise "2% high risk" silently means 2% of records no model ever saw.
+  // Shares of model outcomes use the scored population as their denominator.
   const scoredRows = bandData.filter((b) => b.level !== "unscored").reduce((a, b) => a + b.n, 0);
   const unscoredRows = stats.level_counts.unscored ?? 0;
 
   return (
     <div className="overview-page">
-      <PageHead
-        kicker={t("overview.kicker")}
-        title={t("overview.title")}
-        lede={t("overview.lede", { n: stats.n_tenders.toLocaleString() })}
-        actions={<>
-          <Link className="action-primary" to="/tenders">{t("overview.explore")} <span aria-hidden="true">↗</span></Link>
-          <Link className="action-secondary" to="/method">{t("overview.how_it_works")} <span aria-hidden="true">›</span></Link>
-        </>}
-      />
+      {header}
+      {dataset && <p className="microcopy">
+        {t("product.source")} · {t(dataset.origin.kind === "real-ocds" ? "overview.prov_real" : dataset.origin.synthetic_in_use ? "overview.prov_synthetic" : "overview.prov_unknown")} · {dateLabel(dataset.manifest.exported_at)}
+      </p>}
 
       {metaReq.error && <ErrorNote error={metaReq.error} onRetry={metaReq.reload} />}
       {healthReq.error && <ErrorNote error={healthReq.error} onRetry={healthReq.reload} />}
@@ -141,11 +116,7 @@ export default function Overview() {
           }
           tone={stats.high_risk_count > 0 ? "high" : undefined}
         />
-        <Stat
-          label={t("overview.stat_value")}
-          value={mdl(stats.high_risk_value_mdl)}
-          note={t("overview.stat_value_note")}
-        />
+        <Stat label={t("product.corpus")} value={int(stats.n_tenders)} />
         <Stat
           label={t("overview.stat_single")}
           value={stats.single_bidder_share === null ? "—" : pct(stats.single_bidder_share)}
@@ -156,6 +127,13 @@ export default function Overview() {
           }
         />
       </div>
+
+      <ul className="legend" aria-label={t("overview.bands_h")}>
+        {BAND_ORDER.map(level => <li key={level}>
+          <span className="swatch" style={{ background: BAND_FILL[level] }} />
+          <Link to={`/tenders?level=${level}`}>{t(`risk.${level}`)} · {int(stats.level_counts[level] ?? 0)}</Link>
+        </li>)}
+      </ul>
 
       {/* Provenance: where the rows came from and how the run is traceable. */}
       <details className="card provenance-disclosure" open={datasetErr !== null || dataset?.origin.synthetic_in_use === true || dataset?.verification.hash_matches_manifest === false}>
@@ -309,6 +287,7 @@ export default function Overview() {
                   tick={{ fontSize: 11, fill: "var(--muted)" }}
                   tickLine={false}
                   axisLine={{ stroke: "var(--line)" }}
+                  minTickGap={12}
                   tickFormatter={(v: string) => t(`risk.${v}`)}
                 />
                 <YAxis
@@ -331,14 +310,6 @@ export default function Overview() {
               </BarChart>
             </ResponsiveContainer>
           )}
-          <ul className="legend">
-            {bandData.map((d) => (
-              <li key={d.level}>
-                <span className="swatch" style={{ background: BAND_FILL[d.level] }} />
-                {t(`risk.${d.level}`)} · {d.n}
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
 
@@ -389,7 +360,7 @@ export default function Overview() {
           )}
 
           <h3 style={{ marginTop: 18 }}>{t("overview.source_h")}</h3>
-          {loading ? (
+          {healthReq.loading ? (
             <Skeleton rows={3} />
           ) : mongo?.connected ? (
             <dl className="kv">

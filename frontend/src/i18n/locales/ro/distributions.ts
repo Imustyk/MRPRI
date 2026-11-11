@@ -81,6 +81,7 @@ const distributions: typeof en = {
   log_far: "mult peste",
   log_times: "{{n}}×",
   tooltip_procedures: "proceduri",
+  tooltip_interval: "Interval: {{from}} – {{to}}",
   tooltip_value: "valoare ≈ {{v}}",
   ecdf_h: "Distribuție cumulativă empirică",
   ecdf_p:
